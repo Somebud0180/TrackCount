@@ -26,7 +26,7 @@ struct ContentView: View {
                         boomScore += 1
                     }) {
                         Image(systemName: "plus")
-                            .font(.system(size: 32, weight: .regular))
+                            .font(.system(size: 32))
                             .foregroundStyle(.primary)
                             .frame(height: 30)
                     }
@@ -39,7 +39,7 @@ struct ContentView: View {
                         boomScore -= 1
                     }) {
                         Image(systemName: "minus")
-                            .font(.system(size: 32, weight: .regular))
+                            .font(.system(size: 32))
                             .foregroundStyle(.primary)
                             .frame(height: 30)
                     }
@@ -56,7 +56,7 @@ struct ContentView: View {
                         taratScore += 1
                     }) {
                         Image(systemName: "plus")
-                            .font(.system(size: 32, weight: .regular))
+                            .font(.system(size: 32))
                             .foregroundStyle(.primary)
                             .frame(height: 30)
                     }
@@ -69,7 +69,7 @@ struct ContentView: View {
                         taratScore -= 1
                     }) {
                         Image(systemName: "minus")
-                            .font(.system(size: 32, weight: .regular))
+                            .font(.system(size: 32))
                             .foregroundStyle(.primary)
                             .frame(height: 30)
                     }

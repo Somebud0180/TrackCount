@@ -24,25 +24,25 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AA4A52D62CEDF57D00C79994 /* CtrlPanel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CtrlPanel.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA4A52E62CEDF57E00C79994 /* CtrlPanelTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CtrlPanelTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA4A52F02CEDF57E00C79994 /* CtrlPanelUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CtrlPanelUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA4A52D62CEDF57D00C79994 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA4A52E62CEDF57E00C79994 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA4A52F02CEDF57E00C79994 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AA4A52D82CEDF57D00C79994 /* CtrlPanel */ = {
+		AA4A52D82CEDF57D00C79994 /* TrackCount */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CtrlPanel;
+			path = TrackCount;
 			sourceTree = "<group>";
 		};
-		AA4A52E92CEDF57E00C79994 /* CtrlPanelTests */ = {
+		AA4A52E92CEDF57E00C79994 /* TrackCountTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CtrlPanelTests;
+			path = TrackCountTests;
 			sourceTree = "<group>";
 		};
-		AA4A52F32CEDF57E00C79994 /* CtrlPanelUITests */ = {
+		AA4A52F32CEDF57E00C79994 /* TrackCountUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CtrlPanelUITests;
+			path = TrackCountUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +75,9 @@
 		AA4A52CD2CEDF57D00C79994 = {
 			isa = PBXGroup;
 			children = (
-				AA4A52D82CEDF57D00C79994 /* CtrlPanel */,
-				AA4A52E92CEDF57E00C79994 /* CtrlPanelTests */,
-				AA4A52F32CEDF57E00C79994 /* CtrlPanelUITests */,
+				AA4A52D82CEDF57D00C79994 /* TrackCount */,
+				AA4A52E92CEDF57E00C79994 /* TrackCountTests */,
+				AA4A52F32CEDF57E00C79994 /* TrackCountUITests */,
 				AA4A52D72CEDF57D00C79994 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -85,9 +85,9 @@
 		AA4A52D72CEDF57D00C79994 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AA4A52D62CEDF57D00C79994 /* CtrlPanel.app */,
-				AA4A52E62CEDF57E00C79994 /* CtrlPanelTests.xctest */,
-				AA4A52F02CEDF57E00C79994 /* CtrlPanelUITests.xctest */,
+				AA4A52D62CEDF57D00C79994 /* TrackCount.app */,
+				AA4A52E62CEDF57E00C79994 /* TrackCountTests.xctest */,
+				AA4A52F02CEDF57E00C79994 /* TrackCountUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA4A52D52CEDF57D00C79994 /* CtrlPanel */ = {
+		AA4A52D52CEDF57D00C79994 /* TrackCount */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA4A52FA2CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "CtrlPanel" */;
+			buildConfigurationList = AA4A52FA2CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "TrackCount" */;
 			buildPhases = (
 				AA4A52D22CEDF57D00C79994 /* Sources */,
 				AA4A52D32CEDF57D00C79994 /* Frameworks */,
@@ -108,18 +108,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AA4A52D82CEDF57D00C79994 /* CtrlPanel */,
+				AA4A52D82CEDF57D00C79994 /* TrackCount */,
 			);
-			name = CtrlPanel;
+			name = TrackCount;
 			packageProductDependencies = (
 			);
 			productName = CtrlPanel;
-			productReference = AA4A52D62CEDF57D00C79994 /* CtrlPanel.app */;
+			productReference = AA4A52D62CEDF57D00C79994 /* TrackCount.app */;
 			productType = "com.apple.product-type.application";
 		};
-		AA4A52E52CEDF57E00C79994 /* CtrlPanelTests */ = {
+		AA4A52E52CEDF57E00C79994 /* TrackCountTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA4A52FD2CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "CtrlPanelTests" */;
+			buildConfigurationList = AA4A52FD2CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "TrackCountTests" */;
 			buildPhases = (
 				AA4A52E22CEDF57E00C79994 /* Sources */,
 				AA4A52E32CEDF57E00C79994 /* Frameworks */,
@@ -131,18 +131,18 @@
 				AA4A52E82CEDF57E00C79994 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AA4A52E92CEDF57E00C79994 /* CtrlPanelTests */,
+				AA4A52E92CEDF57E00C79994 /* TrackCountTests */,
 			);
-			name = CtrlPanelTests;
+			name = TrackCountTests;
 			packageProductDependencies = (
 			);
 			productName = CtrlPanelTests;
-			productReference = AA4A52E62CEDF57E00C79994 /* CtrlPanelTests.xctest */;
+			productReference = AA4A52E62CEDF57E00C79994 /* TrackCountTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		AA4A52EF2CEDF57E00C79994 /* CtrlPanelUITests */ = {
+		AA4A52EF2CEDF57E00C79994 /* TrackCountUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA4A53002CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "CtrlPanelUITests" */;
+			buildConfigurationList = AA4A53002CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "TrackCountUITests" */;
 			buildPhases = (
 				AA4A52EC2CEDF57E00C79994 /* Sources */,
 				AA4A52ED2CEDF57E00C79994 /* Frameworks */,
@@ -154,13 +154,13 @@
 				AA4A52F22CEDF57E00C79994 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AA4A52F32CEDF57E00C79994 /* CtrlPanelUITests */,
+				AA4A52F32CEDF57E00C79994 /* TrackCountUITests */,
 			);
-			name = CtrlPanelUITests;
+			name = TrackCountUITests;
 			packageProductDependencies = (
 			);
 			productName = CtrlPanelUITests;
-			productReference = AA4A52F02CEDF57E00C79994 /* CtrlPanelUITests.xctest */;
+			productReference = AA4A52F02CEDF57E00C79994 /* TrackCountUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AA4A52D12CEDF57D00C79994 /* Build configuration list for PBXProject "CtrlPanel" */;
+			buildConfigurationList = AA4A52D12CEDF57D00C79994 /* Build configuration list for PBXProject "TrackCount" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA4A52D52CEDF57D00C79994 /* CtrlPanel */,
-				AA4A52E52CEDF57E00C79994 /* CtrlPanelTests */,
-				AA4A52EF2CEDF57E00C79994 /* CtrlPanelUITests */,
+				AA4A52D52CEDF57D00C79994 /* TrackCount */,
+				AA4A52E52CEDF57E00C79994 /* TrackCountTests */,
+				AA4A52EF2CEDF57E00C79994 /* TrackCountUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		AA4A52E82CEDF57E00C79994 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AA4A52D52CEDF57D00C79994 /* CtrlPanel */;
+			target = AA4A52D52CEDF57D00C79994 /* TrackCount */;
 			targetProxy = AA4A52E72CEDF57E00C79994 /* PBXContainerItemProxy */;
 		};
 		AA4A52F22CEDF57E00C79994 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AA4A52D52CEDF57D00C79994 /* CtrlPanel */;
+			target = AA4A52D52CEDF57D00C79994 /* TrackCount */;
 			targetProxy = AA4A52F12CEDF57E00C79994 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -399,6 +399,7 @@
 				DEVELOPMENT_TEAM = UV3PBA5W3W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TrackCount;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -410,7 +411,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ethanj.CtrlPanel;
+				PRODUCT_BUNDLE_IDENTIFIER = ethanj.TrackCount;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -429,6 +430,7 @@
 				DEVELOPMENT_TEAM = UV3PBA5W3W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TrackCount;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -440,7 +442,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ethanj.CtrlPanel;
+				PRODUCT_BUNDLE_IDENTIFIER = ethanj.TrackCount;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -463,7 +465,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CtrlPanel.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CtrlPanel";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrackCount.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TrackCount";
 			};
 			name = Debug;
 		};
@@ -482,7 +484,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CtrlPanel.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CtrlPanel";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrackCount.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TrackCount";
 			};
 			name = Release;
 		};
@@ -523,7 +525,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA4A52D12CEDF57D00C79994 /* Build configuration list for PBXProject "CtrlPanel" */ = {
+		AA4A52D12CEDF57D00C79994 /* Build configuration list for PBXProject "TrackCount" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA4A52F82CEDF57E00C79994 /* Debug */,
@@ -532,7 +534,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA4A52FA2CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "CtrlPanel" */ = {
+		AA4A52FA2CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "TrackCount" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA4A52FB2CEDF57E00C79994 /* Debug */,
@@ -541,7 +543,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA4A52FD2CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "CtrlPanelTests" */ = {
+		AA4A52FD2CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "TrackCountTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA4A52FE2CEDF57E00C79994 /* Debug */,
@@ -550,7 +552,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA4A53002CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "CtrlPanelUITests" */ = {
+		AA4A53002CEDF57E00C79994 /* Build configuration list for PBXNativeTarget "TrackCountUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA4A53012CEDF57E00C79994 /* Debug */,
