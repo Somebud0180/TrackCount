@@ -1,13 +1,13 @@
 //
-//  CtrlPanelUITestsLaunchTests.swift
-//  CtrlPanelUITests
+//  TrackCountUITestsLaunchTests.swift
+//  TrackCountUITests
 //
 //  Created by Ethan John Lagera on 11/20/24.
 //
 
 import XCTest
 
-final class CtrlPanelUITestsLaunchTests: XCTestCase {
+final class TrackCountUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

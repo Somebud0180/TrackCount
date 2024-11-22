@@ -1,13 +1,13 @@
 //
-//  CtrlPanelUITests.swift
-//  CtrlPanelUITests
+//  TrackCountUITests.swift
+//  TrackCountUITests
 //
 //  Created by Ethan John Lagera on 11/20/24.
 //
 
 import XCTest
 
-final class CtrlPanelUITests: XCTestCase {
+final class TrackCountUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

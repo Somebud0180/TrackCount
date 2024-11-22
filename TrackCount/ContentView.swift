@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  CtrlPanel
+//  TrackCount
 //
 //  Created by Ethan John Lagera on 11/20/24.
 //
@@ -8,10 +8,56 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var boomScore = 0
-    @State private var taratScore = 0
-    @State private var questionBalloonStates: [Bool] = Array(repeating: false, count: 13)
-    @State private var pointBalloonStates: [Bool] = Array(repeating: false, count: 13)
+    @State private var teamOne = 0
+    @State private var teamTwo = 0
+    @State private var buttonGroup = 12
+    @State private var buttonStates: [Bool] = Array(repeating: false, count: 48)
+    
+    var body: some View {
+        NavigationStack {
+            VStack {
+                Text("TrackCount")
+                    .font(.system(size: 64))
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                
+                NavigationLink(destination: trackScreen(teamOne: $teamOne, teamTwo: $teamTwo, buttonGroup: $buttonGroup, buttonStates: $buttonStates)) {
+                    Text("Track It")
+                        .font(.system(size: 32))
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                }
+                .padding()
+            }
+        }
+    }
+}
+
+struct trackScreen: View {
+    @Binding var teamOne: Int
+    @Binding var teamTwo: Int
+    @Binding var buttonGroup: Int
+    @Binding var buttonStates: [Bool]
+    
+    func buttonTextIcon(count: Int, text: String, _ colorOn: Color, _ colorOff: Color) -> some View {
+        return AnyView(
+            Button(action: {
+                buttonStates[count].toggle()
+            }) {
+                Text(text)
+                    .font(.system(size: 30))
+                Image(systemName: "balloon.fill")
+                    .imageScale(.large)
+            }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.secondary)
+                .foregroundStyle(buttonStates[count] ? colorOff : colorOn)
+                .frame(maxWidth: .infinity)
+        )
+    }
     
     var body: some View {
         VStack{
@@ -23,7 +69,7 @@ struct ContentView: View {
                         .font(.system(size: 24))
                         .fontWeight(.bold)
                     Button(action: {
-                        boomScore += 1
+                        teamOne += 1
                     }) {
                         Image(systemName: "plus")
                             .font(.system(size: 32))
@@ -32,11 +78,11 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     
-                    Text(String(boomScore))
+                    Text(String(teamOne))
                         .font(.title)
                     
                     Button(action: {
-                        boomScore -= 1
+                        teamOne -= 1
                     }) {
                         Image(systemName: "minus")
                             .font(.system(size: 32))
@@ -53,7 +99,7 @@ struct ContentView: View {
                         .font(.system(size: 24))
                         .fontWeight(.bold)
                     Button(action: {
-                        taratScore += 1
+                        teamTwo += 1
                     }) {
                         Image(systemName: "plus")
                             .font(.system(size: 32))
@@ -62,11 +108,11 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     
-                    Text(String(taratScore))
+                    Text(String(teamTwo))
                         .font(.title)
                     
                     Button(action: {
-                        taratScore -= 1
+                        teamTwo -= 1
                     }) {
                         Image(systemName: "minus")
                             .font(.system(size: 32))
@@ -88,167 +134,23 @@ struct ContentView: View {
                 
                 // 1-6
                 HStack {
-                    Button(action: {
-                        questionBalloonStates[1].toggle()
-                    }) {
-                        Text("1")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[1] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[2].toggle()
-                    }) {
-                        Text("2")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[2] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[3].toggle()
-                    }) {
-                        Text("3")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[3] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[4].toggle()
-                    }) {
-                        Text("4")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[4] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[5].toggle()
-                    }) {
-                        Text("5")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[5] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[6].toggle()
-                    }) {
-                        Text("6")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[6] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
+                    buttonTextIcon(count: 0, text: "1", .yellow, .black)
+                    buttonTextIcon(count: 1, text: "2", .yellow, .black)
+                    buttonTextIcon(count: 2, text: "3", .yellow, .black)
+                    buttonTextIcon(count: 3, text: "4", .yellow, .black)
+                    buttonTextIcon(count: 4, text: "5", .yellow, .black)
+                    buttonTextIcon(count: 5, text: "6", .yellow, .black)
                 }
                 .padding()
                 
                 // 6-12
                 HStack {
-                    Button(action: {
-                        questionBalloonStates[7].toggle()
-                    }) {
-                        Text("7")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[7] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[8].toggle()
-                    }) {
-                        Text("8")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[8] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[9].toggle()
-                    }) {
-                        Text("9")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[9] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[10].toggle()
-                    }) {
-                        Text("10")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[10] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[11].toggle()
-                    }) {
-                        Text("11")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[11] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        questionBalloonStates[12].toggle()
-                    }) {
-                        Text("12")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(questionBalloonStates[12] ? .black : .yellow)
-                    .frame(maxWidth: .infinity)
+                    buttonTextIcon(count: 6, text: "7", .yellow, .black)
+                    buttonTextIcon(count: 7, text: "8", .yellow, .black)
+                    buttonTextIcon(count: 8, text: "9", .yellow, .black)
+                    buttonTextIcon(count: 9, text: "10", .yellow, .black)
+                    buttonTextIcon(count: 10, text: "11", .yellow, .black)
+                    buttonTextIcon(count: 11, text: "12", .yellow, .black)
                 }
                 .padding()
             }
@@ -262,167 +164,23 @@ struct ContentView: View {
                 
                 // 1-6
                 HStack {
-                    Button(action: {
-                        pointBalloonStates[1].toggle()
-                    }) {
-                        Text("1")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[1] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[2].toggle()
-                    }) {
-                        Text("2")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[2] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[3].toggle()
-                    }) {
-                        Text("3")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[3] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[4].toggle()
-                    }) {
-                        Text("4")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[4] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[5].toggle()
-                    }) {
-                        Text("5")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[5] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[6].toggle()
-                    }) {
-                        Text("6")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[6] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
+                    buttonTextIcon(count: 12, text: "13", .red, .black)
+                    buttonTextIcon(count: 13, text: "14", .red, .black)
+                    buttonTextIcon(count: 14, text: "15", .red, .black)
+                    buttonTextIcon(count: 15, text: "16", .red, .black)
+                    buttonTextIcon(count: 16, text: "17", .red, .black)
+                    buttonTextIcon(count: 17, text: "18", .red, .black)
                 }
                 .padding()
                 
                 // 6-12
                 HStack {
-                    Button(action: {
-                        pointBalloonStates[7].toggle()
-                    }) {
-                        Text("7")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[7] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[8].toggle()
-                    }) {
-                        Text("8")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[8] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[9].toggle()
-                    }) {
-                        Text("9")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[9] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[10].toggle()
-                    }) {
-                        Text("10")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[10] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[11].toggle()
-                    }) {
-                        Text("11")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[11] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(action: {
-                        pointBalloonStates[12].toggle()
-                    }) {
-                        Text("12")
-                            .font(.system(size: 30))
-                        Image(systemName: "balloon.fill")
-                            .imageScale(.large)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.secondary)
-                    .foregroundStyle(pointBalloonStates[12] ? .black : .pink)
-                    .frame(maxWidth: .infinity)
+                    buttonTextIcon(count: 18, text: "19", .red, .black)
+                    buttonTextIcon(count: 19, text: "20", .red, .black)
+                    buttonTextIcon(count: 20, text: "21", .red, .black)
+                    buttonTextIcon(count: 21, text: "22", .red, .black)
+                    buttonTextIcon(count: 22, text: "23", .red, .black)
+                    buttonTextIcon(count: 23, text: "24", .red, .black)
                 }
                 .padding()
             }

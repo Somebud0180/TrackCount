@@ -1,14 +1,14 @@
 //
-//  CtrlPanelTests.swift
-//  CtrlPanelTests
+//  TrackCountTests.swift
+//  TrackCountTests
 //
 //  Created by Ethan John Lagera on 11/20/24.
 //
 
 import Testing
-@testable import CtrlPanel
+@testable import TrackCount
 
-struct CtrlPanelTests {
+struct TrackCountTests {
 
     @Test func example() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.
