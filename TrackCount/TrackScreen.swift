@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct trackScreen: View {
     @Binding var teamOne: Int
@@ -13,7 +14,9 @@ struct trackScreen: View {
     @Binding var cardNames: [String]
     @Binding var counterStates: [Int]
     @Binding var buttonStates: [Int: Bool]
-    @Binding var gridStore: [GridStore]
+    
+    @Query private var gridStore: [GridStore]
+    @Environment(\.modelContext) private var context
     
     func toggleButton(count id: Int, text: String, _ colorOn: Color, _ colorOff: Color) -> some View {
         return AnyView(
@@ -53,7 +56,7 @@ struct trackScreen: View {
                 }
                 .buttonStyle(.borderedProminent)
                 
-                Text(String(teamOne))
+                Text(String(modify.wrappedValue))
                     .font(.title)
                 
                 Button(action: {modify.wrappedValue -= 1}) {

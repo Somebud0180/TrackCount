@@ -10,19 +10,24 @@ import SwiftData
 
 @Model
 class GridStore {
-    var Row: Int
-    var Column: Int
-    var type: String
-    var name: String
-    var text: String
-    var count: Int
+    enum types: String, Codable, CaseIterable {
+        case counter
+        case toggle
+    }
     
-    init(Row: Int, Column: Int, type: String, name: String, text: String, count: Int) {
-        self.Row = Row
-        self.Column = Column
+    var row: Int // Position on the X-axis
+    var column: Int // Position on the Y-axis
+    var type: types // Either a counter or toggle
+    var text: String // The title (counter) or text in button (toggle)
+    var count: Int // The amount counted (counter)
+    var state: Bool // The boolean of the button (toggle)
+    
+    init(row: Int, column: Int, type: types, text: String, count: Int, state: Bool) {
+        self.row = row
+        self.column = column
         self.type = type
-        self.name = name
         self.text = text
         self.count = count
+        self.state = state
     }
 }
