@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  TrackCount
 //
-//  Created by Ethan John Lagera on 11/20/24.
+//  Contains the home screen
 //
 
 import SwiftUI
@@ -25,7 +25,7 @@ struct ContentView: View {
                     .font(.system(size: 64))
                 
                 Grid(alignment: .center) {
-                    NavigationLink(destination: trackScreen(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
+                    NavigationLink(destination: TrackScreen(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
                         Text("Track It")
                             .font(.system(size: 32))
                             .padding()
@@ -34,7 +34,7 @@ struct ContentView: View {
                             .cornerRadius(10)
                     }
                     
-                    NavigationLink(destination: editScreen(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
+                    NavigationLink(destination: EditScreen(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
                         Text("Edit It")
                             .font(.system(size: 32))
                             .padding()

@@ -2,7 +2,7 @@
 //  CtrlPanelApp.swift
 //  CtrlPanel
 //
-//  Created by Ethan John Lagera on 11/20/24.
+//  Starts the app
 //
 
 import SwiftUI

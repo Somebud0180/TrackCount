@@ -29,9 +29,22 @@
 		AA4A52F02CEDF57E00C79994 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA8CD27B2CF392060066518E /* Exceptions for "TrackCount" folder in "TrackCount" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA4A52D52CEDF57D00C79994 /* TrackCount */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA4A52D82CEDF57D00C79994 /* TrackCount */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA8CD27B2CF392060066518E /* Exceptions for "TrackCount" folder in "TrackCount" target */,
+			);
 			path = TrackCount;
 			sourceTree = "<group>";
 		};
@@ -171,7 +184,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1610;
-				LastUpgradeCheck = 1610;
+				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					AA4A52D52CEDF57D00C79994 = {
 						CreatedOnToolsVersion = 16.1;

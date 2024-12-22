@@ -2,7 +2,7 @@
 //  GridStore.swift
 //  TrackCount
 //
-//  Created by Ethan John Lagera on 11/22/24.
+//  Represents a store for the trackers in the grid.
 //
 
 import Foundation
@@ -10,24 +10,28 @@ import SwiftData
 
 @Model
 class GridStore {
-    enum types: String, Codable, CaseIterable {
+    // Types of tracker
+    enum Types: String, Codable, CaseIterable {
         case counter
         case toggle
     }
     
-    var row: Int // Position on the X-axis
-    var column: Int // Position on the Y-axis
-    var type: types // Either a counter or toggle
-    var text: String // The title (counter) or text in button (toggle)
+    var id: Int // The order the card is displayed
+    var type: Types // Either a counter or toggle
+    var text: String // The title for the card
+    var buttonText: String // The text in button (toggle)
     var count: Int // The amount counted (counter)
-    var state: Bool // The boolean of the button (toggle)
+    var state: [Bool] // The boolean of the button (toggle)
+    var symbol: String // The boolean of the button (toggle)
     
-    init(row: Int, column: Int, type: types, text: String, count: Int, state: Bool) {
-        self.row = row
-        self.column = column
+    // Initializes a new instance of GridStore.
+    init(id: Int, type: Types, text: String, buttonText: String, count: Int, state: [Bool], symbol: String) {
+        self.id = id
         self.type = type
         self.text = text
+        self.buttonText = buttonText
         self.count = count
         self.state = state
+        self.symbol = symbol
     }
 }
