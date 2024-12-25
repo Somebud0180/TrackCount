@@ -9,129 +9,29 @@ import SwiftUI
 import SwiftData
 
 struct EditScreen: View {
-    // Previous hard-coded implementation
-    @Binding var teamOne: Int
-    @Binding var teamTwo: Int
-    @Binding var cardNames: [String]
-    @Binding var counterStates: [Int]
-    @Binding var buttonStates: [Int: Bool]
-    
     // Query saved cards
     @Query var savedCards: [CardStore]
+    @StateObject private var viewModel: CreateCardViewModel
     @Environment(\.modelContext) private var context
     
-    // Set variable defaults
-    @State private var newCardIndex: Int = CardIndexManager.getNextAvailable()
-    @State private var newCardType: CardStore.Types = .counter
-    @State private var newCardTitle: String = ""
-    @State private var newButtonText: [String] = Array(repeating: "", count: 1)
-    @State private var newCardCount: Int = 1
-    @State private var newCardState: [Bool] = Array(repeating: true, count: 1)
-    @State private var newCardSymbol: String = ""
-    @State private var isPickerPresented: Bool = false
-    @State private var validationError: [String] = []
-    
-    // Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046
-    static let formatter = NumberFormatter()
-    let minLimit = 1
-    let maxLimit = 4096
-    
-    var binding: Binding<String> {
-        .init(get: {
-            "\(self.newCardCount)"
-        }, set: {
-            // Ensure the value is an integer and above the minimum limit
-            if let value = Int($0), value >= minLimit && value <= maxLimit{
-                self.newCardCount = value
-            } else if let value = Int($0), value > maxLimit {
-                self.newCardCount = maxLimit
-            } else {
-                self.newCardCount = minLimit  // Reset to minimum if the value is below the limit
-            }
-        })
+    init(viewModel: CreateCardViewModel = CreateCardViewModel()) {
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
     
+    // Set variable defaults
+    @State private var isCreateCardPresented: Bool = false
+    @State private var validationError: [String] = []
+    
     var body: some View {
-        VStack {
-            List {
-                // Picker for card type
-                Picker(selection: $newCardType) {
-                    // Display each types of cards in CardStore
-                    ForEach(CardStore.Types.allCases, id: \.self) { type in
-                        Text(type.rawValue.capitalized).tag(type)
-                    }
-                } label: {
-                    Text("Type")
-                    Text("Choose a card type")
-                }
-                
-                // Text field for card title
-                TextField("Set card title", text: $newCardTitle)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+        // List to preview, rearrange and delete created cards
+        List {
+            // Check if savedCards is empty and display a message if so
+            if savedCards.isEmpty {
+                Text("No cards created yet :O")
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .listRowSeparator(.hidden)
-                
-                // Check toggle type then display corresponding fields
-                if newCardType == .toggle {
-                    HStack{
-                        // Create stepper with editable text field. via https://stackoverflow.com/a/63695046
-                        Text("Buttons: ")
-                        TextField("", text: binding).textFieldStyle(.roundedBorder)
-                        Stepper("", value: $newCardCount, in: minLimit...maxLimit)
-                    }
-                        .listRowSeparator(.hidden)
-                        .onChange(of: newCardCount) {
-                            initButton()
-                        }
-                    
-                    // Button with selected smybol preview, pops up with SymbolPicker on press
-                    Button(action: {
-                        isPickerPresented.toggle()
-                    }) {
-                        HStack {
-                            Text("Symbol:")
-                            Spacer()
-                            Image(systemName: newCardSymbol)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 24, height: 24)
-                        }
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
-                    }
-                    .sheet(isPresented: $isPickerPresented) {
-                        SymbolPicker(selectedSymbol: $newCardSymbol)
-                    }
-                    
-                    // Create a text field for each button
-                    ForEach(0..<newCardCount, id: \.self) { index in
-                        TextField("Button \(index + 1) Text", text: $newButtonText[index])
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .listRowSeparator(.hidden)
-                    }
-                }
-                
-                // Button to invoke addCard
-                Button(action: addCard) {
-                    Text("Add")
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                }
-                
-                // Display validation errors if any
-                if !validationError.isEmpty {
-                    Text(validationError.joined(separator: ", ") + " cannot be empty")
-                        .foregroundColor(.red)
-                        .padding()
-                }
-            }
-            
-            // List to preview, rearrange and delete created cards
-            List {
-                // Display each card sorted by their id, 
+            } else {
+                // Display each card sorted by their id
                 ForEach(savedCards.sorted(by: { $0.index < $1.index }), id: \.uuid) { card in
                     HStack {
                         Image(systemName: "line.horizontal.3")
@@ -148,6 +48,19 @@ struct EditScreen: View {
                 }
                 .onMove(perform: moveCard)
             }
+            
+            Button(action: {isCreateCardPresented.toggle()}) {
+                Text("Create a new card")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+            }
+            .padding()
+            .frame(minWidth: 100, maxWidth: .infinity, minHeight: 44)
+            .background(Color.accentColor)
+            .cornerRadius(8)
+        }
+        .sheet(isPresented: $isCreateCardPresented) {
+            CreateCard()
         }
     }
     
@@ -176,67 +89,6 @@ struct EditScreen: View {
         }
     }
     
-    // Prepare button state and text
-    private func initButton() {
-        if newCardCount > newButtonText.count {
-            newButtonText.append(contentsOf: Array(repeating: "", count: newCardCount - newButtonText.count))
-        } else if newCardCount < newButtonText.count {
-            newButtonText.removeLast(newButtonText.count - newCardCount)
-        }
-        
-        if newCardCount > newCardState.count {
-            newCardState.append(contentsOf: Array(repeating: true, count: newCardCount - newCardState.count))
-        } else if newCardCount < newCardState.count {
-            newCardState.removeLast(newCardState.count - newCardCount)
-        }
-    }
-    
-    // Validate card content and save it to the store
-    private func addCard() {
-        validationError.removeAll()
-        if newCardTitle.isEmpty {
-            validationError.append("Title")
-        }
-        
-        if newCardType == .toggle && newCardSymbol.isEmpty {
-            validationError.append("Button Symbol")
-        }
-        
-        if newCardType == .toggle && newCardCount == 0 {
-            validationError.append("Button Card")
-        }
-        
-        if !validationError.isEmpty {
-            return
-        }
-        
-        // Create the new card
-        let newCard = CardStore(uuid: UUID(),
-                                index: newCardIndex,
-                                type: newCardType,
-                                title: newCardTitle,
-                                buttonText: newButtonText,
-                                count: newCardCount,
-                                state: newCardState,
-                                symbol: newCardSymbol)
-        
-        context.insert(newCard)
-        
-        do {
-            try context.save()
-        } catch {
-            print("Failed to save new card: \(error.localizedDescription)")
-        }
-        
-        // Reset the input fields
-        newCardIndex = CardIndexManager.getNextAvailable()
-        newCardTitle = ""
-        newButtonText = Array(repeating: "", count: 1)
-        newCardCount = 1
-        newCardState = Array(repeating: true, count: 1)
-        newCardSymbol = ""
-    }
-    
     // Free the ID and remove card from the store
     private func removeCard(_ card: CardStore) {
         do {
@@ -261,9 +113,6 @@ struct EditScreen: View {
             // Save the changes back to the context
             try context.save()
             print("Card removed, ID freed, and remaining cards updated.")
-            
-            newCardIndex = CardIndexManager.getNextAvailable()
-            
         } catch {
             print("Failed to remove card and update IDs: \(error.localizedDescription)")
         }
@@ -271,9 +120,6 @@ struct EditScreen: View {
 }
 
 #Preview {
-    ContentView()
+    EditScreen()
         .modelContainer(for: CardStore.self)
 }
-
-
-

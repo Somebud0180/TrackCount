@@ -30,16 +30,16 @@ struct ContentView: View {
                             .font(.system(size: 32))
                             .padding()
                             .background(Color.blue)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .cornerRadius(10)
                     }
                     
-                    NavigationLink(destination: EditScreen(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
+                    NavigationLink(destination: EditScreen()) {
                         Text("Edit It")
                             .font(.system(size: 32))
                             .padding()
                             .background(Color.blue)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .cornerRadius(10)
                     }
                 }
