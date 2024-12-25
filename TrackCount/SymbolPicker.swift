@@ -22,7 +22,7 @@ struct SymbolPicker: View {
     ]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading) {
                     Text("Math")
@@ -43,6 +43,7 @@ struct SymbolPicker: View {
                     createSymbolGrid(symbols: timeSymbols)
                 }
             }
+            .padding(.horizontal)
             .navigationBarTitle("Icons", displayMode: .inline)
             .navigationBarItems(trailing: Button("Done") {
                 presentationMode.wrappedValue.dismiss()
@@ -64,14 +65,14 @@ struct SymbolPicker: View {
                     .cornerRadius(8)
                     .onTapGesture {
                         selectedSymbol = symbol
+                        presentationMode.wrappedValue.dismiss()
                     }
             }
         }
+        .padding(.horizontal)
     }
 }
 
-struct SymbolPicker_Previews: PreviewProvider {
-    static var previews: some View {
-        SymbolPicker(selectedSymbol: .constant("star"))
-    }
+#Preview {
+    SymbolPicker(selectedSymbol: .constant("plus"))
 }

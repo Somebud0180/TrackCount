@@ -27,6 +27,7 @@
 		AA4A52D62CEDF57D00C79994 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA4A52E62CEDF57E00C79994 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA4A52F02CEDF57E00C79994 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA6B7C932D1B27B400520D57 /* TrackCount.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TrackCount.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -88,6 +89,7 @@
 		AA4A52CD2CEDF57D00C79994 = {
 			isa = PBXGroup;
 			children = (
+				AA6B7C932D1B27B400520D57 /* TrackCount.xctestplan */,
 				AA4A52D82CEDF57D00C79994 /* TrackCount */,
 				AA4A52E92CEDF57E00C79994 /* TrackCountTests */,
 				AA4A52F32CEDF57E00C79994 /* TrackCountUITests */,
@@ -516,7 +518,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = CtrlPanel;
+				TEST_TARGET_NAME = TrackCount;
 			};
 			name = Debug;
 		};
@@ -533,7 +535,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = CtrlPanel;
+				TEST_TARGET_NAME = TrackCount;
 			};
 			name = Release;
 		};
