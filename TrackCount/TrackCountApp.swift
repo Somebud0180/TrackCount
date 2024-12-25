@@ -9,11 +9,11 @@ import SwiftUI
 import SwiftData
 
 @main
-struct CtrlPanelApp: App {
+struct TrackCountApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .modelContainer(for: GridStore.self)
+                .modelContainer(for: CardStore.self)
         }
     }
 }
