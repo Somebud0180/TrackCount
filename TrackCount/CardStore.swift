@@ -17,7 +17,8 @@ final class CardStore {
     }
     
     @Attribute(.unique) var uuid: UUID? // Unique identifier for the card
-    @Attribute(.unique) var index: Int // The order the card appears
+    var groupTitle: String // Title of the tracking group a card belongs to
+    var index: Int // The order the card appears
     var type: Types // The card type, either a counter or toggle
     var title: String // The title for the card
     var buttonText: [String]? // The text in button (toggle)
@@ -26,8 +27,9 @@ final class CardStore {
     var symbol: String? // The symbol of the button (toggle)
     
     // Initializes a new instance of GridStore.
-    init(uuid: UUID, index: Int, type: Types, title: String, buttonText: [String]? = nil, count: Int, state: [Bool]? = nil, symbol: String? = nil) {
+    init(uuid: UUID, groupTitle: String, index: Int, type: Types, title: String, buttonText: [String]? = nil, count: Int, state: [Bool]? = nil, symbol: String? = nil) {
         self.uuid = uuid
+        self.groupTitle = groupTitle
         self.index = index
         self.type = type
         self.title = title

@@ -11,16 +11,13 @@ import SwiftData
 struct EditScreen: View {
     // Query saved cards
     @Query var savedCards: [CardStore]
-    @StateObject private var viewModel: CreateCardViewModel
     @Environment(\.modelContext) private var context
     
-    init(viewModel: CreateCardViewModel = CreateCardViewModel()) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-    }
-    
     // Set variable defaults
-    @State private var isCreateCardPresented: Bool = false
+    @State private var isCardFormPresented: Bool = false
     @State private var validationError: [String] = []
+    @State private var selectedCard: CardStore? = nil
+    @State private var isEditingCard: Bool = false
     
     var body: some View {
         // List to preview, rearrange and delete created cards
@@ -45,11 +42,15 @@ struct EditScreen: View {
                             Label("Delete", systemImage: "trash")
                         }
                     }
+                    .onTapGesture {
+                        selectedCard = card
+                        isCardFormPresented.toggle()
+                    }
                 }
                 .onMove(perform: moveCard)
             }
             
-            Button(action: {isCreateCardPresented.toggle()}) {
+            Button(action: {isCardFormPresented.toggle()}) {
                 Text("Create a new card")
                     .font(.title2)
                     .foregroundStyle(.white)
@@ -59,8 +60,12 @@ struct EditScreen: View {
             .background(Color.accentColor)
             .cornerRadius(8)
         }
-        .sheet(isPresented: $isCreateCardPresented) {
-            CreateCard()
+        .sheet(isPresented: $isCardFormPresented) {
+            CardForm(selectedCard)
+                .presentationDetents([.fraction(0.99)])
+                .onDisappear {
+                    selectedCard = nil
+                }
         }
     }
     

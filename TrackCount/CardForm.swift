@@ -1,5 +1,5 @@
 //
-//  CreateCard.swift
+//  CardForm.swift
 //  TrackCount
 //
 //  The card editing interface
@@ -7,16 +7,17 @@
 
 import SwiftUI
 
-struct CreateCard: View {
+struct CardForm: View {
     @Environment(\.modelContext) private var context
-    @StateObject private var viewModel: CreateCardViewModel
-    
-    init(viewModel: CreateCardViewModel = CreateCardViewModel()) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-    }
-    
+    @StateObject private var viewModel = CardViewModel()
     @Environment(\.presentationMode) var presentationMode
     @State private var isPickerPresented: Bool = false
+    
+    // Initializer accepting an optional existingCard
+    init(_ existingCard: CardStore? = nil) {
+        // Initialize viewModel with existingCard
+        _viewModel = StateObject(wrappedValue: CardViewModel(existingCard: existingCard))
+    }
     
     // Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046
     static let formatter = NumberFormatter()
@@ -29,12 +30,12 @@ struct CreateCard: View {
             },
             set: {
                 // Ensure the value is an integer and within limits
-                if let value = Int($0), value >= viewModel.minLimit && value <= viewModel.maxLimit {
+                if let value = Int($0), value >= viewModel.minButtonLimit && value <= viewModel.maxButtonLimit {
                     self.viewModel.newCardCount = value
-                } else if let value = Int($0), value > viewModel.maxLimit {
-                    self.viewModel.newCardCount = viewModel.maxLimit // Set to max if the value is above the limit
+                } else if let value = Int($0), value > viewModel.minButtonLimit {
+                    self.viewModel.newCardCount = viewModel.maxButtonLimit // Set to max if the value is above the limit
                 } else {
-                    self.viewModel.newCardCount = viewModel.minLimit  // Reset to minimum if the value is below the limit
+                    self.viewModel.newCardCount = viewModel.minButtonLimit  // Reset to minimum if the value is below the limit
                 }
             }
         )
@@ -65,12 +66,13 @@ struct CreateCard: View {
                         TextField("", value: $viewModel.newCardCount, formatter: NumberFormatter())
                             .textFieldStyle(.roundedBorder)
                             .keyboardType(.numberPad)
-                        Stepper("", value: $viewModel.newCardCount, in: viewModel.minLimit...viewModel.maxLimit)
+                        Stepper("", value: $viewModel.newCardCount, in: viewModel.minButtonLimit...viewModel.maxButtonLimit)
                     }
                     .onChange(of: viewModel.newCardCount) {
                         viewModel.initButton(with: context) // Create new text field for each toggle
                     }
                     
+                    // A symbol preview/picker
                     Button(action: {
                         isPickerPresented.toggle()
                     }) {
@@ -88,6 +90,7 @@ struct CreateCard: View {
                     }
                     .sheet(isPresented: $isPickerPresented) {
                         SymbolPicker(selectedSymbol: $viewModel.newCardSymbol)
+                            .presentationDetents([.fraction(0.99)])
                     }
                     
                     ForEach(0..<viewModel.newCardCount, id: \.self) { index in
@@ -98,9 +101,12 @@ struct CreateCard: View {
                 }
                 
                 Button(action: {
-                    viewModel.addCard(with: context)
+                    viewModel.saveCard(with: context)
+                    if viewModel.existingCard != nil {
+                        presentationMode.wrappedValue.dismiss()
+                    }
                 }) {
-                    Text("Add")
+                    Text(viewModel.existingCard == nil ? "Add Card" : "Save Changes")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
@@ -114,12 +120,16 @@ struct CreateCard: View {
                         .padding()
                 }
             }
-            .navigationBarTitle("Create Card", displayMode: .inline)
+            .navigationBarTitle(viewModel.existingCard == nil ? "Create Card" : "Edit Card", displayMode: .inline)
             .navigationBarItems(trailing: Button("Done") {presentationMode.wrappedValue.dismiss()})
+            .onAppear {
+                viewModel.initEditCard(with: context)
+            }
         }
     }
 }
 
 #Preview {
-    CreateCard()
+    CardForm()
+        .modelContainer(for: CardStore.self)
 }
