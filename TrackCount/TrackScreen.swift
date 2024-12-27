@@ -15,7 +15,7 @@ struct TrackScreen: View {
     @Binding var counterStates: [Int]
     @Binding var buttonStates: [Int: Bool]
     
-    @Query private var gridStore: [CardStore]
+    @Query private var gridStore: [DMStoredCard]
     @Environment(\.modelContext) private var context
     
     func toggleButton(count id: Int, text: String, _ colorOn: Color, _ colorOff: Color) -> some View {
@@ -149,5 +149,5 @@ struct TrackScreen: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: CardStore.self)
+        .modelContainer(for: DMCardGroup.self)
 }

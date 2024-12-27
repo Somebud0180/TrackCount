@@ -15,7 +15,7 @@ struct ContentView: View {
     @State private var counterStates: [Int] = []
     @State private var buttonStates: [Int: Bool] = [:]
     
-    @Query private var savedCards: [CardStore]
+    @Query private var savedCards: [DMStoredCard]
     @Environment(\.modelContext) private var context
     
     var body: some View {
@@ -34,7 +34,7 @@ struct ContentView: View {
                             .cornerRadius(10)
                     }
                     
-                    NavigationLink(destination: EditScreen()) {
+                    NavigationLink(destination: EditScreenView()) {
                         Text("Edit It")
                             .font(.system(size: 32))
                             .padding()
@@ -50,15 +50,10 @@ struct ContentView: View {
             for card in savedCards {
                 checkCardProperties(card: card)
             }
-            
-            // Check for empty store to reset IndexManager
-            if savedCards.isEmpty {
-                CardIndexManager.clearFreeIndex()
-            }
         }
     }
     
-    func checkCardProperties(card: CardStore) {
+    func checkCardProperties(card: DMStoredCard) {
         var errors: [String] = []
         
         // Reflect the properties of the card
@@ -100,5 +95,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: CardStore.self)
+        .modelContainer(for: DMCardGroup.self)
 }

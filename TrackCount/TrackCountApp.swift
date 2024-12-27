@@ -13,7 +13,7 @@ struct TrackCountApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .modelContainer(for: CardStore.self)
+                .modelContainer(for: DMCardGroup.self)
         }
     }
 }

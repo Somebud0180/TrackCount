@@ -1,22 +1,32 @@
 //
-//  CardForm.swift
+//  CardFormView.swift
 //  TrackCount
 //
-//  The card editing interface
+//  A view containing the card editing interface
 //
 
 import SwiftUI
 
-struct CardForm: View {
+/// A view containing the form for creating or editing a card
+struct CardFormView: View {
+    // Environment and state properties for managing data context, view presentation, and view model state.
+    // - `context`: Provides access to the model context for reading/writing data.
+    // - `presentationMode`: Used to manage the presentation state of the current view.
+    // - `dismiss`: A closure to dismiss the current view, used in sheets.
+    // - `viewModel`: The state object responsible for managing the logic and data of the view.
     @Environment(\.modelContext) private var context
-    @StateObject private var viewModel = CardViewModel()
     @Environment(\.presentationMode) var presentationMode
-    @State private var isPickerPresented: Bool = false
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var viewModel: CardViewModel
     
-    // Initializer accepting an optional existingCard
-    init(_ existingCard: CardStore? = nil) {
-        // Initialize viewModel with existingCard
-        _viewModel = StateObject(wrappedValue: CardViewModel(existingCard: existingCard))
+    @State private var isSymbolPickerPresented: Bool = false
+    
+    /// Initializes the selectedGroup and selectedCard variable for editing
+    /// - Parameters:
+    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card
+    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over
+    init(selectedGroup: DMCardGroup, selectedCard: DMStoredCard? = nil) {
+        _viewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup, selectedCard: selectedCard))
     }
     
     // Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046
@@ -46,16 +56,17 @@ struct CardForm: View {
             List {
                 // Picker for card type
                 Picker(selection: $viewModel.newCardType) {
-                    ForEach(CardStore.Types.allCases, id: \.self) { type in
+                    ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
                         Text(type.rawValue.capitalized).tag(type)
                     }
                 } label: {
                     Text("Type")
                 }
+                .listRowSeparator(.hidden)
                 
                 // Text field for card title
                 TextField("Set card title", text: $viewModel.newCardTitle)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .customRoundedStyle()
                     .listRowSeparator(.hidden)
                 
                 // Check type for toggle to add specific editing fields
@@ -64,64 +75,70 @@ struct CardForm: View {
                     HStack {
                         Text("Buttons: ")
                         TextField("", value: $viewModel.newCardCount, formatter: NumberFormatter())
-                            .textFieldStyle(.roundedBorder)
+                            .customRoundedStyle()
                             .keyboardType(.numberPad)
                         Stepper("", value: $viewModel.newCardCount, in: viewModel.minButtonLimit...viewModel.maxButtonLimit)
                     }
                     .onChange(of: viewModel.newCardCount) {
                         viewModel.initButton(with: context) // Create new text field for each toggle
                     }
+                    .listRowSeparator(.hidden)
                     
                     // A symbol preview/picker
                     Button(action: {
-                        isPickerPresented.toggle()
+                        isSymbolPickerPresented.toggle()
                     }) {
                         HStack {
-                            Text("Symbol:")
+                            Text("Button Symbol:")
                             Spacer()
                             Image(systemName: viewModel.newCardSymbol)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 24, height: 24)
                         }
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
+                        .customRoundedStyle()
                     }
-                    .sheet(isPresented: $isPickerPresented) {
-                        SymbolPicker(selectedSymbol: $viewModel.newCardSymbol)
+                    .listRowSeparator(.hidden)
+                    .buttonStyle(PlainButtonStyle())
+                    .sheet(isPresented: $isSymbolPickerPresented) {
+                        SymbolPicker(behaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
                             .presentationDetents([.fraction(0.99)])
                     }
                     
-                    ForEach(0..<viewModel.newCardCount, id: \.self) { index in
+                    ForEach(0..<viewModel.newButtonText.count, id: \.self) { index in
                         TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .customRoundedStyle()
                             .listRowSeparator(.hidden)
                     }
                 }
                 
                 Button(action: {
                     viewModel.saveCard(with: context)
-                    if viewModel.existingCard != nil {
+                    if viewModel.selectedCard != nil {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }) {
-                    Text(viewModel.existingCard == nil ? "Add Card" : "Save Changes")
+                    Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
+                .listRowSeparator(.hidden)
                 
                 if !viewModel.validationError.isEmpty {
-                    Text(viewModel.validationError.joined(separator: ", ") + " cannot be empty")
+                    Text(viewModel.validationError.joined(separator: ", "))
                         .foregroundColor(.red)
+                        .listRowSeparator(.hidden)
                         .padding()
                 }
             }
-            .navigationBarTitle(viewModel.existingCard == nil ? "Create Card" : "Edit Card", displayMode: .inline)
-            .navigationBarItems(trailing: Button("Done") {presentationMode.wrappedValue.dismiss()})
+            .listStyle(PlainListStyle())
+            .navigationBarTitle(viewModel.selectedCard == nil ? "Add Card" : "Edit Card", displayMode: .inline)
+            .navigationBarItems(trailing: Button("Dismiss") {
+                dismiss()
+            })
             .onAppear {
                 viewModel.initEditCard(with: context)
             }
@@ -130,6 +147,11 @@ struct CardForm: View {
 }
 
 #Preview {
-    CardForm()
-        .modelContainer(for: CardStore.self)
+    // Sample DMCardGroup to pass into the preview
+    var sampleGroup: DMCardGroup {
+        DMCardGroup(uuid: UUID(), index: 0, groupTitle: "Card 1", groupSymbol: "star.fill")
+    }
+    
+    CardFormView(selectedGroup: sampleGroup)
+        .modelContainer(for: DMCardGroup.self)
 }
