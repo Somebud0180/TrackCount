@@ -33,8 +33,7 @@ struct SymbolPicker: View {
     @Binding var selectedSymbol: String
     @Environment(\.presentationMode) var presentationMode
     @State private var searchText: String = ""
-
-    private let behaviour: Behaviour
+    @State private var behaviour: Behaviour
     
     // Initialize with originScreen and selectedSymbol binding
     /// Initializes the behaviour and selected symbol binding
@@ -67,8 +66,8 @@ struct SymbolPicker: View {
                     }
                 }
             }
-            .searchable(text: $searchText)
-            .navigationBarTitle("Icons", displayMode: .inline)
+            .searchable(text: $searchText, prompt: "Search Symbols")
+            .navigationBarTitle("Symbols", displayMode: .inline)
             .navigationBarItems(trailing: Button("Done") {
                 presentationMode.wrappedValue.dismiss()
             })
@@ -81,11 +80,19 @@ struct SymbolPicker: View {
         symbols.mapValues { categorySymbols in
             searchText.isEmpty
             ? categorySymbols
-            : categorySymbols.filter { $0.lowercased().contains(searchText.lowercased()) }
+            : categorySymbols.filter {
+                // Lowercase the input to make it case-insensetive
+                preprocess($0).contains(searchText.lowercased())}
         }
         .filter { !$0.value.isEmpty } // Remove empty categories
     }
-
+    
+    /// A helper function to preprocess the symbol names for better searchability
+    private func preprocess(_ symbol: String) -> String {
+        symbol
+            .replacingOccurrences(of: ".fill", with: "") // Remove ".fill"
+            .replacingOccurrences(of: ".", with: " ") // Repalace "." with a space
+    }
     
     /// A function that creates a grid containing a set symbols.
     /// Grabs symbols from the passed over argument and lists each symbols that can be tapped to select it.
@@ -113,16 +120,12 @@ struct SymbolPicker: View {
     private func handleSymbolSelection(_ symbol: String) {
         switch behaviour {
         case .tapToSelect:
-            // If the symbol is already selected, deselect it
-            if selectedSymbol == symbol {
-                selectedSymbol = ""
-            } else {
-                // Select the symbol and dismiss the picker
-                selectedSymbol = symbol
-                presentationMode.wrappedValue.dismiss()
-            }
+            // Select the symbol and dismiss the picker
+            selectedSymbol = symbol
+            presentationMode.wrappedValue.dismiss()
         case .tapWithUnselect:
-            // Similarly handle for GroupFormView
+            // Select the symbol and dismiss the picker
+            // Or tap it again to unselect it
             if selectedSymbol == symbol {
                 selectedSymbol = ""
             } else {
@@ -134,5 +137,7 @@ struct SymbolPicker: View {
 }
 
 #Preview {
-    SymbolPicker(behaviour: .tapToSelect, selectedSymbol: .constant("balloon.fill"))
+    // Sample variable to pass to the picker
+    @Previewable @State var testSymbol: String = ""
+    SymbolPicker(behaviour: .tapWithUnselect, selectedSymbol: $testSymbol)
 }
