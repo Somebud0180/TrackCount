@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var cardNames: [String] = []
     @State private var counterStates: [Int] = []
     @State private var buttonStates: [Int: Bool] = [:]
+    @State var animateGradient: Bool = false
     
     @Query private var savedCards: [DMStoredCard]
     @Environment(\.modelContext) private var context
@@ -23,6 +24,7 @@ struct HomeView: View {
             VStack {
                 Text("TrackCount")
                     .font(.system(size: 64))
+                    .foregroundStyle(.white.opacity(0.8))
                 
                 Grid(alignment: .center) {
                     NavigationLink(destination: TrackView(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
@@ -30,7 +32,7 @@ struct HomeView: View {
                             .font(.system(size: 32))
                             .padding()
                             .background(Color.blue)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.white.opacity(0.8))
                             .cornerRadius(10)
                     }
                     
@@ -39,8 +41,25 @@ struct HomeView: View {
                             .font(.system(size: 32))
                             .padding()
                             .background(Color.blue)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.white.opacity(0.8))
                             .cornerRadius(10)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity,maxHeight: .infinity)
+            .background {
+                LinearGradient(
+                    colors: [.black, .gray],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing)
+                .edgesIgnoringSafeArea(.all)
+                .hueRotation(.degrees(animateGradient ? 45 : 0))
+                .onAppear {
+                    withAnimation(
+                        .easeInOut(duration: 3)
+                        .repeatForever())
+                    {
+                        animateGradient.toggle()
                     }
                 }
             }

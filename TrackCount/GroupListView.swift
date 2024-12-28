@@ -57,7 +57,7 @@ struct GroupListView: View {
                     }
                 }
                 .padding()
-                .navigationBarTitle("Card Groups")
+                .navigationBarTitle("Your Groups")
                 .navigationBarItems(trailing: Button(action: {isPresentingGroupForm.toggle()}) {
                     Image(systemName: "plus")
                 })
