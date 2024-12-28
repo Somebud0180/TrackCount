@@ -5,18 +5,16 @@
 //  Contains symbols and a symbol picker functionality
 //
 
-
 import SwiftUI
-
-
-/// Represents the interaction behavior setting for the symbol picker.
-enum Behaviour {
-    case tapToSelect // Tap to select
-    case tapWithUnselect // Tap to select and tap again to unselect
-}
 
 /// A view containing symbols with the ability to pick one and store it to selectedSymbol.
 struct SymbolPicker: View {
+    /// Represents the interaction behavior setting for the symbol picker.
+    enum Behaviour {
+        case tapToSelect // Tap to select
+        case tapWithUnselect // Tap to select and tap again to unselect
+    }
+    
     /// The set of pickable symbols
     private let symbols: [String: [String]] = [
         "objects": ["hammer.fill", "wrench.fill", "screwdriver.fill", "paintbrush.fill", "scissors", "pencil", "text.document.fill", "list.clipboard.fill", "archivebox.fill", "tray.2.fill", "bag.fill", "cart.fill", "gift.fill", "lightbulb.fill", "fanblades.fill", "microwave.fill", "oven.fill", "fork.knife", "cup.and.saucer.fill", "book.fill", "umbrella.fill", "balloon.fill", "party.popper.fill"],

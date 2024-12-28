@@ -9,14 +9,9 @@ import SwiftUI
 
 /// A view containing the form for creating or editing a card
 struct CardFormView: View {
-    // Environment and state properties for managing data context, view presentation, and view model state.
-    // - `context`: Provides access to the model context for reading/writing data.
-    // - `presentationMode`: Used to manage the presentation state of the current view.
-    // - `dismiss`: A closure to dismiss the current view, used in sheets.
-    // - `viewModel`: The state object responsible for managing the logic and data of the view.
     @Environment(\.modelContext) private var context
     @Environment(\.presentationMode) var presentationMode
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel: CardViewModel
     
     @State private var isSymbolPickerPresented: Bool = false

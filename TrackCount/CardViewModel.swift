@@ -10,7 +10,7 @@ import Foundation
 import SwiftData
 
 class CardViewModel: ObservableObject {
-    // Initialize variables
+    // Set variable defaults
     @Published var selectedGroup: DMCardGroup
     @Published var selectedCard: DMStoredCard? = nil
     @Published var newIndex: Int = 0

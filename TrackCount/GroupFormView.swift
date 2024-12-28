@@ -9,9 +9,10 @@ import SwiftUI
 import SwiftData
 
 struct GroupFormView: View {
-    // Set variables
     @Environment(\.modelContext) private var context
     @Environment(\.presentationMode) var presentationMode
+    
+    // Set variable defaults
     @State private var isPickerPresented: Bool = false
     @Query private var savedGroups: [DMCardGroup]
     @State private var validationError: [String] = []

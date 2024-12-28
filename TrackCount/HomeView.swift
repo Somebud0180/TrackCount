@@ -9,25 +9,23 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
-    @State private var teamOne = 0
-    @State private var teamTwo = 0
-    @State private var cardNames: [String] = []
-    @State private var counterStates: [Int] = []
-    @State private var buttonStates: [Int: Bool] = [:]
-    @State var animateGradient: Bool = false
-    
-    @Query private var savedCards: [DMStoredCard]
     @Environment(\.modelContext) private var context
+    @Environment(\.colorScheme) private var colorScheme
+    @Query private var savedGroups: [DMCardGroup]
+    @State var animateGradient: Bool = false
+    var gradientColors: [Color] {
+        colorScheme == .light ? [.white, .blue] : [.black, .gray]
+    }
     
     var body: some View {
         NavigationStack {
             VStack {
                 Text("TrackCount")
                     .font(.system(size: 64))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.primary.opacity(0.8))
                 
                 Grid(alignment: .center) {
-                    NavigationLink(destination: TrackView(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
+                    NavigationLink(destination: GroupListView(viewBehaviour: .view)) {
                         Text("Track It")
                             .font(.system(size: 32))
                             .padding()
@@ -36,7 +34,7 @@ struct HomeView: View {
                             .cornerRadius(10)
                     }
                     
-                    NavigationLink(destination: GroupListView()) {
+                    NavigationLink(destination: GroupListView(viewBehaviour: .edit)) {
                         Text("Edit It")
                             .font(.system(size: 32))
                             .padding()
@@ -49,7 +47,7 @@ struct HomeView: View {
             .frame(maxWidth: .infinity,maxHeight: .infinity)
             .background {
                 LinearGradient(
-                    colors: [.black, .gray],
+                    colors: gradientColors,
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing)
                 .edgesIgnoringSafeArea(.all)
@@ -66,12 +64,16 @@ struct HomeView: View {
         }
         .onAppear {
             // Check saved cards and destroy faulty cards
-            for card in savedCards {
-                checkCardProperties(card: card)
+            for group in savedGroups {
+                for card in group.cards {
+                    checkCardProperties(card: card)
+                }
             }
         }
     }
     
+    /// A function that checks the contents of a card for any issues and deletes it.
+    /// - Parameter card: Accepts a DMStoredCard entity, the card that will be checked.
     func checkCardProperties(card: DMStoredCard) {
         var errors: [String] = []
         

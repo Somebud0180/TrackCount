@@ -10,7 +10,6 @@ import SwiftData
 
 /// A view containing a list of cards in a selected group
 struct CardListView: View {
-    // Query saved cards
     @Environment(\.modelContext) private var context
     
     // Set variable defaults
