@@ -1,5 +1,5 @@
 //
-//  TrackScreen.swift
+//  TrackView.swift
 //  TrackCount
 //
 //  Contains the screen for displaying the trackers
@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct TrackScreen: View {
+struct TrackView: View {
     @Binding var teamOne: Int
     @Binding var teamTwo: Int
     @Binding var cardNames: [String]
@@ -148,6 +148,6 @@ struct TrackScreen: View {
 }
 
 #Preview {
-    ContentView()
+    HomeView()
         .modelContainer(for: DMCardGroup.self)
 }

@@ -1,5 +1,5 @@
 //
-//  EditScreenView.swift
+//  GroupListView.swift
 //  TrackCount
 //
 //  Contains the screen for editing the tracker contents
@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 /// A view containing that lists all saved groups and provides access to editing the group's cards
-struct EditScreenView: View {
+struct GroupListView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
     
@@ -71,6 +71,6 @@ struct EditScreenView: View {
 }
 
 #Preview {
-    EditScreenView()
+    GroupListView()
         .modelContainer(for: DMCardGroup.self)
 }

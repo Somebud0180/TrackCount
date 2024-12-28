@@ -25,7 +25,7 @@ struct HomeView: View {
                     .font(.system(size: 64))
                 
                 Grid(alignment: .center) {
-                    NavigationLink(destination: TrackScreen(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
+                    NavigationLink(destination: TrackView(teamOne: $teamOne, teamTwo: $teamTwo, cardNames: $cardNames, counterStates: $counterStates, buttonStates: $buttonStates)) {
                         Text("Track It")
                             .font(.system(size: 32))
                             .padding()
@@ -34,7 +34,7 @@ struct HomeView: View {
                             .cornerRadius(10)
                     }
                     
-                    NavigationLink(destination: EditScreenView()) {
+                    NavigationLink(destination: GroupListView()) {
                         Text("Edit It")
                             .font(.system(size: 32))
                             .padding()
