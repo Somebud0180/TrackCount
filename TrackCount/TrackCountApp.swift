@@ -12,7 +12,7 @@ import SwiftData
 struct TrackCountApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
                 .modelContainer(for: DMCardGroup.self)
         }
     }

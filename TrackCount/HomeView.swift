@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  HomeView.swift
 //  TrackCount
 //
 //  Contains the home screen
@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct ContentView: View {
+struct HomeView: View {
     @State private var teamOne = 0
     @State private var teamTwo = 0
     @State private var cardNames: [String] = []
@@ -94,6 +94,6 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    HomeView()
         .modelContainer(for: DMCardGroup.self)
 }
