@@ -17,9 +17,23 @@ enum Behaviour {
 
 /// A view containing symbols with the ability to pick one and store it to selectedSymbol.
 struct SymbolPicker: View {
+    /// The set of pickable symbols
+    private let symbols: [String: [String]] = [
+        "objects": ["hammer.fill", "wrench.fill", "screwdriver.fill", "paintbrush.fill", "scissors", "pencil", "text.document.fill", "list.clipboard.fill", "archivebox.fill", "tray.2.fill", "bag.fill", "cart.fill", "gift.fill", "lightbulb.fill", "fanblades.fill", "microwave.fill", "oven.fill", "fork.knife", "cup.and.saucer.fill", "book.fill", "umbrella.fill", "balloon.fill", "party.popper.fill"],
+        "math": ["plus", "minus", "multiply", "divide", "number"],
+        "transport": ["car.fill", "car.2.fill", "bolt.car.fill", "bus.fill", "bus.doubledecker.fill", "tram.fill", "airplane", "fuelpump.fill", "bicycle", "figure.walk"],
+        "nature": ["clock.fill", "alarm.fill", "stopwatch.fill", "timer", "hourglass"],
+        "technology": ["laptopcomputer", "iphone", "ipad", "desktopcomputer", "applewatch", "watch.analog", "tv.fill", "printer.fill", "network", "antenna.radiowaves.left.and.right"],
+        "people": ["person.fill", "person.2.fill", "person.circle", "person.crop.circle.badge.checkmark", "person.crop.circle.badge.xmark", "figure.wave", "figure.run", "figure.walk", "figure.stand"],
+        "food": ["fork.knife", "cup.and.saucer.fill", "leaf.fill", "cart.fill", "takeoutbag.and.cup.and.straw.fill"],
+        "animals": ["hare.fill", "tortoise.fill", "cat.fill", "dog.fill", "lizard.fill", "bird.fill", "ant.fill", "ladybug.fill", "fish.fill", "pawprint.fill"],
+        "fitness": ["gamecontroller.fill", "trophy.fill", "figure.roll", "figure.dance", "figure.strengthtraining.traditional", "figure.surfing", "figure.pool.swim", "figure.run.treadmill", "figure.boxing", "figure.badminton", "figure.hiking", "figure.walk", "figure.run", "figure.golf", "sportscourt.fill", "soccerball", "basketball.fill", "volleyball.fill", "football.fill", "tennis.racket", "tennisball.fill", "hockey.puck.fill"]
+    ]
+    
     @Binding var selectedSymbol: String
     @Environment(\.presentationMode) var presentationMode
-    
+    @State private var searchText: String = ""
+
     private let behaviour: Behaviour
     
     // Initialize with originScreen and selectedSymbol binding
@@ -32,27 +46,8 @@ struct SymbolPicker: View {
         self._selectedSymbol = selectedSymbol
     }
     
-    // Symbols
-    private let objectSymbols = ["hammer.fill", "wrench.fill", "screwdriver.fill", "paintbrush.fill", "scissors", "pencil", "text.document.fill", "list.clipboard.fill", "archivebox.fill", "tray.2.fill", "bag.fill", "cart.fill", "gift.fill", "lightbulb.fill", "fanblades.fill", "microwave.fill", "oven.fill", "fork.knife", "cup.and.saucer.fill", "book.fill", "umbrella.fill", "balloon.fill", "party.popper.fill"]
     
-    private let mathSymbols = ["plus", "minus", "multiply", "divide", "number"]
     
-    private let transportSymbols = ["car.fill", "car.2.fill", "bolt.car.fill", "bus.fill", "bus.doubledecker.fill", "tram.fill", "airplane", "fuelpump.fill", "bicycle", "figure.walk"]
-    
-    private let timeSymbols = ["clock.fill", "alarm.fill", "stopwatch.fill", "timer", "hourglass",]
-    
-    private let natureSymbols = ["cloud.sun.fill", "cloud.bolt.fill", "cloud.rain.fill", "cloud.bolt.rain.fill", "cloud.snow.fill", "cloud.hail.fill", "snowflake", "wind", "wind.snow", "tornado", "thermometer", "flame.fill", "sun.max.fill", "star.fill", "moon.fill", "moon.stars.fill"]
-    
-    private let technologySymbols = ["laptopcomputer", "iphone", "ipad", "desktopcomputer", "applewatch", "watch.analog", "tv.fill", "printer.fill", "network", "antenna.radiowaves.left.and.right"]
-    
-    private let peopleSymbols = ["person.fill", "person.2.fill", "person.circle", "person.crop.circle.badge.checkmark", "person.crop.circle.badge.xmark", "figure.wave", "figure.run", "figure.walk", "figure.stand"]
-    
-    private let foodSymbols = ["fork.knife", "cup.and.saucer.fill", "leaf.fill", "cart.fill", "takeoutbag.and.cup.and.straw.fill"]
-    
-    private let animalSymbols = ["hare.fill", "tortoise.fill", "cat.fill", "dog.fill", "lizard.fill", "bird.fill", "ant.fill", "ladybug.fill", "fish.fill", "pawprint.fill"]
-    
-    private let fitnessSymbols = ["gamecontroller.fill", "trophy.fill", "figure.roll", "figure.dance", "figure.strengthtraining.traditional", "figure.surfing", "figure.pool.swim", "figure.run.treadmill", "figure.boxing", "figure.badminton", "figure.hiking", "figure.walk", "figure.run", "figure.golf", "sportscourt.fill", "soccerball", "basketball.fill", "volleyball.fill", "football.fill", "tennis.racket", "tennisball.fill", "hockey.puck.fill"]
-
     private let columns = [
         GridItem(.adaptive(minimum: 50))
     ]
@@ -61,73 +56,36 @@ struct SymbolPicker: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading) {
-                    Text("Objects")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: objectSymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("Math")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: mathSymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("Transportation")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: transportSymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("Time")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: timeSymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("Nature")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: natureSymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("Technology")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: technologySymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("People")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: peopleSymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("Food")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: foodSymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("Animal")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: animalSymbols)
-                    Spacer(minLength: 20)
-                    
-                    Text("Fitness")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    createSymbolGrid(symbols: fitnessSymbols)
-                    Spacer(minLength: 20)
+                    ForEach(filteredCategories.keys.sorted(), id: \.self) { category in
+                        VStack(alignment: .leading) {
+                            Text(category.capitalized)
+                                .font(.headline)
+                                .padding(.horizontal)
+                            createSymbolGrid(symbols: filteredCategories[category] ?? [])
+                            Spacer(minLength: 20)
+                        }
+                    }
                 }
             }
+            .searchable(text: $searchText)
             .navigationBarTitle("Icons", displayMode: .inline)
             .navigationBarItems(trailing: Button("Done") {
                 presentationMode.wrappedValue.dismiss()
             })
         }
     }
+    
+    /// A variable that contains the search filtered symbol variables.
+    /// Searches the symbol variable in lowercase to match the casing.
+    private var filteredCategories: [String: [String]] {
+        symbols.mapValues { categorySymbols in
+            searchText.isEmpty
+            ? categorySymbols
+            : categorySymbols.filter { $0.lowercased().contains(searchText.lowercased()) }
+        }
+        .filter { !$0.value.isEmpty } // Remove empty categories
+    }
+
     
     /// A function that creates a grid containing a set symbols.
     /// Grabs symbols from the passed over argument and lists each symbols that can be tapped to select it.
@@ -152,7 +110,6 @@ struct SymbolPicker: View {
     
     /// A function that handles symbol selection.
     /// The behaviour changes based on the passed over argument
-    ///
     private func handleSymbolSelection(_ symbol: String) {
         switch behaviour {
         case .tapToSelect:
