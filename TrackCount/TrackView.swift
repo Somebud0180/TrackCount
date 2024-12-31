@@ -47,6 +47,10 @@ struct TrackView: View {
         let deviceIdiom = UIDevice.current.userInterfaceIdiom
         let isPortrait = verticalSizeClass == .regular
         
+        if selectedGroup.cards.count <= 2 {
+            return selectedGroup.cards.count
+        }
+        
         switch (deviceIdiom, isPortrait) {
         case (.phone, true):
             // Portrait iPhone
@@ -147,10 +151,12 @@ struct TrackView: View {
                         .lineLimit(2)
                 }
                 Image(systemName: card.symbol!)
+                    .font(.body)
+                    .minimumScaleFactor(0.2)
             }
             // Make the button fill available space
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding()
+            .padding(5)
         }
         .buttonStyle(.borderedProminent)
         .tint(Color.blue)

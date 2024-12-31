@@ -92,8 +92,8 @@ class CardViewModel: ObservableObject {
             card.title = newCardTitle
             card.type = newCardType
             card.count = newCardCount
-            card.buttonText = newButtonText
-            card.state = newCardState
+            card.buttonText = newButtonText.prefix(newCardCount).map { $0 }
+            card.state = newCardState.prefix(newCardCount).map { $0 }
             card.symbol = newCardSymbol
         } else {
             // Create a new card
@@ -102,9 +102,9 @@ class CardViewModel: ObservableObject {
                 index: newIndex,
                 type: newCardType,
                 title: newCardTitle,
-                buttonText: newCardType == .toggle ? newButtonText : nil,
+                buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
                 count: newCardType == .counter ? newCardCount : 0,
-                state: newCardType == .toggle ? newCardState : nil,
+                state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } : nil,
                 symbol: newCardType == .toggle ? newCardSymbol : nil
             )
             selectedGroup.cards.append(newCard) // Save the new card to the selected group

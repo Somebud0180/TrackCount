@@ -100,9 +100,11 @@ struct CardFormView: View {
                     }
                     
                     ForEach(0..<viewModel.newButtonText.count, id: \.self) { index in
-                        TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
-                            .customRoundedStyle()
-                            .listRowSeparator(.hidden)
+                        if index < viewModel.newButtonText.count {
+                            TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
+                                .customRoundedStyle()
+                                .listRowSeparator(.hidden)
+                        }
                     }
                 }
                 
