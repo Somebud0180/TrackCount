@@ -19,45 +19,66 @@ struct HomeView: View {
     
     var body: some View {
         NavigationStack {
-            VStack {
-                Text("TrackCount")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.primary.opacity(0.8))
-                
-                Grid(alignment: .center) {
-                    NavigationLink(destination: GroupListView(viewBehaviour: .view)) {
-                        Text("Track It")
-                            .font(.system(size: 32))
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundStyle(.white.opacity(0.8))
-                            .cornerRadius(10)
+            GeometryReader { proxy in
+                ZStack{
+                    if colorScheme == .light {
+                        Rectangle()
+                            .background(.ultraThinMaterial)
+                            .ignoresSafeArea()
                     }
                     
-                    NavigationLink(destination: GroupListView(viewBehaviour: .edit)) {
-                        Text("Edit It")
-                            .font(.system(size: 32))
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundStyle(.white.opacity(0.8))
-                            .cornerRadius(10)
+                    VStack {
+                        Text("TrackCount")
+                            .font(.system(.largeTitle, design: .default, weight: .semibold))
+                            .dynamicTypeSize(DynamicTypeSize.accessibility5)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
+                            .foregroundStyle(Color.white.opacity(0.8))
+                        
+                        Grid(alignment: .center) {
+                            NavigationLink(destination: GroupListView(viewBehaviour: .view)) {
+                                Text("Track It")
+                                    .font(.largeTitle)
+                                    .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
+                                    .minimumScaleFactor(0.5)
+                                    .lineLimit(1)
+                                    .frame(minWidth: 150, minHeight: 25)
+                                    .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
+                                    .background(.ultraThinMaterial)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(10)
+                            }
+                            
+                            NavigationLink(destination: GroupListView(viewBehaviour: .edit)) {
+                                Text("Edit It")
+                                    .font(.largeTitle)
+                                    .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
+                                    .minimumScaleFactor(0.5)
+                                    .lineLimit(1)
+                                    .frame(minWidth: 150, minHeight: 25)
+                                    .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
+                                    .background(.ultraThinMaterial)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(10)
+                            }
+                        }
                     }
                 }
-            }
-            .frame(maxWidth: .infinity,maxHeight: .infinity)
-            .background {
-                LinearGradient(
-                    colors: gradientColors,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing)
-                .edgesIgnoringSafeArea(.all)
-                .hueRotation(.degrees(animateGradient ? 45 : 0))
-                .onAppear {
-                    withAnimation(
-                        .easeInOut(duration: 3)
-                        .repeatForever())
-                    {
-                        animateGradient.toggle()
+                .frame(maxWidth: .infinity,maxHeight: .infinity)
+                .background {
+                    LinearGradient(
+                        colors: gradientColors,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing)
+                    .edgesIgnoringSafeArea(.all)
+                    .hueRotation(.degrees(animateGradient ? 45 : 0))
+                    .onAppear {
+                        withAnimation(
+                            .easeInOut(duration: 3)
+                            .repeatForever())
+                        {
+                            animateGradient.toggle()
+                        }
                     }
                 }
             }

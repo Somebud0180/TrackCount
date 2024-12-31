@@ -10,7 +10,6 @@ import SwiftUI
 /// A view containing the form for creating or editing a card
 struct CardFormView: View {
     @Environment(\.modelContext) private var context
-    @Environment(\.presentationMode) var presentationMode
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel: CardViewModel
     
@@ -110,7 +109,7 @@ struct CardFormView: View {
                 Button(action: {
                     viewModel.saveCard(with: context)
                     if viewModel.selectedCard != nil {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }) {
                     Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
@@ -131,12 +130,24 @@ struct CardFormView: View {
             }
             .listStyle(PlainListStyle())
             .navigationBarTitle(viewModel.selectedCard == nil ? "Add Card" : "Edit Card", displayMode: .inline)
-            .navigationBarItems(trailing: Button("Dismiss") {
-                dismiss()
-            })
-            .onAppear {
-                viewModel.initEditCard(with: context)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Dismiss") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        viewModel.saveCard(with: context)
+                        if viewModel.validationError.isEmpty {
+                            dismiss()
+                        }
+                    }
+                }
             }
+        }
+        .onAppear {
+            viewModel.initEditCard(with: context)
         }
     }
 }

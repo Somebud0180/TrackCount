@@ -140,6 +140,7 @@ class CardViewModel: ObservableObject {
     /// A functiomn that sets the temporary fields to defaults.
     /// Used to reset the contents after saving a card to free the fields for a new card.
     private func resetFields() {
+        selectedCard = nil
         newCardType = .counter
         newCardTitle = ""
         newButtonText = Array(repeating: "", count: 1)

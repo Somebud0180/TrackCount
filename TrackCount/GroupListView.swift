@@ -10,71 +10,64 @@ import SwiftData
 
 /// A view containing that lists all saved groups and provides access to editing the group's cards
 struct GroupListView: View {
+    /// Represents the behavior setting for the group list.
     enum Behaviour {
-        case edit
-        case view
+        case edit // Allows creating groups, NavigationLink directs to editing the group's cards
+        case view // NavigationLink directs to viewing the group's cards
     }
     
     @Environment(\.modelContext) private var context
-    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.colorScheme) private var colorScheme
+    
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
     @State private var isPresentingGroupForm: Bool = false
+    @State var selectedGroup: DMCardGroup?
+    @State var isEditing: EditMode = .inactive
     @State var animateGradient: Bool = false
+    @State var isShowingDialog = false
     var viewBehaviour: Behaviour
     var gradientColors: [Color] {
-        colorScheme == .light ? [animateGradient ? .blue : .purple, .white] : [.white, .black]
+        colorScheme == .light ? [.blue, .white] : [.white, .black]
     }
+    let columnLayout: [GridItem] = [
+        GridItem(.adaptive(minimum: 110, maximum: 200), spacing: 16)
+    ]
     
     var body: some View {
-        let columnLayout = [GridItem(.adaptive(minimum: 110, maximum: 200), spacing: 16)]
-        let backgroundGradient = RadialGradient(colors: gradientColors, center: .center, startRadius: animateGradient ? 15 : 25, endRadius: animateGradient ? 100 : 90)
-        
         /// Variable that stores black in light mode and white in dark mode
         /// Used for items with non-white primary light mode colors (i.e. buttons)
         let primaryColors: Color = colorScheme == .light ? Color.black : Color.white
+        let backgroundGradient = RadialGradient(colors: gradientColors, center: .center, startRadius: animateGradient ? 15 : 25, endRadius: animateGradient ? 100 : 90)
         
         NavigationView {
             ScrollView {
                 LazyVGrid(columns: columnLayout, spacing: 16) {
                     ForEach(savedGroups) { group in
+                        
+                        let groupCardView = GroupCardView(
+                            group: group,
+                            backgroundGradient: backgroundGradient,
+                            primaryColors: primaryColors,
+                            selectedGroup: $selectedGroup,
+                            animateGradient: $animateGradient,
+                            isShowingDialog: $isShowingDialog
+                        )
+                        
                         NavigationLink(destination: destinationView(for: group)) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 25)
-                                    .fill(backgroundGradient)
-                                    .onAppear {
-                                        withAnimation(
-                                            .easeInOut(duration: 3).repeatForever(autoreverses: true)
-                                        ) {
-                                            animateGradient.toggle()
-                                        }
+                            groupCardView
+                                .jiggle(amount: 2, isEnabled: isEditing == .active)
+                                .frame(height: 200)
+                                .contextMenu {
+                                    Button("Share Group", systemImage: "square.and.arrow.up") {
+                                        print("Sharing")
                                     }
-                                
-                                // Background styling
-                                RoundedRectangle(cornerRadius: 25)
-                                    .fill(.thinMaterial) // Applies the frosted glass effect
-                                    .shadow(radius: 5) // Adds a subtle shadow for depth
-                                
-                                // Group 'card' contents
-                                VStack {
-                                    if !group.groupSymbol.isEmpty {
-                                        Image(systemName: group.groupSymbol)
-                                            .font(.system(size: 32))
-                                            .foregroundStyle(primaryColors.opacity(0.8))
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                                            .padding()
-                                    }
-                                    
-                                    if !group.groupTitle.isEmpty {
-                                        Text(group.groupTitle)
-                                            .font(.system(size: 18, weight: .bold))
-                                            .foregroundStyle(primaryColors.opacity(0.8))
-                                            .multilineTextAlignment(.center)
-                                            .padding()
+                                    Button("Delete Group", systemImage: "trash", role: .destructive) {
+                                        selectedGroup = group
+                                        isShowingDialog = true
                                     }
                                 }
-                            }
-                            .frame(height: 200)
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding()
@@ -85,24 +78,64 @@ struct GroupListView: View {
                             Button(action: { isPresentingGroupForm.toggle() }) {
                                 Image(systemName: "plus")
                             }
-                            .sheet(isPresented: $isPresentingGroupForm) {
-                                GroupFormView()
-                                    .presentationDetents([.fraction(0.40)])
-                            }
                         }
                     }
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        EditButton()
+                    }
                 }
+                .environment(\.editMode, $isEditing)
+                .sheet(isPresented: $isPresentingGroupForm) {
+                    GroupFormView()
+                        .presentationDetents([.fraction(0.45)])
+                }
+                .alert(isPresented: $isShowingDialog) {
+                    Alert(
+                        title: alertTitle,
+                        message: Text("Are you sure you want to delete this group? This cannot be undone."),
+                        primaryButton: .destructive(Text("Confirm")) {
+                            if let group = selectedGroup {
+                                removeGroup(group)
+                                selectedGroup = nil
+                            }
+                        },
+                        secondaryButton: .cancel {
+                            selectedGroup = nil
+                            isShowingDialog = false
+                        }
+                    )
+                }
+            }
+            .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 10) {
+                isEditing = .active
             }
         }
     }
     
+    /// Computed property for alert title
+    private var alertTitle: Text {
+        if let group = selectedGroup {
+            if group.groupTitle.isEmpty {
+                return Text("Delete Group?")
+            } else {
+                return Text("Delete \(group.groupTitle)?")
+            }
+        }
+        return Text("Delete Group?")
+    }
+    
+    /// A function that deletes the accepted group from storage
+    func removeGroup(_ group: DMCardGroup) {
+        context.delete(group)
+    }
+    
     /// A function that determines the destination based on the viewBehaviour
+    @ViewBuilder
     private func destinationView(for group: DMCardGroup) -> some View {
-        switch viewBehaviour {
-        case .edit:
-            return AnyView(CardListView(selectedGroup: group))
-        case .view:
-            return AnyView(TrackView(selectedGroup: group))
+        if viewBehaviour == .edit {
+            CardListView(selectedGroup: group)
+        } else {
+            TrackView(selectedGroup: group)
         }
     }
 }

@@ -2,7 +2,7 @@
 //  GroupFormView.swift
 //  TrackCount
 //
-//  Created by Ethan John Lagera on 12/27/24.
+//  A view containing the group creation interface
 //
 
 import SwiftUI
@@ -10,7 +10,7 @@ import SwiftData
 
 struct GroupFormView: View {
     @Environment(\.modelContext) private var context
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     
     // Set variable defaults
     @State private var isPickerPresented: Bool = false
@@ -81,9 +81,21 @@ struct GroupFormView: View {
             }
             .listStyle(InsetListStyle())
             .navigationBarTitle("Create Group", displayMode: .inline)
-            .navigationBarItems(trailing: Button("Dismiss") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Dismiss") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        addGroup()
+                        if validationError.isEmpty {
+                            dismiss()
+                        }
+                    }
+                }
+            }
         }
     }
     

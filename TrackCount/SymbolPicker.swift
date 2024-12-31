@@ -15,6 +15,13 @@ struct SymbolPicker: View {
         case tapWithUnselect // Tap to select and tap again to unselect
     }
     
+    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
+    @Binding var selectedSymbol: String
+    
+    @State private var searchText: String = ""
+    @State private var behaviour: Behaviour
+    
     /// The set of pickable symbols
     private let symbols: [String: [String]] = [
         "objects": ["hammer.fill", "wrench.fill", "screwdriver.fill", "paintbrush.fill", "scissors", "pencil", "text.document.fill", "list.clipboard.fill", "archivebox.fill", "tray.2.fill", "bag.fill", "cart.fill", "gift.fill", "lightbulb.fill", "fanblades.fill", "microwave.fill", "oven.fill", "fork.knife", "cup.and.saucer.fill", "book.fill", "umbrella.fill", "balloon.fill", "party.popper.fill"],
@@ -27,11 +34,6 @@ struct SymbolPicker: View {
         "animals": ["hare.fill", "tortoise.fill", "cat.fill", "dog.fill", "lizard.fill", "bird.fill", "ant.fill", "ladybug.fill", "fish.fill", "pawprint.fill"],
         "fitness": ["gamecontroller.fill", "trophy.fill", "figure.roll", "figure.dance", "figure.strengthtraining.traditional", "figure.surfing", "figure.pool.swim", "figure.run.treadmill", "figure.boxing", "figure.badminton", "figure.hiking", "figure.walk", "figure.run", "figure.golf", "sportscourt.fill", "soccerball", "basketball.fill", "volleyball.fill", "football.fill", "tennis.racket", "tennisball.fill", "hockey.puck.fill"]
     ]
-    
-    @Binding var selectedSymbol: String
-    @Environment(\.presentationMode) var presentationMode
-    @State private var searchText: String = ""
-    @State private var behaviour: Behaviour
     
     // Initialize with originScreen and selectedSymbol binding
     /// Initializes the behaviour and selected symbol binding
@@ -66,9 +68,13 @@ struct SymbolPicker: View {
             }
             .searchable(text: $searchText, prompt: "Search Symbols")
             .navigationBarTitle("Symbols", displayMode: .inline)
-            .navigationBarItems(trailing: Button("Done") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
     

@@ -60,15 +60,30 @@ struct CardListView: View {
                 .background(Color.accentColor)
                 .cornerRadius(8)
             }
-            .navigationBarTitleDisplayMode(.inline)
         }
-        .navigationBarTitle(selectedGroup.groupTitle, displayMode: .inline)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitleViewBuilder {
+            if selectedGroup.groupTitle.isEmpty {
+                Image(systemName: selectedGroup.groupSymbol)
+            } else {
+                Text(selectedGroup.groupTitle)
+            }
+        }
         .sheet(isPresented: $isPresentingCardFormView) {
-            CardFormView(selectedGroup: selectedGroup, selectedCard: selectedCard)
-                .presentationDetents([.medium, .fraction(0.99)])
-                .onDisappear {
-                    selectedCard = nil
-                }
+            if let cardToEdit = selectedCard {
+                CardFormView(selectedGroup: selectedGroup, selectedCard: cardToEdit)
+                    .presentationDetents([.medium, .fraction(0.99)])
+                    .onDisappear {
+                        selectedCard = nil
+                    }
+            } else {
+                // Handle addition of a new card
+                CardFormView(selectedGroup: selectedGroup)
+                    .presentationDetents([.medium, .fraction(0.99)])
+                    .onDisappear {
+                        selectedCard = nil
+                    }
+            }
         }
     }
     
@@ -125,6 +140,17 @@ struct CardListView: View {
         } catch {
             print("Failed to remove card and update IDs: \(error.localizedDescription)")
         }
+    }
+}
+
+extension View {
+    @ViewBuilder func navigationTitleViewBuilder<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        self.navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    content()
+                }
+            }
     }
 }
 
