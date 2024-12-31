@@ -12,8 +12,8 @@ import SwiftData
 struct TrackCountApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .modelContainer(for: CardStore.self)
+            HomeView()
+                .modelContainer(for: DMCardGroup.self)
         }
     }
 }

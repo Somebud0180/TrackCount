@@ -1,0 +1,141 @@
+//
+//  HomeView.swift
+//  TrackCount
+//
+//  Contains the home screen
+//
+
+import SwiftUI
+import SwiftData
+
+struct HomeView: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.colorScheme) private var colorScheme
+    @Query private var savedGroups: [DMCardGroup]
+    @State var animateGradient: Bool = false
+    var gradientColors: [Color] {
+        colorScheme == .light ? [.white, .blue] : [.black, .gray]
+    }
+    
+    var body: some View {
+        NavigationStack {
+            GeometryReader { proxy in
+                ZStack{
+                    if colorScheme == .light {
+                        Rectangle()
+                            .background(.ultraThinMaterial)
+                            .ignoresSafeArea()
+                    }
+                    
+                    VStack {
+                        Text("TrackCount")
+                            .font(.system(.largeTitle, design: .default, weight: .semibold))
+                            .dynamicTypeSize(DynamicTypeSize.accessibility5)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
+                            .foregroundStyle(Color.white.opacity(0.8))
+                        
+                        Grid(alignment: .center) {
+                            NavigationLink(destination: GroupListView(viewBehaviour: .view)) {
+                                Text("Track It")
+                                    .font(.largeTitle)
+                                    .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
+                                    .minimumScaleFactor(0.5)
+                                    .lineLimit(1)
+                                    .frame(minWidth: 150, minHeight: 25)
+                                    .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
+                                    .background(.ultraThinMaterial)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(10)
+                            }
+                            
+                            NavigationLink(destination: GroupListView(viewBehaviour: .edit)) {
+                                Text("Edit It")
+                                    .font(.largeTitle)
+                                    .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
+                                    .minimumScaleFactor(0.5)
+                                    .lineLimit(1)
+                                    .frame(minWidth: 150, minHeight: 25)
+                                    .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
+                                    .background(.ultraThinMaterial)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(10)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity,maxHeight: .infinity)
+                .background {
+                    LinearGradient(
+                        colors: gradientColors,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing)
+                    .edgesIgnoringSafeArea(.all)
+                    .hueRotation(.degrees(animateGradient ? 45 : 0))
+                    .onAppear {
+                        withAnimation(
+                            .easeInOut(duration: 3)
+                            .repeatForever())
+                        {
+                            animateGradient.toggle()
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear {
+            // Check saved cards and destroy faulty cards
+            for group in savedGroups {
+                for card in group.cards {
+                    checkCardProperties(card: card)
+                }
+            }
+        }
+    }
+    
+    /// A function that checks the contents of a card for any issues and deletes it.
+    /// - Parameter card: Accepts a DMStoredCard entity, the card that will be checked.
+    func checkCardProperties(card: DMStoredCard) {
+        var errors: [String] = []
+        
+        // Reflect the properties of the card
+        let mirror = Mirror(reflecting: card)
+        
+        for child in mirror.children {
+            if let propertyName = child.label {
+                // Check if the value is String and empty
+                if child.value is String, let stringValue = child.value as? String, stringValue.isEmpty {
+                    errors.append("\(propertyName) is empty")
+                }
+                // Check if the value is Int and invalid (you can adjust the condition as needed)
+                else if child.value is Int, let intValue = child.value as? Int, intValue <= 0 {
+                    errors.append("\(propertyName) is zero or invalid")
+                }
+                // Check if the value is Optional and nil
+                else if child.value is Optional<Any>, child.value == nil {
+                    errors.append("\(propertyName) is nil")
+                }
+            }
+        }
+        
+        if !errors.isEmpty {
+            print("Card with UUID \(String(describing: card.uuid)) has the following issues: \(errors.joined(separator: ", "))")
+            
+            do {
+                // Remove the card from the context
+                context.delete(card)
+                
+                // Save the context after deletion
+                try context.save()
+                print("Card with UUID \(String(describing: card.uuid)) has been deleted")
+            } catch {
+                print("Card with UUID \(String(describing: card.uuid)) has not been deleted")
+            }
+        }
+    }
+}
+
+#Preview {
+    HomeView()
+        .modelContainer(for: DMCardGroup.self)
+}
