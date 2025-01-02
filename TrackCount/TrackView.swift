@@ -47,23 +47,34 @@ struct TrackView: View {
         let deviceIdiom = UIDevice.current.userInterfaceIdiom
         let isPortrait = verticalSizeClass == .regular
         
-        if selectedGroup.cards.count <= 2 {
-            return selectedGroup.cards.count
-        }
-        
         switch (deviceIdiom, isPortrait) {
         case (.phone, true):
             // Portrait iPhone
             return 1
         case (.phone, false):
             // Landscape iPhone
-            return 2
+            if selectedGroup.cards.count <= 2 {
+                // Display all cards if total card count is below or equal to default
+                return selectedGroup.cards.count
+            } else {
+                return 2
+            }
         case (.pad, true):
             // Portrait iPad
-            return 2
+            if selectedGroup.cards.count <= 2 {
+                // Display all cards if total card count is below or equal to default
+                return selectedGroup.cards.count
+            } else {
+                return 2
+            }
         case (.pad, false):
             // Landscape iPad
-            return 3
+            if selectedGroup.cards.count <= 2 {
+                // Display all cards if total card count is below or equal to default
+                return selectedGroup.cards.count
+            } else {
+                return 3
+            }
         default:
             // Fallback to 2 columns
             return 2
