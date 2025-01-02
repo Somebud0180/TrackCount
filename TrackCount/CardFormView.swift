@@ -6,22 +6,15 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// A view containing the form for creating or editing a card
 struct CardFormView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) var dismiss
-    @StateObject private var viewModel: CardViewModel
+    @StateObject var viewModel: CardViewModel
     
     @State private var isSymbolPickerPresented: Bool = false
-    
-    /// Initializes the selectedGroup and selectedCard variable for editing
-    /// - Parameters:
-    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card
-    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over
-    init(selectedGroup: DMCardGroup, selectedCard: DMStoredCard? = nil) {
-        _viewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup, selectedCard: selectedCard))
-    }
     
     // Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046
     static let formatter = NumberFormatter()
@@ -61,6 +54,13 @@ struct CardFormView: View {
                 // Text field for card title
                 TextField("Set card title", text: $viewModel.newCardTitle)
                     .customRoundedStyle()
+                    .listRowSeparator(.hidden)
+                
+                
+                ColorPicker("Button Color:", selection: $viewModel.newCardPrimary, supportsOpacity: false)
+                    .listRowSeparator(.hidden)
+                
+                ColorPicker("Button Content Color:", selection: $viewModel.newCardSecondary, supportsOpacity: false)
                     .listRowSeparator(.hidden)
                 
                 // Check type for toggle to add specific editing fields
@@ -149,7 +149,7 @@ struct CardFormView: View {
             }
         }
         .onAppear {
-            viewModel.initEditCard(with: context)
+            viewModel.initEditCard()
         }
     }
 }
@@ -160,6 +160,9 @@ struct CardFormView: View {
         DMCardGroup(uuid: UUID(), index: 0, groupTitle: "Card 1", groupSymbol: "star.fill")
     }
     
-    CardFormView(selectedGroup: sampleGroup)
+    // Sample CardViewModel to pass into the preview
+    let testViewModel = CardViewModel(selectedGroup: sampleGroup)
+    
+    CardFormView(viewModel: testViewModel)
         .modelContainer(for: DMCardGroup.self)
 }

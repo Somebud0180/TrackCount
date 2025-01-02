@@ -83,55 +83,6 @@ struct HomeView: View {
                 }
             }
         }
-        .onAppear {
-            // Check saved cards and destroy faulty cards
-            for group in savedGroups {
-                for card in group.cards {
-                    checkCardProperties(card: card)
-                }
-            }
-        }
-    }
-    
-    /// A function that checks the contents of a card for any issues and deletes it.
-    /// - Parameter card: Accepts a DMStoredCard entity, the card that will be checked.
-    func checkCardProperties(card: DMStoredCard) {
-        var errors: [String] = []
-        
-        // Reflect the properties of the card
-        let mirror = Mirror(reflecting: card)
-        
-        for child in mirror.children {
-            if let propertyName = child.label {
-                // Check if the value is String and empty
-                if child.value is String, let stringValue = child.value as? String, stringValue.isEmpty {
-                    errors.append("\(propertyName) is empty")
-                }
-                // Check if the value is Int and invalid (you can adjust the condition as needed)
-                else if child.value is Int, let intValue = child.value as? Int, intValue <= 0 {
-                    errors.append("\(propertyName) is zero or invalid")
-                }
-                // Check if the value is Optional and nil
-                else if child.value is Optional<Any>, child.value == nil {
-                    errors.append("\(propertyName) is nil")
-                }
-            }
-        }
-        
-        if !errors.isEmpty {
-            print("Card with UUID \(String(describing: card.uuid)) has the following issues: \(errors.joined(separator: ", "))")
-            
-            do {
-                // Remove the card from the context
-                context.delete(card)
-                
-                // Save the context after deletion
-                try context.save()
-                print("Card with UUID \(String(describing: card.uuid)) has been deleted")
-            } catch {
-                print("Card with UUID \(String(describing: card.uuid)) has not been deleted")
-            }
-        }
     }
 }
 

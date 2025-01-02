@@ -8,9 +8,11 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 class CardViewModel: ObservableObject {
     // Set variable defaults
+    @Environment(\.self) var environment
     @Published var selectedGroup: DMCardGroup
     @Published var selectedCard: DMStoredCard? = nil
     @Published var newIndex: Int = 0
@@ -20,6 +22,8 @@ class CardViewModel: ObservableObject {
     @Published var newCardCount: Int = 1
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
     @Published var newCardSymbol: String = ""
+    @Published var newCardPrimary: Color = .blue
+    @Published var newCardSecondary: Color = .white
     @Published var validationError: [String] = []
     
     // Button limit
@@ -36,8 +40,9 @@ class CardViewModel: ObservableObject {
     }
     
     /// A function that grabs the saved data from a selected card.
-    /// Used to populate the temporary variables within CardViewModel.
-    func initEditCard(with context: ModelContext) {
+    /// Used to populate the temporary variables within CardViewModel with the variables from the selected card.
+    func initEditCard() {
+        print("Initializing edit card: \(selectedCard?.title ?? "No card selected")")
         guard let card = selectedCard else { return }
         self.newCardType = card.type
         self.newCardTitle = card.title
@@ -45,6 +50,8 @@ class CardViewModel: ObservableObject {
         self.newButtonText = card.buttonText ?? Array(repeating: "", count: 1)
         self.newCardState = card.state ?? Array(repeating: true, count: 1)
         self.newCardSymbol = card.symbol ?? ""
+        self.newCardPrimary = card.primaryColor.color
+        self.newCardSecondary = card.secondaryColor.color
     }
     
     /// A function that adjusts variables related to buttons.
@@ -95,6 +102,8 @@ class CardViewModel: ObservableObject {
             card.buttonText = newButtonText.prefix(newCardCount).map { $0 }
             card.state = newCardState.prefix(newCardCount).map { $0 }
             card.symbol = newCardSymbol
+            card.primaryColor = CodableColor(color: newCardPrimary)
+            card.secondaryColor = CodableColor(color: newCardSecondary)
         } else {
             // Create a new card
             let newCard = DMStoredCard(
@@ -105,7 +114,9 @@ class CardViewModel: ObservableObject {
                 buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
                 count: newCardType == .counter ? newCardCount : 0,
                 state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } : nil,
-                symbol: newCardType == .toggle ? newCardSymbol : nil
+                symbol: newCardType == .toggle ? newCardSymbol : nil,
+                primaryColor: newCardPrimary,
+                secondaryColor: newCardSecondary
             )
             selectedGroup.cards.append(newCard) // Save the new card to the selected group
         }
@@ -137,7 +148,7 @@ class CardViewModel: ObservableObject {
         }
     }
     
-    /// A functiomn that sets the temporary fields to defaults.
+    /// A function that sets the temporary fields to defaults.
     /// Used to reset the contents after saving a card to free the fields for a new card.
     private func resetFields() {
         selectedCard = nil
@@ -147,5 +158,7 @@ class CardViewModel: ObservableObject {
         newCardCount = 1
         newCardState = Array(repeating: true, count: 1)
         newCardSymbol = ""
+        newCardPrimary = .blue
+        newCardSecondary = .white
     }
 }

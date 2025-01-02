@@ -116,10 +116,11 @@ struct TrackView: View {
             Button(action: { card.count += 1 }) {
                 Image(systemName: "plus")
                     .font(.title)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(card.secondaryColor.color)
                     .frame(height: 30)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(card.primaryColor.color)
             
             // Current Count
             Text(String(card.count))
@@ -129,10 +130,11 @@ struct TrackView: View {
             Button(action: { card.count -= 1 }) {
                 Image(systemName: "minus")
                     .font(.title)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(card.secondaryColor.color)
                     .frame(height: 30)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(card.primaryColor.color)
             
             Spacer()
         }
@@ -149,6 +151,7 @@ struct TrackView: View {
                         .font(.body)
                         .minimumScaleFactor(0.5)
                         .lineLimit(2)
+                        .foregroundStyle(card.state![id] ? card.secondaryColor.color : .black)
                 }
                 Image(systemName: card.symbol!)
                     .font(.body)
@@ -159,9 +162,8 @@ struct TrackView: View {
             .padding(5)
         }
         .buttonStyle(.borderedProminent)
-        .tint(Color.blue)
         // Change foreground style based on state
-        .foregroundStyle(card.state![id] ? .white : .secondary)
+        .foregroundStyle(card.state![id] ? card.primaryColor.color : .secondary)
     }
 }
 

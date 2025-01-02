@@ -38,8 +38,10 @@ struct GroupListView: View {
         /// Used for items with non-white primary light mode colors (i.e. buttons)
         let primaryColors: Color = colorScheme == .light ? Color.black : Color.white
         let backgroundGradient = RadialGradient(colors: gradientColors, center: .center, startRadius: animateGradient ? 15 : 25, endRadius: animateGradient ? 100 : 90)
+        let onDragUpdate: (DragGesture.Value) -> Void
+        let onDragEnd: () -> Void
         
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 LazyVGrid(columns: columnLayout, spacing: 16) {
                     ForEach(savedGroups) { group in
@@ -71,17 +73,18 @@ struct GroupListView: View {
                     }
                 }
                 .padding()
+                .navigationBarTitleDisplayMode(.large)
                 .navigationTitle("Your Groups")
                 .toolbar {
                     if viewBehaviour == .edit {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            EditButton()
+                        }
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button(action: { isPresentingGroupForm.toggle() }) {
                                 Image(systemName: "plus")
                             }
                         }
-                    }
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        EditButton()
                     }
                 }
                 .environment(\.editMode, $isEditing)
@@ -125,8 +128,29 @@ struct GroupListView: View {
     }
     
     /// A function that deletes the accepted group from storage
-    func removeGroup(_ group: DMCardGroup) {
-        context.delete(group)
+    private func removeGroup(_ group: DMCardGroup) {
+        do {
+            // Remove the group from the context
+            context.delete(group)
+            
+            // Save the context after deletion
+            try context.save()
+            
+            // Update the IDs of remaining cards to fill the gap
+            var mutableGroups = savedGroups.sorted(by: { $0.index < $1.index })
+            mutableGroups.removeAll { $0.uuid == group.uuid }
+            
+            // Reassign IDs to remaining cards
+            for index in mutableGroups.indices {
+                mutableGroups[index].index = index
+            }
+            
+            // Save the changes back to the context
+            try context.save()
+            print("Group removed, ID freed, and remaining cards updated.")
+        } catch {
+            print("Failed to remove group and update IDs: \(error.localizedDescription)")
+        }
     }
     
     /// A function that determines the destination based on the viewBehaviour

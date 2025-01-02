@@ -62,8 +62,14 @@ struct GroupFormView: View {
                     SymbolPicker(behaviour: .tapWithUnselect, selectedSymbol: $newGroupSymbol)
                         .presentationDetents([.fraction(0.99)])
                 }
+                .listRowSeparator(.hidden)
                 
-                Button(action : {addGroup()}) {
+                Button(action : {
+                    addGroup()
+                    if validationError.isEmpty {
+                        dismiss()
+                    }
+                }) {
                     Text("Add Group")
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -71,6 +77,7 @@ struct GroupFormView: View {
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
+                .listRowSeparator(.hidden)
                 
                 if !validationError.isEmpty {
                     Text(validationError.joined(separator: ", "))

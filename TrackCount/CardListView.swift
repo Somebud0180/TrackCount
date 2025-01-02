@@ -11,12 +11,21 @@ import SwiftData
 /// A view containing a list of cards in a selected group
 struct CardListView: View {
     @Environment(\.modelContext) private var context
+    @StateObject private var viewModel: CardViewModel
     
     // Set variable defaults
     var selectedGroup: DMCardGroup
     @State private var isPresentingCardFormView: Bool = false
     @State private var validationError: [String] = []
-    @State private var selectedCard: DMStoredCard? = nil
+    
+    /// Initializes the selectedGroup and selectedCard variable for editing
+    /// - Parameters:
+    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card
+    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over
+    init(selectedGroup: DMCardGroup) {
+        _viewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
+        self.selectedGroup = selectedGroup
+    }
     
     var body: some View {
         NavigationStack {
@@ -34,7 +43,9 @@ struct CardListView: View {
                             Image(systemName: "line.horizontal.3")
                                 .foregroundColor(.secondary)
                             Text(card.title)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .listRowSeparator(.hidden)
                         .swipeActions {
                             Button(role: .destructive) {
                                 removeCard(card)
@@ -43,7 +54,8 @@ struct CardListView: View {
                             }
                         }
                         .onTapGesture {
-                            selectedCard = card
+                            viewModel.selectedCard = card
+                            viewModel.initEditCard()
                             isPresentingCardFormView.toggle()
                         }
                     }
@@ -61,7 +73,6 @@ struct CardListView: View {
                 .cornerRadius(8)
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
         .navigationTitleViewBuilder {
             if selectedGroup.groupTitle.isEmpty {
                 Image(systemName: selectedGroup.groupSymbol)
@@ -70,20 +81,8 @@ struct CardListView: View {
             }
         }
         .sheet(isPresented: $isPresentingCardFormView) {
-            if let cardToEdit = selectedCard {
-                CardFormView(selectedGroup: selectedGroup, selectedCard: cardToEdit)
-                    .presentationDetents([.medium, .fraction(0.99)])
-                    .onDisappear {
-                        selectedCard = nil
-                    }
-            } else {
-                // Handle addition of a new card
-                CardFormView(selectedGroup: selectedGroup)
-                    .presentationDetents([.medium, .fraction(0.99)])
-                    .onDisappear {
-                        selectedCard = nil
-                    }
-            }
+            CardFormView(viewModel: viewModel)
+                .presentationDetents([.medium, .fraction(0.99)])
         }
     }
     
@@ -144,7 +143,10 @@ struct CardListView: View {
 }
 
 extension View {
-    @ViewBuilder func navigationTitleViewBuilder<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    /// A function that builds the navigation view title based on what is passed into it.
+    /// Utilized as it enables the usage of if statements for picking the title.
+    @ViewBuilder
+    func navigationTitleViewBuilder<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         self.navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {

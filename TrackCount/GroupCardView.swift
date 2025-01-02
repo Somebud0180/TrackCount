@@ -19,7 +19,6 @@ struct GroupCardView: View {
     @Binding var isShowingDialog: Bool
     
     var body: some View {
-        
         ZStack {
             // Background Gradient
             RoundedRectangle(cornerRadius: 12)
