@@ -55,7 +55,7 @@ struct CardListView: View {
                         }
                         .onTapGesture {
                             viewModel.selectedCard = card
-                            viewModel.initEditCard()
+                            viewModel.fetchCard()
                             isPresentingCardFormView.toggle()
                         }
                     }

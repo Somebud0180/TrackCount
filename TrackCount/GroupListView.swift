@@ -18,55 +18,40 @@ struct GroupListView: View {
     
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) private var colorScheme
+    @StateObject private var viewModel: GroupViewModel
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
     @State private var isPresentingGroupForm: Bool = false
-    @State var selectedGroup: DMCardGroup?
-    @State var isEditing: EditMode = .inactive
-    @State var animateGradient: Bool = false
-    @State var isShowingDialog = false
-    var viewBehaviour: Behaviour
-    var gradientColors: [Color] {
-        colorScheme == .light ? [.blue, .white] : [.white, .black]
-    }
+    @State private var isPresentingDeleteDialog: Bool = false
+    @State private var animateGradient: Bool = false
+    @State private var selectedGroup: DMCardGroup?
+    @State var viewBehaviour: Behaviour
+    
     let columnLayout: [GridItem] = [
         GridItem(.adaptive(minimum: 110, maximum: 200), spacing: 16)
     ]
     
+    init(viewBehaviour: Behaviour) {
+        _viewModel = StateObject(wrappedValue: GroupViewModel())
+        self.viewBehaviour = viewBehaviour
+    }
+    
     var body: some View {
-        /// Variable that stores black in light mode and white in dark mode
-        /// Used for items with non-white primary light mode colors (i.e. buttons)
-        let primaryColors: Color = colorScheme == .light ? Color.black : Color.white
-        let backgroundGradient = RadialGradient(colors: gradientColors, center: .center, startRadius: animateGradient ? 15 : 25, endRadius: animateGradient ? 100 : 90)
-        let onDragUpdate: (DragGesture.Value) -> Void
-        let onDragEnd: () -> Void
-        
         NavigationStack {
             ScrollView {
                 LazyVGrid(columns: columnLayout, spacing: 16) {
                     ForEach(savedGroups) { group in
                         
                         let groupCardView = GroupCardView(
-                            group: group,
-                            backgroundGradient: backgroundGradient,
-                            primaryColors: primaryColors,
-                            selectedGroup: $selectedGroup,
                             animateGradient: $animateGradient,
-                            isShowingDialog: $isShowingDialog
+                            group: group
                         )
                         
                         NavigationLink(destination: destinationView(for: group)) {
                             groupCardView
-                                .jiggle(amount: 2, isEnabled: isEditing == .active)
                                 .frame(height: 200)
                                 .contextMenu {
-                                    Button("Share Group", systemImage: "square.and.arrow.up") {
-                                        print("Sharing")
-                                    }
-                                    Button("Delete Group", systemImage: "trash", role: .destructive) {
-                                        selectedGroup = group
-                                        isShowingDialog = true
-                                    }
+                                    contextMenu(for: group)
                                 }
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -77,9 +62,6 @@ struct GroupListView: View {
                 .navigationTitle("Your Groups")
                 .toolbar {
                     if viewBehaviour == .edit {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            EditButton()
-                        }
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button(action: { isPresentingGroupForm.toggle() }) {
                                 Image(systemName: "plus")
@@ -87,12 +69,11 @@ struct GroupListView: View {
                         }
                     }
                 }
-                .environment(\.editMode, $isEditing)
-                .sheet(isPresented: $isPresentingGroupForm) {
+                .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
                     GroupFormView()
                         .presentationDetents([.fraction(0.45)])
                 }
-                .alert(isPresented: $isShowingDialog) {
+                .alert(isPresented: $isPresentingDeleteDialog) {
                     Alert(
                         title: alertTitle,
                         message: Text("Are you sure you want to delete this group? This cannot be undone."),
@@ -104,13 +85,10 @@ struct GroupListView: View {
                         },
                         secondaryButton: .cancel {
                             selectedGroup = nil
-                            isShowingDialog = false
+                            isPresentingDeleteDialog = false
                         }
                     )
                 }
-            }
-            .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 10) {
-                isEditing = .active
             }
         }
     }
@@ -150,6 +128,24 @@ struct GroupListView: View {
             print("Group removed, ID freed, and remaining cards updated.")
         } catch {
             print("Failed to remove group and update IDs: \(error.localizedDescription)")
+        }
+    }
+
+    /// A function that contains the buttons used in the context menu for the cards
+    private func contextMenu(for group: DMCardGroup) -> some View {
+        Group {
+            Button("Edit Group", systemImage: "pencil") {
+                viewModel.selectedGroup = group
+                viewModel.fetchGroup()
+                isPresentingGroupForm.toggle()
+            }
+            Button("Share Group", systemImage: "square.and.arrow.up") {
+                print("Sharing")
+            }
+            Button("Delete Group", systemImage: "trash", role: .destructive) {
+                selectedGroup = group
+                isPresentingDeleteDialog = true
+            }
         }
     }
     

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 /// A view containing the form for creating or editing a card
 struct CardFormView: View {
@@ -109,10 +108,7 @@ struct CardFormView: View {
                 }
                 
                 Button(action: {
-                    viewModel.saveCard(with: context)
-                    if viewModel.validationError.isEmpty && viewModel.selectedCard != nil {
-                        dismiss()
-                    }
+                    saveCard()
                 }) {
                     Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
                         .frame(maxWidth: .infinity)
@@ -134,18 +130,32 @@ struct CardFormView: View {
             .navigationBarTitle(viewModel.selectedCard == nil ? "Add Card" : "Edit Card", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Dismiss") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        viewModel.saveCard(with: context)
-                        if viewModel.validationError.isEmpty {
-                            dismiss()
-                        }
+                        saveCard()
                     }
                 }
+            }
+        }
+    }
+    
+    /// A  function that saves the current card and dismisses the screen.
+    /// Contains some safeguards to avoid crashes.
+    private func saveCard() {
+        // Resign the first responder to ensure that any active text fields commit their changes.
+        // This prevents a crash that occurs when saving while a text field is still being edited.
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        
+        // Defer the save action to the next run loop to ensure all UI updates are completed.
+        // This helps in making sure that the text fields have updated their bound variables before saving.
+        DispatchQueue.main.async {
+            viewModel.saveCard(with: context)
+            if viewModel.validationError.isEmpty {
+                dismiss()
             }
         }
     }
