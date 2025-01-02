@@ -62,7 +62,7 @@ class CardViewModel: ObservableObject {
     /// A function that adjusts variables related to buttons.
     /// Used to adjust the arrays 'newButtonText' and 'newCardState' to match the newCardCount.
     /// Also clamps newCardCount to stay within limits.
-    func initButton(with context: ModelContext) {
+    func initButton() {
         // Clamp newCardCount within valid limits
         newCardCount = min(max(newCardCount, minButtonLimit), maxButtonLimit)
         
@@ -86,6 +86,9 @@ class CardViewModel: ObservableObject {
     /// Also checks the card contents and throws errors, if any, to validationError.
     /// Also provides the card's index and uuid on save.
     func saveCard(with context: ModelContext) {
+        // Validate button count and update before saving
+        initButton()
+        
         // Validate the form before saving
         validateForm()
         guard validationError.isEmpty else {

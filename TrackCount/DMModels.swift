@@ -96,7 +96,7 @@ final class DMStoredCard: Identifiable {
     var secondaryColor: CodableColor
     
     /// Initializes a new instance of DMStoredCard.
-    init(uuid: UUID, index: Int, type: Types, title: String, buttonText: [String]? = nil, count: Int, state: [Bool]? = nil, symbol: String? = nil, primaryColor: Color = .blue, secondaryColor: Color = .white) {
+    init(uuid: UUID, index: Int, type: Types, title: String, buttonText: [String]? = nil, count: Int, state: [Bool]? = nil, symbol: String? = nil, primaryColor: Color, secondaryColor: Color) {
         self.uuid = uuid
         self.index = index
         self.type = type

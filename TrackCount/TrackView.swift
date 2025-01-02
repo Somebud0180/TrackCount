@@ -81,6 +81,7 @@ struct TrackView: View {
         }
     }
     
+    /// Builds the inputted card into a visible card according to it's type.
     private func gridCard(_ card: DMStoredCard) -> some View {
         return AnyView(
             ZStack {
@@ -97,6 +98,7 @@ struct TrackView: View {
         )
     }
     
+    /// Creates the toggle card contents from the inputted card.
     private func toggleCard(_ card: DMStoredCard) -> some View {
         VStack(alignment: .center, spacing: 10) {
             Text(card.title)
@@ -115,6 +117,7 @@ struct TrackView: View {
         .padding()
     }
     
+    /// Creates the counter card contents from the inputted card.
     private func counterCard(_ card: DMStoredCard) -> some View {
         VStack(alignment: .center, spacing: 10) {
             Text(card.title)
@@ -152,6 +155,7 @@ struct TrackView: View {
         .padding()
     }
     
+    /// Creates buttons with data from the inputted card and index
     private func toggleButton(_ card: DMStoredCard, id: Int) -> some View {
         Button(action: {
             card.state![id].toggle()
@@ -167,6 +171,7 @@ struct TrackView: View {
                 Image(systemName: card.symbol!)
                     .font(.body)
                     .minimumScaleFactor(0.2)
+                    .foregroundStyle(card.state![id] ? card.secondaryColor.color : .black)
             }
             // Make the button fill available space
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -179,6 +184,18 @@ struct TrackView: View {
 }
 
 #Preview {
-    GroupListView(viewBehaviour: .view)
-        .modelContainer(for: DMCardGroup.self)
+    // An example set of cards
+    // Contains 1 counter card and 1 toggle card
+    let exampleCards: [DMStoredCard] = [
+        DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, primaryColor: .blue, secondaryColor: .white),
+        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", buttonText: [""], count: 1, state: [true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow)
+    ]
+    
+    // An example group
+    // Contains an example set of cards
+    var exampleGroup: DMCardGroup {
+        DMCardGroup(uuid: UUID(), index: 0, groupTitle: "Test", groupSymbol: "", cards: exampleCards)
+    }
+    
+    TrackView(selectedGroup: exampleGroup)
 }

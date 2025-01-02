@@ -74,7 +74,7 @@ struct CardFormView: View {
                         Stepper("", value: $viewModel.newCardCount, in: viewModel.minButtonLimit...viewModel.maxButtonLimit)
                     }
                     .onChange(of: viewModel.newCardCount) {
-                        viewModel.initButton(with: context) // Create new text field for each toggle
+                        viewModel.initButton() // Create new text field for each toggle
                     }
                     .listRowSeparator(.hidden)
                     
