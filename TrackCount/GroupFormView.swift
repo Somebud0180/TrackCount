@@ -65,7 +65,7 @@ struct GroupFormView: View {
                         dismiss()
                     }
                 }) {
-                    Text("Add Group")
+                    Text(viewModel.selectedGroup == nil ? "Add Group" : "Save Group")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
@@ -82,7 +82,7 @@ struct GroupFormView: View {
                 }
             }
             .listStyle(InsetListStyle())
-            .navigationBarTitle("Create Group", displayMode: .inline)
+            .navigationBarTitle(viewModel.selectedGroup == nil ? "Create Group" : "Edit Group", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Dismiss") {
