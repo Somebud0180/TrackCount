@@ -16,6 +16,8 @@ class GroupViewModel: ObservableObject {
     @Published var newGroupSymbol: String = ""
     @Published var newGroupTitle: String = ""
     
+    /// Initializes the selectedGroup for editing
+    /// - Parameter selectedGroup: (optional) accepts DMGroupCard entities, edits the entity that is passed over
     init(selectedGroup: DMCardGroup? = nil) {
         self.selectedGroup = selectedGroup
     }
@@ -24,8 +26,8 @@ class GroupViewModel: ObservableObject {
     func fetchGroup() {
         print("Initializing edit group: \(selectedGroup?.groupTitle ?? "No Group Selected")")
         guard let selectedGroup else { return }
-        newGroupTitle = selectedGroup.groupTitle
-        newGroupSymbol = selectedGroup.groupSymbol
+        self.newGroupTitle = selectedGroup.groupTitle
+        self.newGroupSymbol = selectedGroup.groupSymbol
     }
     
     /// A function that resets all temporary variables back to defaull

@@ -70,7 +70,7 @@ struct GroupListView: View {
                     }
                 }
                 .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
-                    GroupFormView()
+                    GroupFormView(viewModel: viewModel)
                         .presentationDetents([.fraction(0.45)])
                 }
                 .alert(isPresented: $isPresentingDeleteDialog) {

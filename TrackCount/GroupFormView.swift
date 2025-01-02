@@ -11,16 +11,11 @@ import SwiftData
 struct GroupFormView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) var dismiss
-    @Query private var savedGroups: [DMCardGroup]
-    @StateObject private var viewModel: GroupViewModel
+    @StateObject var viewModel: GroupViewModel
     
     // Set variable defaults
     @State private var isPickerPresented: Bool = false
     let characterLimit = 32
-    
-    init() {
-        _viewModel = StateObject(wrappedValue: GroupViewModel())
-    }
     
     var body: some View {
         NavigationStack {
@@ -108,6 +103,9 @@ struct GroupFormView: View {
 }
 
 #Preview {
-    GroupFormView()
+    // Sample CardViewModel to pass into the preview
+    let testViewModel = GroupViewModel()
+    
+    GroupFormView(viewModel: testViewModel)
         .modelContainer(for: DMCardGroup.self)
 }
