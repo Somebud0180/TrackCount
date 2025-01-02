@@ -148,7 +148,7 @@ struct TrackView: View {
                     .frame(height: 30)
             }
             .buttonStyle(.borderedProminent)
-            .foregroundStyle(card.primaryColor.color)
+            .tint(card.primaryColor.color)
             
             Spacer()
         }
@@ -178,8 +178,7 @@ struct TrackView: View {
             .padding(5)
         }
         .buttonStyle(.borderedProminent)
-        // Change foreground style based on state
-        .foregroundStyle(card.state![id] ? card.primaryColor.color : .secondary)
+        .tint(card.state![id] ? card.primaryColor.color : .secondary)
     }
 }
 
@@ -188,7 +187,7 @@ struct TrackView: View {
     // Contains 1 counter card and 1 toggle card
     let exampleCards: [DMStoredCard] = [
         DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, primaryColor: .blue, secondaryColor: .white),
-        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", buttonText: [""], count: 1, state: [true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow)
+        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", buttonText: ["", "", "", "", ""], count: 5, state: [true, true, true, true, true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow)
     ]
     
     // An example group
