@@ -8,9 +8,11 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 class CardViewModel: ObservableObject {
     // Set variable defaults
+    @Environment(\.self) var environment
     @Published var selectedGroup: DMCardGroup
     @Published var selectedCard: DMStoredCard? = nil
     @Published var newIndex: Int = 0
@@ -20,7 +22,14 @@ class CardViewModel: ObservableObject {
     @Published var newCardCount: Int = 1
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
     @Published var newCardSymbol: String = ""
+    @Published var newCardPrimary: Color = .blue
+    @Published var newCardSecondary: Color = .white
     @Published var validationError: [String] = []
+    
+    enum resetFor {
+        case viewModel
+        case dismiss
+    }
     
     // Button limit
     let minButtonLimit = 1
@@ -36,8 +45,9 @@ class CardViewModel: ObservableObject {
     }
     
     /// A function that grabs the saved data from a selected card.
-    /// Used to populate the temporary variables within CardViewModel.
-    func initEditCard(with context: ModelContext) {
+    /// Used to populate the temporary variables within CardViewModel with the variables from the selected card.
+    func fetchCard() {
+        print("Initializing edit card: \(selectedCard?.title ?? "No card selected")")
         guard let card = selectedCard else { return }
         self.newCardType = card.type
         self.newCardTitle = card.title
@@ -45,12 +55,14 @@ class CardViewModel: ObservableObject {
         self.newButtonText = card.buttonText ?? Array(repeating: "", count: 1)
         self.newCardState = card.state ?? Array(repeating: true, count: 1)
         self.newCardSymbol = card.symbol ?? ""
+        self.newCardPrimary = card.primaryColor.color
+        self.newCardSecondary = card.secondaryColor.color
     }
     
     /// A function that adjusts variables related to buttons.
     /// Used to adjust the arrays 'newButtonText' and 'newCardState' to match the newCardCount.
     /// Also clamps newCardCount to stay within limits.
-    func initButton(with context: ModelContext) {
+    func initButton() {
         // Clamp newCardCount within valid limits
         newCardCount = min(max(newCardCount, minButtonLimit), maxButtonLimit)
         
@@ -74,6 +86,9 @@ class CardViewModel: ObservableObject {
     /// Also checks the card contents and throws errors, if any, to validationError.
     /// Also provides the card's index and uuid on save.
     func saveCard(with context: ModelContext) {
+        // Validate button count and update before saving
+        initButton()
+        
         // Validate the form before saving
         validateForm()
         guard validationError.isEmpty else {
@@ -92,9 +107,11 @@ class CardViewModel: ObservableObject {
             card.title = newCardTitle
             card.type = newCardType
             card.count = newCardCount
-            card.buttonText = newButtonText
-            card.state = newCardState
+            card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count)))
+            card.state = Array(newCardState.prefix(min(newCardCount, newCardState.count)))
             card.symbol = newCardSymbol
+            card.primaryColor = CodableColor(color: newCardPrimary)
+            card.secondaryColor = CodableColor(color: newCardSecondary)
         } else {
             // Create a new card
             let newCard = DMStoredCard(
@@ -102,10 +119,12 @@ class CardViewModel: ObservableObject {
                 index: newIndex,
                 type: newCardType,
                 title: newCardTitle,
-                buttonText: newCardType == .toggle ? newButtonText : nil,
+                buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
                 count: newCardType == .counter ? newCardCount : 0,
-                state: newCardType == .toggle ? newCardState : nil,
-                symbol: newCardType == .toggle ? newCardSymbol : nil
+                state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } : nil,
+                symbol: newCardType == .toggle ? newCardSymbol : nil,
+                primaryColor: newCardPrimary,
+                secondaryColor: newCardSecondary
             )
             selectedGroup.cards.append(newCard) // Save the new card to the selected group
         }
@@ -117,9 +136,25 @@ class CardViewModel: ObservableObject {
             validationError.append("Failed to save the card: \(error.localizedDescription)")
         }
         
-        resetFields()
+        resetFields(.viewModel)
     }
 
+    /// A function that sets the temporary fields to defaults.
+    /// Used to reset the contents after saving a card to free the fields for a new card.
+    func resetFields(_ behaviour: resetFor? = .dismiss) {
+        if behaviour == .dismiss {
+            selectedCard = nil
+        }
+        newCardType = .counter
+        newCardTitle = ""
+        newButtonText = Array(repeating: "", count: 1)
+        newCardCount = 1
+        newCardState = Array(repeating: true, count: 1)
+        newCardSymbol = ""
+        newCardPrimary = .blue
+        newCardSecondary = .white
+    }
+    
     /// A function that checks the card's contents for any issues.
     /// Prevents empty titles for all card types and empty symbols for toggle cards.
     /// Appends errors to validationError.
@@ -135,17 +170,5 @@ class CardViewModel: ObservableObject {
                 validationError.append("Symbol cannot be empty for toggle type.")
             }
         }
-    }
-    
-    /// A functiomn that sets the temporary fields to defaults.
-    /// Used to reset the contents after saving a card to free the fields for a new card.
-    private func resetFields() {
-        selectedCard = nil
-        newCardType = .counter
-        newCardTitle = ""
-        newButtonText = Array(repeating: "", count: 1)
-        newCardCount = 1
-        newCardState = Array(repeating: true, count: 1)
-        newCardSymbol = ""
     }
 }

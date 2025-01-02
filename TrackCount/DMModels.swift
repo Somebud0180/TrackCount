@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 /// A data model entity representing a group of cards in the app's database.
 /// Includes metadata like group title, symbol, and the associated cards.
@@ -28,6 +29,7 @@ final class DMCardGroup: Identifiable {
     /// The list of cards associated with the group.
     @Relationship(deleteRule: .cascade) var cards: [DMStoredCard] = []
     
+    /// Initializes a new instance of DMCardGroup.
     init(uuid: UUID, index: Int, groupTitle: String, groupSymbol: String, cards: [DMStoredCard] = []) {
         self.uuid = uuid
         self.index = index
@@ -87,8 +89,14 @@ final class DMStoredCard: Identifiable {
     /// The symbol of the button (toggle).
     var symbol: String?
     
-    // Initializes a new instance of GridStore.
-    init(uuid: UUID, index: Int, type: Types, title: String, buttonText: [String]? = nil, count: Int, state: [Bool]? = nil, symbol: String? = nil) {
+    /// The color used for buttons
+    var primaryColor: CodableColor
+    
+    /// The color used for the button contents (text and symbols)
+    var secondaryColor: CodableColor
+    
+    /// Initializes a new instance of DMStoredCard.
+    init(uuid: UUID, index: Int, type: Types, title: String, buttonText: [String]? = nil, count: Int, state: [Bool]? = nil, symbol: String? = nil, primaryColor: Color, secondaryColor: Color) {
         self.uuid = uuid
         self.index = index
         self.type = type
@@ -97,6 +105,8 @@ final class DMStoredCard: Identifiable {
         self.count = count
         self.state = state
         self.symbol = symbol
+        self.primaryColor = CodableColor(color: primaryColor)
+        self.secondaryColor = CodableColor(color: secondaryColor)
         
         validateStoredCard() // Perform card validation after initialization
     }

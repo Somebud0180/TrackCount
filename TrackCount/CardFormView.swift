@@ -11,17 +11,9 @@ import SwiftUI
 struct CardFormView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) var dismiss
-    @StateObject private var viewModel: CardViewModel
+    @StateObject var viewModel: CardViewModel
     
     @State private var isSymbolPickerPresented: Bool = false
-    
-    /// Initializes the selectedGroup and selectedCard variable for editing
-    /// - Parameters:
-    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card
-    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over
-    init(selectedGroup: DMCardGroup, selectedCard: DMStoredCard? = nil) {
-        _viewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup, selectedCard: selectedCard))
-    }
     
     // Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046
     static let formatter = NumberFormatter()
@@ -63,6 +55,13 @@ struct CardFormView: View {
                     .customRoundedStyle()
                     .listRowSeparator(.hidden)
                 
+                
+                ColorPicker("Button Color:", selection: $viewModel.newCardPrimary, supportsOpacity: false)
+                    .listRowSeparator(.hidden)
+                
+                ColorPicker("Button Content Color:", selection: $viewModel.newCardSecondary, supportsOpacity: false)
+                    .listRowSeparator(.hidden)
+                
                 // Check type for toggle to add specific editing fields
                 if viewModel.newCardType == .toggle {
                     // A stepper with an editable text field
@@ -74,7 +73,7 @@ struct CardFormView: View {
                         Stepper("", value: $viewModel.newCardCount, in: viewModel.minButtonLimit...viewModel.maxButtonLimit)
                     }
                     .onChange(of: viewModel.newCardCount) {
-                        viewModel.initButton(with: context) // Create new text field for each toggle
+                        viewModel.initButton() // Create new text field for each toggle
                     }
                     .listRowSeparator(.hidden)
                     
@@ -100,17 +99,16 @@ struct CardFormView: View {
                     }
                     
                     ForEach(0..<viewModel.newButtonText.count, id: \.self) { index in
-                        TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
-                            .customRoundedStyle()
-                            .listRowSeparator(.hidden)
+                        if index < viewModel.newButtonText.count {
+                            TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
+                                .customRoundedStyle()
+                                .listRowSeparator(.hidden)
+                        }
                     }
                 }
                 
                 Button(action: {
-                    viewModel.saveCard(with: context)
-                    if viewModel.selectedCard != nil {
-                        dismiss()
-                    }
+                    saveCard()
                 }) {
                     Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
                         .frame(maxWidth: .infinity)
@@ -132,22 +130,33 @@ struct CardFormView: View {
             .navigationBarTitle(viewModel.selectedCard == nil ? "Add Card" : "Edit Card", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Dismiss") {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        viewModel.saveCard(with: context)
-                        if viewModel.validationError.isEmpty {
-                            dismiss()
-                        }
+                        saveCard()
                     }
                 }
             }
         }
-        .onAppear {
-            viewModel.initEditCard(with: context)
+    }
+    
+    /// A  function that saves the current card and dismisses the screen.
+    /// Contains some safeguards to avoid crashes.
+    private func saveCard() {
+        // Resign the first responder to ensure that any active text fields commit their changes.
+        // This prevents a crash that occurs when saving while a text field is still being edited.
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        
+        // Defer the save action to the next run loop to ensure all UI updates are completed.
+        // This helps in making sure that the text fields have updated their bound variables before saving.
+        DispatchQueue.main.async {
+            viewModel.saveCard(with: context)
+            if viewModel.validationError.isEmpty {
+                dismiss()
+            }
         }
     }
 }
@@ -158,6 +167,9 @@ struct CardFormView: View {
         DMCardGroup(uuid: UUID(), index: 0, groupTitle: "Card 1", groupSymbol: "star.fill")
     }
     
-    CardFormView(selectedGroup: sampleGroup)
+    // Sample CardViewModel to pass into the preview
+    let testViewModel = CardViewModel(selectedGroup: sampleGroup)
+    
+    CardFormView(viewModel: testViewModel)
         .modelContainer(for: DMCardGroup.self)
 }

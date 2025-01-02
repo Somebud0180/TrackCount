@@ -11,31 +11,26 @@ import SwiftData
 struct GroupFormView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) var dismiss
+    @StateObject var viewModel: GroupViewModel
     
     // Set variable defaults
     @State private var isPickerPresented: Bool = false
-    @Query private var savedGroups: [DMCardGroup]
-    @State private var validationError: [String] = []
-    @State private var newGroupIndex: Int = 0
-    @State private var newGroupSymbol: String = ""
-    @State private var newGroupTitle: String = ""
-    
     let characterLimit = 32
     
     var body: some View {
         NavigationStack {
             List {
                 ZStack(alignment: .bottomTrailing) {
-                    TextField("Set group title", text: $newGroupTitle)
+                    TextField("Set group title", text: $viewModel.newGroupTitle)
                         .customRoundedStyle()
                         .padding(EdgeInsets(top: 3, leading: 0, bottom: 16, trailing: 0))
-                        .onChange(of: newGroupTitle) {
-                            if newGroupTitle.count > characterLimit {
-                                newGroupTitle = String(newGroupTitle.prefix(characterLimit))
+                        .onChange(of: viewModel.newGroupTitle) {
+                            if viewModel.newGroupTitle.count > characterLimit {
+                                viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
                             }
                         }
                     
-                    Text("\(newGroupTitle.count)/32")
+                    Text("\(viewModel.newGroupTitle.count)/32")
                         .padding([.trailing], 3)
                         .foregroundColor(.gray)
                         .font(.footnote)
@@ -49,7 +44,7 @@ struct GroupFormView: View {
                     HStack {
                         Text("Group Symbol:")
                         Spacer()
-                        Image(systemName: newGroupSymbol)
+                        Image(systemName: viewModel.newGroupSymbol)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 24, height: 24)
@@ -59,11 +54,17 @@ struct GroupFormView: View {
                 .buttonStyle(PlainButtonStyle())
                 .listRowSeparator(.hidden)
                 .sheet(isPresented: $isPickerPresented) {
-                    SymbolPicker(behaviour: .tapWithUnselect, selectedSymbol: $newGroupSymbol)
+                    SymbolPicker(behaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
                         .presentationDetents([.fraction(0.99)])
                 }
+                .listRowSeparator(.hidden)
                 
-                Button(action : {addGroup()}) {
+                Button(action : {
+                    viewModel.addGroup(with: context)
+                    if viewModel.validationError.isEmpty {
+                        dismiss()
+                    }
+                }) {
                     Text("Add Group")
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -71,9 +72,10 @@ struct GroupFormView: View {
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
+                .listRowSeparator(.hidden)
                 
-                if !validationError.isEmpty {
-                    Text(validationError.joined(separator: ", "))
+                if !viewModel.validationError.isEmpty {
+                    Text(viewModel.validationError.joined(separator: ", "))
                         .listRowSeparator(.hidden)
                         .foregroundColor(.red)
                         .padding(.horizontal)
@@ -89,8 +91,8 @@ struct GroupFormView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        addGroup()
-                        if validationError.isEmpty {
+                        viewModel.addGroup(with: context)
+                        if viewModel.validationError.isEmpty {
                             dismiss()
                         }
                     }
@@ -98,57 +100,12 @@ struct GroupFormView: View {
             }
         }
     }
-    
-    /// A function that stores the temporary variables to a group and saves it to the data model entity.
-    /// Used to save the set variables into the group.
-    /// Also checks the card contents and throws errors, if any, to validationError.
-    /// Also provides the group's index and uuid on save.
-    private func addGroup() {
-        // Validate entry
-        validateGroup()
-        
-        guard validationError.isEmpty else {
-            return
-        }
-        
-        if savedGroups.count == 0 {
-            newGroupIndex = 0
-        } else {
-            newGroupIndex = savedGroups.count + 1
-        }
-        
-        let newGroup = DMCardGroup(uuid: UUID(),
-                                   index: newGroupIndex,
-                                   groupTitle: newGroupTitle,
-                                   groupSymbol: newGroupSymbol)
-        
-        context.insert(newGroup)
-        
-        // Save the context
-        do {
-            try context.save()
-        } catch {
-            validationError.append("Failed to save the group: \(error.localizedDescription)")
-        }
-        
-        newGroupTitle = ""
-    }
-    
-    /// A function that checks the group's contents for any issues.
-    /// Ensures atleast either one of the two variables (newGroupTitle and newGroupSymbol) is filled.
-    /// Appends errors to validationError.
-    private func validateGroup() {
-        validationError.removeAll()
-        let titleIsEmpty = newGroupTitle.isEmpty
-        let symbolIsEmpty = newGroupSymbol.isEmpty
-        
-        if titleIsEmpty && symbolIsEmpty {
-            validationError.append("Group title cannot be empty without a symbol or vice versa")
-        }
-    }
 }
 
 #Preview {
-    GroupFormView()
+    // Sample CardViewModel to pass into the preview
+    let testViewModel = GroupViewModel()
+    
+    GroupFormView(viewModel: testViewModel)
         .modelContainer(for: DMCardGroup.self)
 }

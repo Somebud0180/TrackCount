@@ -9,17 +9,18 @@ import SwiftUI
 
 /// A card containing a rounded rectangle with a gradient background, contains the group symbol and title
 struct GroupCardView: View {
-    @Environment(\.modelContext) private var context
-    
-    let group: DMCardGroup
-    let backgroundGradient: RadialGradient
-    let primaryColors: Color
-    @Binding var selectedGroup: DMCardGroup?
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var animateGradient: Bool
-    @Binding var isShowingDialog: Bool
+    let group: DMCardGroup
+    var gradientColors: [Color] {
+        colorScheme == .light ? [.blue, .white] : [.white, .black]
+    }
     
     var body: some View {
-        
+        /// Variable that stores black in light mode and white in dark mode
+        /// Used for items with non-white primary light mode colors (i.e. buttons)
+        let primaryColor: Color = colorScheme == .light ? Color.black : Color.white
+        let backgroundGradient: RadialGradient = RadialGradient(colors: gradientColors, center: .center, startRadius: animateGradient ? 15 : 25, endRadius: animateGradient ? 100 : 90)
         ZStack {
             // Background Gradient
             RoundedRectangle(cornerRadius: 12)
@@ -40,13 +41,13 @@ struct GroupCardView: View {
                 if !group.groupSymbol.isEmpty {
                     Image(systemName: group.groupSymbol)
                         .font(.system(size: 32))
-                        .foregroundStyle(primaryColors.opacity(0.8))
+                        .foregroundStyle(primaryColor.opacity(0.8))
                 }
                 
                 if !group.groupTitle.isEmpty {
                     Text(group.groupTitle)
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(primaryColors.opacity(0.8))
+                        .foregroundStyle(primaryColor.opacity(0.8))
                         .padding(.horizontal)
                 }
             }
