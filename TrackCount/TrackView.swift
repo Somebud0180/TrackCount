@@ -38,7 +38,13 @@ struct TrackView: View {
                 .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle(selectedGroup.groupTitle)
+            .navigationTitleViewBuilder {
+                if selectedGroup.groupTitle.isEmpty {
+                    Image(systemName: selectedGroup.groupSymbol)
+                } else {
+                    Text(selectedGroup.groupTitle)
+                }
+            }
         }
     }
     
