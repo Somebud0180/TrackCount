@@ -110,7 +110,7 @@ struct CardFormView: View {
                 
                 Button(action: {
                     viewModel.saveCard(with: context)
-                    if viewModel.selectedCard != nil {
+                    if viewModel.validationError.isEmpty && viewModel.selectedCard != nil {
                         dismiss()
                     }
                 }) {
@@ -147,9 +147,6 @@ struct CardFormView: View {
                     }
                 }
             }
-        }
-        .onAppear {
-            viewModel.initEditCard()
         }
     }
 }

@@ -26,6 +26,11 @@ class CardViewModel: ObservableObject {
     @Published var newCardSecondary: Color = .white
     @Published var validationError: [String] = []
     
+    enum resetFor {
+        case viewModel
+        case dismiss
+    }
+    
     // Button limit
     let minButtonLimit = 1
     let maxButtonLimit = 4096
@@ -128,9 +133,25 @@ class CardViewModel: ObservableObject {
             validationError.append("Failed to save the card: \(error.localizedDescription)")
         }
         
-        resetFields()
+        resetFields(.viewModel)
     }
 
+    /// A function that sets the temporary fields to defaults.
+    /// Used to reset the contents after saving a card to free the fields for a new card.
+    func resetFields(_ behaviour: resetFor? = .dismiss) {
+        if behaviour == .dismiss {
+            selectedCard = nil
+        }
+        newCardType = .counter
+        newCardTitle = ""
+        newButtonText = Array(repeating: "", count: 1)
+        newCardCount = 1
+        newCardState = Array(repeating: true, count: 1)
+        newCardSymbol = ""
+        newCardPrimary = .blue
+        newCardSecondary = .white
+    }
+    
     /// A function that checks the card's contents for any issues.
     /// Prevents empty titles for all card types and empty symbols for toggle cards.
     /// Appends errors to validationError.
@@ -146,19 +167,5 @@ class CardViewModel: ObservableObject {
                 validationError.append("Symbol cannot be empty for toggle type.")
             }
         }
-    }
-    
-    /// A function that sets the temporary fields to defaults.
-    /// Used to reset the contents after saving a card to free the fields for a new card.
-    private func resetFields() {
-        selectedCard = nil
-        newCardType = .counter
-        newCardTitle = ""
-        newButtonText = Array(repeating: "", count: 1)
-        newCardCount = 1
-        newCardState = Array(repeating: true, count: 1)
-        newCardSymbol = ""
-        newCardPrimary = .blue
-        newCardSecondary = .white
     }
 }

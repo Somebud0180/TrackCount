@@ -80,7 +80,9 @@ struct CardListView: View {
                 Text(selectedGroup.groupTitle)
             }
         }
-        .sheet(isPresented: $isPresentingCardFormView) {
+        .sheet(isPresented: $isPresentingCardFormView, onDismiss: {
+            viewModel.resetFields()
+        }) {
             CardFormView(viewModel: viewModel)
                 .presentationDetents([.medium, .fraction(0.99)])
         }
