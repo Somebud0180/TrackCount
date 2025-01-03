@@ -25,6 +25,7 @@ struct GroupFormView: View {
                         .customRoundedStyle()
                         .padding(EdgeInsets(top: 3, leading: 0, bottom: 16, trailing: 0))
                         .onChange(of: viewModel.newGroupTitle) {
+                            viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
                             if viewModel.newGroupTitle.count > characterLimit {
                                 viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
                             }

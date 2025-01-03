@@ -140,12 +140,59 @@ struct GroupListView: View {
                 isPresentingGroupForm.toggle()
             }
             Button("Share Group", systemImage: "square.and.arrow.up") {
-                print("Sharing")
+                shareGroup(group)
             }
             Button("Delete Group", systemImage: "trash", role: .destructive) {
                 selectedGroup = group
                 isPresentingDeleteDialog = true
             }
+        }
+    }
+    
+    private func shareGroup(_ group: DMCardGroup) {
+        do {
+            // Sanitize filename
+            let sanitizedTitle = group.groupTitle
+                .components(separatedBy: .init(charactersIn: "/\\?%*|\"<>"))
+                .joined()
+                .trimmingCharacters(in: .whitespaces)
+            
+            let fileName = sanitizedTitle.isEmpty ? "shared_group.trackcount" : "\(sanitizedTitle).trackcount"
+            
+            // Create temporary URL with unique identifier
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathComponent(fileName)
+            
+            // Ensure directory exists
+            try FileManager.default.createDirectory(
+                at: tempURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            
+            // Write data
+            let shareData = try group.encodeForSharing()
+            try shareData.write(to: tempURL, options: .atomic)
+            
+            let activityVC = UIActivityViewController(
+                activityItems: [tempURL],
+                applicationActivities: nil
+            )
+            
+            // Cleanup after sharing
+            activityVC.completionWithItemsHandler = { _, _, _, _ in
+                try? FileManager.default.removeItem(at: tempURL)
+            }
+            
+            // Present sharing UI
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first,
+               let rootVC = window.rootViewController {
+                activityVC.popoverPresentationController?.sourceView = rootVC.view
+                rootVC.present(activityVC, animated: true)
+            }
+        } catch {
+            print("Failed to share group: \(error)")
         }
     }
     

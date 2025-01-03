@@ -42,7 +42,9 @@ class GroupViewModel: ObservableObject {
     /// Appends errors to validationError.
     func validateGroup() {
         validationError.removeAll()
-        let titleIsEmpty = newGroupTitle.isEmpty
+        let trimmedTitle = newGroupTitle.trimmingCharacters(in: .whitespaces)
+        
+        let titleIsEmpty = trimmedTitle.isEmpty
         let symbolIsEmpty = newGroupSymbol.isEmpty
         
         if titleIsEmpty && symbolIsEmpty {
