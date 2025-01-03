@@ -51,6 +51,74 @@ final class DMCardGroup: Identifiable {
             fatalError("Either the title or symbol must be provided")
         }
     }
+    
+    /// Packages the group and its cards into a shareable format
+    /// - Returns: Group encoded in JSON
+    func encodeForSharing() throws -> Data {
+        let shareData = ShareableGroup(
+            groupTitle: self.groupTitle,
+            groupSymbol: self.groupSymbol,
+            cards: self.cards.map { card in
+                ShareableCard(
+                    type: card.type,
+                    title: card.title,
+                    buttonText: card.buttonText,
+                    count: card.count,
+                    symbol: card.symbol,
+                    primaryColor: card.primaryColor,
+                    secondaryColor: card.secondaryColor
+                )
+            }
+        )
+        return try JSONEncoder().encode(shareData)
+    }
+    
+    /// Unpacks the shareable format into the app's standard group and cards
+    /// - Parameters:
+    ///   - data: The data to be decoded/unpacked
+    ///   - context: The context where the data is saved
+    /// - Returns: A standard group and card
+    static func decodeFromShared(_ data: Data, context: ModelContext) throws -> DMCardGroup {
+        let shareData = try JSONDecoder().decode(ShareableGroup.self, from: data)
+        let group = DMCardGroup(
+            uuid: UUID(),
+            index: 0, // Will be updated when added to context
+            groupTitle: shareData.groupTitle,
+            groupSymbol: shareData.groupSymbol
+        )
+        
+        // Create cards from shared data
+        group.cards = try shareData.cards.enumerated().map { index, cardData in
+            if cardData.type == .counter {
+                return DMStoredCard(
+                    uuid: UUID(),
+                    index: index,
+                    type: cardData.type,
+                    title: cardData.title,
+                    count: cardData.count,
+                    primaryColor: cardData.primaryColor.color,
+                    secondaryColor: cardData.secondaryColor.color
+                )
+            } else if cardData.type == .toggle {
+                return DMStoredCard(
+                    uuid: UUID(),
+                    index: index,
+                    type: cardData.type,
+                    title: cardData.title,
+                    buttonText: cardData.buttonText,
+                    count: cardData.count,
+                    state: Array(repeating: true, count: cardData.count),
+                    symbol: cardData.symbol,
+                    primaryColor: cardData.primaryColor.color,
+                    secondaryColor: cardData.secondaryColor.color
+                )
+            } else {
+                throw NSError(domain: "Invalid card type", code: 0, userInfo: nil)
+            }
+        }
+        
+        return group
+    }
 }
 
 /// A data model entity representing the cards in the app's database.
@@ -130,4 +198,21 @@ final class DMStoredCard: Identifiable {
             }
         }
     }
+}
+
+// Codable structures for sharing
+struct ShareableGroup: Codable {
+    let groupTitle: String
+    let groupSymbol: String
+    let cards: [ShareableCard]
+}
+
+struct ShareableCard: Codable {
+    let type: DMStoredCard.Types
+    let title: String
+    let buttonText: [String]?
+    let count: Int
+    let symbol: String?
+    let primaryColor: CodableColor
+    let secondaryColor: CodableColor
 }

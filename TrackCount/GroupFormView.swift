@@ -25,6 +25,7 @@ struct GroupFormView: View {
                         .customRoundedStyle()
                         .padding(EdgeInsets(top: 3, leading: 0, bottom: 16, trailing: 0))
                         .onChange(of: viewModel.newGroupTitle) {
+                            viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
                             if viewModel.newGroupTitle.count > characterLimit {
                                 viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
                             }
@@ -65,7 +66,7 @@ struct GroupFormView: View {
                         dismiss()
                     }
                 }) {
-                    Text("Add Group")
+                    Text(viewModel.selectedGroup == nil ? "Add Group" : "Save Group")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
@@ -82,7 +83,7 @@ struct GroupFormView: View {
                 }
             }
             .listStyle(InsetListStyle())
-            .navigationBarTitle("Create Group", displayMode: .inline)
+            .navigationBarTitle(viewModel.selectedGroup == nil ? "Create Group" : "Edit Group", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Dismiss") {
