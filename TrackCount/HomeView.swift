@@ -49,7 +49,10 @@ struct HomeView: View {
                                     .cornerRadius(10)
                             }
                             
-                            NavigationLink(destination: GroupListView(viewBehaviour: .edit)) {
+                            NavigationLink(destination:
+                                            GroupListView(viewBehaviour: .edit)
+                                                .environmentObject(ImportManager())
+                            ) {
                                 Text("Edit It")
                                     .font(.largeTitle)
                                     .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
