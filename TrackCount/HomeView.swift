@@ -12,7 +12,7 @@ struct HomeView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) private var colorScheme
     @Query private var savedGroups: [DMCardGroup]
-    @State var animateGradient: Bool = false
+    @State private var animateGradient: Bool = false
 
     /// Dynamically computes gradient colors based on colorScheme.
     private var gradientColors: [Color] {
@@ -28,6 +28,19 @@ struct HomeView: View {
         NavigationStack {
             GeometryReader { proxy in
                 ZStack{
+                    Rectangle()
+                        .foregroundStyle(backgroundGradient)
+                        .edgesIgnoringSafeArea(.all)
+                        .hueRotation(.degrees(animateGradient ? 45 : 0))
+                        .onAppear {
+                            withAnimation(
+                                .easeInOut(duration: 3)
+                                .repeatForever(autoreverses: true)
+                            ){
+                                animateGradient.toggle()
+                            }
+                        }
+
                     if colorScheme == .light {
                         // A thin material to soften the gradient background
                         Rectangle()
@@ -63,7 +76,7 @@ struct HomeView: View {
                             
                             NavigationLink(destination:
                                             GroupListView(viewBehaviour: .edit)
-                                                .environmentObject(ImportManager())
+                                .environmentObject(ImportManager())
                             ){
                                 Text("Edit It")
                                     .font(.largeTitle)
@@ -80,19 +93,6 @@ struct HomeView: View {
                     }
                 }
                 .frame(maxWidth: .infinity,maxHeight: .infinity)
-                .background {
-                    backgroundGradient
-                    .edgesIgnoringSafeArea(.all)
-                    .hueRotation(.degrees(animateGradient ? 45 : 0))
-                    .onAppear {
-                        withAnimation(
-                            .easeInOut(duration: 3)
-                            .repeatForever(autoreverses: true)
-                        ){
-                            animateGradient.toggle()
-                        }
-                    }
-                }
             }
         }
     }

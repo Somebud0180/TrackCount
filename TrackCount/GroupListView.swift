@@ -18,8 +18,8 @@ struct GroupListView: View {
     }
     
     @EnvironmentObject private var importManager: ImportManager
-    @Environment(\.modelContext) private var context
     @StateObject private var viewModel = GroupViewModel()
+    @Environment(\.modelContext) private var context
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
     @State private var isShowingFilePicker = false
@@ -37,6 +37,7 @@ struct GroupListView: View {
     }
     
     var body: some View {
+        
         NavigationStack {
             ScrollView {
                 // Display validation error if any
@@ -49,10 +50,8 @@ struct GroupListView: View {
                 
                 LazyVGrid(columns: columnLayout, spacing: 16) {
                     ForEach(savedGroups) { group in
-                        let groupCardView = GroupCardView(group: group)
-                        
                         NavigationLink(destination: destinationView(for: group)) {
-                            groupCardView
+                            GroupCardView(group: group)
                                 .frame(height: 200)
                                 .contextMenu {
                                     contextMenu(for: group)
