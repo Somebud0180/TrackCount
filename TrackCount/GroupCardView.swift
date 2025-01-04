@@ -65,6 +65,7 @@ struct GroupCardView: View {
                 if !group.groupTitle.isEmpty {
                     Text(group.groupTitle)
                         .font(.system(.title3, weight: .bold))
+                        .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
                         .lineLimit(3)
                         .foregroundStyle(primaryColor.opacity(0.8))
