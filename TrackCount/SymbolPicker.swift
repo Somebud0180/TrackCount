@@ -121,7 +121,7 @@ struct SymbolPicker: View {
     /// A function that handles symbol selection.
     /// The viewBehaviour changes based on the passed over argument.
     private func handleSymbolSelection(_ symbol: String) {
-        switch viewBehaviour {
+        switch self.viewBehaviour {
         case .tapToSelect:
             // Select the symbol and dismiss the picker
             selectedSymbol = symbol

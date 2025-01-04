@@ -94,7 +94,7 @@ struct CardFormView: View {
                     .listRowSeparator(.hidden)
                     .buttonStyle(PlainButtonStyle())
                     .sheet(isPresented: $isSymbolPickerPresented) {
-                        SymbolPicker(behaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
+                        SymbolPicker(viewBehaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
                             .presentationDetents([.fraction(0.99)])
                     }
                     
