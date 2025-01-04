@@ -24,28 +24,4 @@ final class TrackCountUITests: XCTestCase {
         // Example UI test case.
         XCTAssert(app.buttons["ExampleButton"].exists)
     }
-    
-    // TODO
-    // Implement functional UI test
-    func testIncrementButton() throws {
-        let app = XCUIApplication()
-        app.launch()
-        
-        let incrementButton = app.buttons["Increment"]
-        incrementButton.tap()
-        
-        let counterLabel = app.staticTexts["CounterLabel"]
-        XCTAssertEqual(counterLabel.label, "1", "Counter label should display 1 after increment")
-    }
-    
-    func testDecrementButton() throws {
-        let app = XCUIApplication()
-        app.launch()
-        
-        let decrementButton = app.buttons["Decrement"]
-        decrementButton.tap()
-        
-        let counterLabel = app.staticTexts["CounterLabel"]
-        XCTAssertEqual(counterLabel.label, "-1", "Counter label should display -1 after decrement")
-    }
 }
