@@ -14,16 +14,16 @@ import SwiftUI
 @Model
 final class DMCardGroup: Identifiable {
     
-    /// A unique identifier for the group
+    /// A unique identifier for the group.
     @Attribute(.unique) var uuid: UUID
     
-    /// The order the group appears
+    /// The order the group appears.
     var index: Int
     
-    /// The title of the group
+    /// The title of the group.
     var groupTitle: String
     
-    /// The symbol of the group
+    /// The symbol of the group.
     var groupSymbol: String
     
     /// The list of cards associated with the group.
@@ -52,8 +52,8 @@ final class DMCardGroup: Identifiable {
         }
     }
     
-    /// Packages the group and its cards into a shareable format
-    /// - Returns: Group encoded in JSON
+    /// Packages the group and its cards into a shareable format.
+    /// - Returns: Group encoded in JSON.
     func encodeForSharing() throws -> Data {
         let shareData = ShareableGroup(
             groupTitle: self.groupTitle,
@@ -73,11 +73,11 @@ final class DMCardGroup: Identifiable {
         return try JSONEncoder().encode(shareData)
     }
     
-    /// Unpacks the shareable format into the app's standard group and cards
+    /// Unpacks the shareable format into the app's standard group and cards.
     /// - Parameters:
-    ///   - data: The data to be decoded/unpacked
-    ///   - context: The context where the data is saved
-    /// - Returns: A standard group and card
+    ///   - data: The data to be decoded/unpacked.
+    ///   - context: The context where the data is saved.
+    /// - Returns: A standard group and card.
     static func decodeFromShared(_ data: Data, context: ModelContext) throws -> DMCardGroup {
         let shareData = try JSONDecoder().decode(ShareableGroup.self, from: data)
         let group = DMCardGroup(
@@ -157,10 +157,10 @@ final class DMStoredCard: Identifiable {
     /// The symbol of the button (toggle).
     var symbol: String?
     
-    /// The color used for buttons
+    /// The color used for buttons.
     var primaryColor: CodableColor
     
-    /// The color used for the button contents (text and symbols)
+    /// The color used for the button contents (text and symbols).
     var secondaryColor: CodableColor
     
     /// Initializes a new instance of DMStoredCard.
@@ -200,14 +200,14 @@ final class DMStoredCard: Identifiable {
     }
 }
 
-/// Codable group structure for sharing
+/// Codable group structure for sharing.
 struct ShareableGroup: Codable {
     let groupTitle: String
     let groupSymbol: String
     let cards: [ShareableCard]
 }
 
-/// Codable card structure for sharing
+/// Codable card structure for sharing.
 struct ShareableCard: Codable {
     let type: DMStoredCard.Types
     let title: String

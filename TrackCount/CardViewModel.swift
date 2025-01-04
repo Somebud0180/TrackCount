@@ -35,10 +35,10 @@ class CardViewModel: ObservableObject {
     let minButtonLimit = 1
     let maxButtonLimit = 4096
     
-    /// Initializes the selectedGroup and selectedCard variable for editing
+    /// Initializes the selectedGroup and selectedCard variable for editing.
     /// - Parameters:
-    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card
-    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over
+    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card.
+    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over.
     init(selectedGroup: DMCardGroup, selectedCard: DMStoredCard? = nil) {
         self.selectedGroup = selectedGroup
         self.selectedCard = selectedCard

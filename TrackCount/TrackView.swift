@@ -161,7 +161,7 @@ struct TrackView: View {
         .padding()
     }
     
-    /// Creates buttons with data from the inputted card and index
+    /// Creates buttons with data from the inputted card and index.
     private func toggleButton(_ card: DMStoredCard, id: Int) -> some View {
         Button(action: {
             card.state![id].toggle()

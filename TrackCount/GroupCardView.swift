@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// A card containing a rounded rectangle with a gradient background, contains the group symbol and title
+/// A card containing a rounded rectangle with a gradient background, contains the group symbol and title.
 struct GroupCardView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var animateGradient: Bool
@@ -17,8 +17,8 @@ struct GroupCardView: View {
     }
     
     var body: some View {
-        /// Variable that stores black in light mode and white in dark mode
-        /// Used for items with non-white primary light mode colors (i.e. buttons)
+        /// Variable that stores black in light mode and white in dark mode.
+        /// Used for items with non-white primary light mode colors (i.e. buttons).
         let primaryColor: Color = colorScheme == .light ? Color.black : Color.white
         let backgroundGradient: RadialGradient = RadialGradient(colors: gradientColors, center: .center, startRadius: animateGradient ? 15 : 25, endRadius: animateGradient ? 100 : 90)
         ZStack {

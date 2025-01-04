@@ -14,6 +14,7 @@ class ImportManager: ObservableObject {
     @Published var previewGroup: DMCardGroup?
     private var hasSecurityAccess = false
     
+    /// Handles the URL on import and initializes shared groups for import.
     func handleImport(_ url: URL) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
@@ -27,6 +28,7 @@ class ImportManager: ObservableObject {
         }
     }
     
+    /// Loads the preview of the shared group and shows the alert.
     private func loadPreview() {
         guard let url = currentFileURL else { return }
         do {
@@ -40,6 +42,7 @@ class ImportManager: ObservableObject {
         }
     }
     
+    /// Resets the import variables.
     func reset() {
         if hasSecurityAccess {
             currentFileURL?.stopAccessingSecurityScopedResource()
