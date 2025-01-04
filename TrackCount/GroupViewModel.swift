@@ -25,7 +25,6 @@ class GroupViewModel: ObservableObject {
     
     /// A function that fetches the existing group details for editing.
     func fetchGroup() {
-        print("Initializing edit group: \(selectedGroup?.groupTitle ?? "No Group Selected")")
         guard let selectedGroup else { return }
         self.newGroupTitle = selectedGroup.groupTitle
         self.newGroupSymbol = selectedGroup.groupSymbol
@@ -66,7 +65,7 @@ class GroupViewModel: ObservableObject {
         do {
             savedGroups = try context.fetch(FetchDescriptor<DMCardGroup>())
         } catch {
-            print("Failed to fetch DMCardGroup: \(error)")
+            validationError.append("Failed to fetch DMCardGroup: \(error)")
         }
         
         guard validationError.isEmpty else {

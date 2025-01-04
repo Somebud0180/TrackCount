@@ -47,7 +47,6 @@ class CardViewModel: ObservableObject {
     /// A function that grabs the saved data from a selected card.
     /// Used to populate the temporary variables within CardViewModel with the variables from the selected card.
     func fetchCard() {
-        print("Initializing edit card: \(selectedCard?.title ?? "No card selected")")
         guard let card = selectedCard else { return }
         self.newCardType = card.type
         self.newCardTitle = card.title

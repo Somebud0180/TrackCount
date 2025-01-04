@@ -13,7 +13,9 @@ struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Query private var savedGroups: [DMCardGroup]
     @State var animateGradient: Bool = false
-    var gradientColors: [Color] {
+
+    /// Dynamically computes gradient colors based on colorScheme.
+    private var gradientColors: [Color] {
         colorScheme == .light ? [.white, .blue] : [.black, .gray]
     }
     
@@ -85,7 +87,7 @@ struct HomeView: View {
                     .onAppear {
                         withAnimation(
                             .easeInOut(duration: 3)
-                            .repeatForever()
+                            .repeatForever(autoreverses: true)
                         ){
                             animateGradient.toggle()
                         }

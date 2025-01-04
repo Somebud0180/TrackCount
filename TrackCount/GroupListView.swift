@@ -19,14 +19,12 @@ struct GroupListView: View {
     
     @EnvironmentObject private var importManager: ImportManager
     @Environment(\.modelContext) private var context
-    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var viewModel = GroupViewModel()
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
     @State private var isShowingFilePicker = false
     @State private var isPresentingGroupForm: Bool = false
     @State private var isPresentingDeleteDialog: Bool = false
-    @State private var animateGradient: Bool = false
     @State private var selectedGroup: DMCardGroup?
     @State var viewBehaviour: Behaviour
     
@@ -41,13 +39,17 @@ struct GroupListView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                // Display validation error if any
+                if !viewModel.validationError.isEmpty {
+                    Text(viewModel.validationError.joined(separator: ", "))
+                        .foregroundColor(.red)
+                        .listRowSeparator(.hidden)
+                        .padding()
+                }
+                
                 LazyVGrid(columns: columnLayout, spacing: 16) {
                     ForEach(savedGroups) { group in
-                        
-                        let groupCardView = GroupCardView(
-                            animateGradient: $animateGradient,
-                            group: group
-                        )
+                        let groupCardView = GroupCardView(group: group)
                         
                         NavigationLink(destination: destinationView(for: group)) {
                             groupCardView
@@ -111,7 +113,7 @@ struct GroupListView: View {
                                 importManager.handleImport(url)
                             }
                         case .failure(let error):
-                            print("File import failed: \(error.localizedDescription)")
+                            viewModel.validationError.append("File import failed: \(error.localizedDescription)")
                         }
                     }
                 }
