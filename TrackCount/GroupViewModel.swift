@@ -17,6 +17,9 @@ class GroupViewModel: ObservableObject {
     @Published var newGroupSymbol: String = ""
     @Published var newGroupTitle: String = ""
     
+    // Set limits
+    let titleCharacterLimit = 32
+    
     /// Initializes the selectedGroup for editing.
     /// - Parameter selectedGroup: (optional) accepts DMGroupCard entities, edits the entity that is passed over.
     init(selectedGroup: DMCardGroup? = nil) {
@@ -154,28 +157,5 @@ class GroupViewModel: ObservableObject {
         try shareData.write(to: tempURL, options: .atomic)
         
         return tempURL
-    }
-    
-    /// Handles the shared group and saves it to storage.
-    /// - Parameter context: The context where the group will be stored.
-    func importGroup(with context: ModelContext) {
-        guard let previewGroup = importManager.previewGroup else { return }
-        
-        do {
-            // Fetch existing groups to determine new index
-            let descriptor = FetchDescriptor<DMCardGroup>()
-            let existingGroups = try context.fetch(descriptor)
-            
-            // Set new index
-            previewGroup.index = existingGroups.count
-            
-            // Insert group
-            context.insert(previewGroup)
-            try context.save()
-            
-            importManager.reset()
-        } catch {
-            validationError.append("Failed to import group: \(error.localizedDescription)")
-        }
     }
 }

@@ -32,6 +32,7 @@ class CardViewModel: ObservableObject {
     }
     
     // Button limit
+    let buttonTextLimit = 20
     let minButtonLimit = 1
     let maxButtonLimit = 4096
     

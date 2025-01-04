@@ -10,8 +10,7 @@ import SwiftData
 
 struct TrackView: View {
     @Environment(\.modelContext) private var context
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     
     var selectedGroup: DMCardGroup
     
@@ -22,7 +21,7 @@ struct TrackView: View {
                 let columns = determineColumns()
                 
                 // Define the grid layout
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: columns), spacing: 16) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: columns), spacing: 4) {
                     if selectedGroup.cards.isEmpty {
                         // Display a message when there are no cards
                         Text("You have no cards yet")
@@ -53,33 +52,35 @@ struct TrackView: View {
         let deviceIdiom = UIDevice.current.userInterfaceIdiom
         let isPortrait = verticalSizeClass == .regular
         
+        print(isPortrait)
+        
         switch (deviceIdiom, isPortrait) {
         case (.phone, true):
             // Portrait iPhone
             return 1
         case (.phone, false):
             // Landscape iPhone
-            if selectedGroup.cards.count <= 2 {
-                // Display all cards if total card count is below or equal to default
+            if selectedGroup.cards.count < 2 {
+                // Display all cards if total card count is below default
                 return selectedGroup.cards.count
             } else {
                 return 2
             }
         case (.pad, true):
             // Portrait iPad
-            if selectedGroup.cards.count <= 2 {
-                // Display all cards if total card count is below or equal to default
+            if selectedGroup.cards.count < 2 {
+                // Display all cards if total card count is below default
                 return selectedGroup.cards.count
             } else {
                 return 2
             }
         case (.pad, false):
-            // Landscape iPad
-            if selectedGroup.cards.count <= 2 {
-                // Display all cards if total card count is below or equal to default
+            // Landscape iPad (Theoretially never the case)
+            if selectedGroup.cards.count < 2 {
+                // Display all cards if total card count is below default
                 return selectedGroup.cards.count
             } else {
-                return 3
+                return 2
             }
         default:
             // Fallback to 2 columns
@@ -121,6 +122,20 @@ struct TrackView: View {
             Spacer()
         }
         .padding()
+    }
+    
+    /// Determines the possible column layouts of the toggle card
+    private func determineButtonColumns(_ card: DMStoredCard) -> Int {
+        switch card.count {
+        case 1:
+            return 1
+        case 2:
+            return 2
+        case 3:
+            return 3
+        default:
+            return 1
+        }
     }
     
     /// Creates the counter card contents from the inputted card.
@@ -170,7 +185,7 @@ struct TrackView: View {
                 if let buttonText = card.buttonText?[id], !buttonText.isEmpty {
                     Text(buttonText)
                         .font(.body)
-                        .minimumScaleFactor(0.5)
+                        .minimumScaleFactor(0.3)
                         .lineLimit(2)
                         .foregroundStyle(card.state![id] ? card.secondaryColor.color : .black)
                 }
@@ -181,7 +196,7 @@ struct TrackView: View {
             }
             // Make the button fill available space
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(5)
+            .padding(1)
         }
         .buttonStyle(.borderedProminent)
         .tint(card.state![id] ? card.primaryColor.color : .secondary)

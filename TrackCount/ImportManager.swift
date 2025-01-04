@@ -12,10 +12,11 @@ class ImportManager: ObservableObject {
     @Published var showImportAlert = false
     @Published var currentFileURL: URL?
     @Published var previewGroup: DMCardGroup?
+    @Published var error: String?
     private var hasSecurityAccess = false
     
     /// Handles the URL on import and initializes shared groups for import.
-    func handleImport(_ url: URL) {
+    func handleImport(_ url: URL, with context: ModelContext) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.reset()
@@ -24,21 +25,37 @@ class ImportManager: ObservableObject {
             guard self.hasSecurityAccess else { return }
             
             self.currentFileURL = url
-            self.loadPreview()
+            self.loadPreview(with: context)
         }
     }
     
     /// Loads the preview of the shared group and shows the alert.
-    private func loadPreview() {
+    private func loadPreview(with context: ModelContext) {
         guard let url = currentFileURL else { return }
+        
         do {
             let data = try Data(contentsOf: url)
-            let container = try ModelContainer(for: DMCardGroup.self)
-            let context = ModelContext(container)
             previewGroup = try DMCardGroup.decodeFromShared(data, context: context)
             showImportAlert = true
         } catch {
-            print("Preview failed: \(error)")
+            self.error = "Preview failed: \(error.localizedDescription)"
+        }
+    }
+    
+    /// Confirms the import of the shared group.
+    func confirmImport(with context: ModelContext) {
+        guard let previewGroup = previewGroup else { return }
+        
+        do {
+            let descriptor = FetchDescriptor<DMCardGroup>()
+            let existingGroups = try context.fetch(descriptor)
+            previewGroup.index = existingGroups.count
+            
+            context.insert(previewGroup)
+            try context.save()
+            reset()
+        } catch {
+            self.error = "Import failed: \(error.localizedDescription)"
         }
     }
     
@@ -51,5 +68,6 @@ class ImportManager: ObservableObject {
         currentFileURL = nil
         previewGroup = nil
         showImportAlert = false
+        error = nil
     }
 }

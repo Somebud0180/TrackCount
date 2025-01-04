@@ -109,7 +109,7 @@ struct GroupListView: View {
                         switch result {
                         case .success(let urls):
                             if let url = urls.first {
-                                importManager.handleImport(url)
+                                importManager.handleImport(url, with: context)
                             }
                         case .failure(let error):
                             viewModel.validationError.append("File import failed: \(error.localizedDescription)")
@@ -124,7 +124,7 @@ struct GroupListView: View {
                     importManager.reset()
                 }
                 Button("Import") {
-                    viewModel.importGroup(with: context)
+                    importManager.confirmImport(with: context)
                 }
             }
         } message: {
@@ -174,17 +174,21 @@ struct GroupListView: View {
     /// A function that contains the buttons used in the context menu for the cards.
     private func contextMenu(for group: DMCardGroup) -> some View {
         Group {
-            Button("Edit Group", systemImage: "pencil") {
-                viewModel.selectedGroup = group
-                viewModel.fetchGroup()
-                isPresentingGroupForm.toggle()
+            if viewBehaviour == .edit {
+                Button("Edit Group", systemImage: "pencil") {
+                    viewModel.selectedGroup = group
+                    viewModel.fetchGroup()
+                    isPresentingGroupForm.toggle()
+                }
             }
             Button("Share Group", systemImage: "square.and.arrow.up") {
                 shareGroup(group)
             }
-            Button("Delete Group", systemImage: "trash", role: .destructive) {
-                selectedGroup = group
-                isPresentingDeleteDialog = true
+            if viewBehaviour == .edit {
+                Button("Delete Group", systemImage: "trash", role: .destructive) {
+                    selectedGroup = group
+                    isPresentingDeleteDialog = true
+                }
             }
         }
     }

@@ -15,9 +15,10 @@ struct GroupFormView: View {
     
     // Set variable defaults
     @State private var isPickerPresented: Bool = false
-    let characterLimit = 32
     
     var body: some View {
+        let characterLimit = viewModel.titleCharacterLimit
+        
         NavigationStack {
             List {
                 ZStack(alignment: .bottomTrailing) {
@@ -25,13 +26,16 @@ struct GroupFormView: View {
                         .customRoundedStyle()
                         .padding(EdgeInsets(top: 3, leading: 0, bottom: 16, trailing: 0))
                         .onChange(of: viewModel.newGroupTitle) {
-                            viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
                             if viewModel.newGroupTitle.count > characterLimit {
+                                viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
                                 viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
                             }
                         }
+                        .onSubmit {
+                            viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
+                        }
                     
-                    Text("\(viewModel.newGroupTitle.count)/32")
+                    Text("\(viewModel.newGroupTitle.count)/\(characterLimit)")
                         .padding([.trailing], 3)
                         .foregroundColor(.gray)
                         .font(.footnote)
