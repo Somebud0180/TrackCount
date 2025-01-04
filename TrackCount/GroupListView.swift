@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
-/// A view containing that lists all saved groups and provides access to editing the group's cards
+/// A view containing that lists all saved groups and provides access to editing the group's cards.
 struct GroupListView: View {
     /// Represents the behavior setting for the group list.
     enum Behaviour {
@@ -136,6 +136,7 @@ struct GroupListView: View {
         }
     }
     
+    /// A function that saves the imported group to storage.
     private func importGroup() {
         guard let url = importManager.currentFileURL else { return }
         
@@ -150,7 +151,7 @@ struct GroupListView: View {
         }
     }
     
-    /// Computed property for alert title
+    /// Computed property for alert title.
     private var alertTitle: Text {
         if let group = selectedGroup {
             if group.groupTitle.isEmpty {
@@ -162,7 +163,7 @@ struct GroupListView: View {
         return Text("Delete Group?")
     }
     
-    /// A function that deletes the accepted group from storage
+    /// A function that deletes the accepted group from storage.
     private func removeGroup(_ group: DMCardGroup) {
         do {
             // Remove the group from the context
@@ -188,7 +189,7 @@ struct GroupListView: View {
         }
     }
 
-    /// A function that contains the buttons used in the context menu for the cards
+    /// A function that contains the buttons used in the context menu for the cards.
     private func contextMenu(for group: DMCardGroup) -> some View {
         Group {
             Button("Edit Group", systemImage: "pencil") {
@@ -206,6 +207,8 @@ struct GroupListView: View {
         }
     }
     
+    /// A function that handles the preparation of the groups for sharing.
+    /// - Parameter group: The group to be shared, accepts type DMCardGroup.
     private func shareGroup(_ group: DMCardGroup) {
         do {
             // Sanitize filename
@@ -253,7 +256,7 @@ struct GroupListView: View {
         }
     }
     
-    /// A function that determines the destination based on the viewBehaviour
+    /// A function that determines the destination based on the viewBehaviour.
     @ViewBuilder
     private func destinationView(for group: DMCardGroup) -> some View {
         if viewBehaviour == .edit {

@@ -200,13 +200,14 @@ final class DMStoredCard: Identifiable {
     }
 }
 
-// Codable structures for sharing
+/// Codable group structure for sharing
 struct ShareableGroup: Codable {
     let groupTitle: String
     let groupSymbol: String
     let cards: [ShareableCard]
 }
 
+/// Codable card structure for sharing
 struct ShareableCard: Codable {
     let type: DMStoredCard.Types
     let title: String

@@ -140,7 +140,7 @@ struct TrackView: View {
                     .frame(height: 30)
             }
             .buttonStyle(.borderedProminent)
-            .foregroundStyle(card.primaryColor.color)
+            .tint(card.primaryColor.color)
             
             // Current Count
             Text(String(card.count))

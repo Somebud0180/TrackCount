@@ -2,7 +2,7 @@
 //  ImportManager.swift
 //  TrackCount
 //
-//  Handles URL on import
+//  Handles the URLs on import and initializes shared groups for import.
 //
 
 import SwiftUI

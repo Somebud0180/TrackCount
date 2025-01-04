@@ -33,7 +33,7 @@ struct CardListView: View {
             List {
                 // Check if selectedGroup.cards. is empty and display a message if so
                 if selectedGroup.cards.isEmpty {
-                    Text("No cards created yet :O")
+                    Text("Create a new card to get started")
                         .frame(maxWidth: .infinity, alignment: .center)
                         .listRowSeparator(.hidden)
                 } else {

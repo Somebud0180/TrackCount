@@ -120,7 +120,7 @@ class CardViewModel: ObservableObject {
                 type: newCardType,
                 title: newCardTitle,
                 buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
-                count: newCardType == .counter ? newCardCount : 0,
+                count: newCardType == .toggle ? newCardCount : 0,
                 state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } : nil,
                 symbol: newCardType == .toggle ? newCardSymbol : nil,
                 primaryColor: newCardPrimary,

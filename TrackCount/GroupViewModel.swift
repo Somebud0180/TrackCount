@@ -2,7 +2,7 @@
 //  GroupViewModel.swift
 //  TrackCount
 //
-//  Created by Ethan John Lagera on 1/2/25.
+//  Contains most of the logic related to groups
 //
 
 import Foundation
