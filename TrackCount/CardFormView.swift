@@ -100,9 +100,27 @@ struct CardFormView: View {
                     
                     ForEach(0..<viewModel.newButtonText.count, id: \.self) { index in
                         if index < viewModel.newButtonText.count {
-                            TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
-                                .customRoundedStyle()
-                                .listRowSeparator(.hidden)
+                            let characterLimit = viewModel.buttonTextLimit
+                            
+                            ZStack(alignment: .bottomTrailing) {
+                                TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
+                                    .customRoundedStyle()
+                                    .onChange(of: viewModel.newButtonText[index]) {
+                                        if viewModel.newButtonText[index].count > characterLimit {
+                                            viewModel.newButtonText[index] = String(viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces))
+                                            viewModel.newButtonText[index] = String(viewModel.newButtonText[index].prefix(characterLimit))
+                                        }
+                                    }
+                                    .onSubmit {
+                                        viewModel.newButtonText[index] = viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces)
+                                    }
+                                
+                                Text("\(viewModel.newButtonText[index].count)/\(characterLimit)")
+                                    .padding([.trailing], 3)
+                                    .foregroundColor(.gray)
+                                    .font(.footnote)
+                            }
+                            .listRowSeparator(.hidden)
                         }
                     }
                 }
@@ -141,6 +159,10 @@ struct CardFormView: View {
                 }
             }
         }
+    }
+    
+    func buttonTextField() {
+        
     }
     
     /// A  function that saves the current card and dismisses the screen.

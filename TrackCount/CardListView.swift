@@ -37,6 +37,14 @@ struct CardListView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .listRowSeparator(.hidden)
                 } else {
+                    // Display validation error if any
+                    if !validationError.isEmpty {
+                        Text(viewModel.validationError.joined(separator: ", "))
+                            .foregroundColor(.red)
+                            .listRowSeparator(.hidden)
+                            .padding()
+                    }
+                    
                     // Display each card sorted by their id
                     ForEach(selectedGroup.cards.sorted(by: { $0.index < $1.index }), id: \.uuid) { card in
                         HStack {
@@ -112,7 +120,7 @@ struct CardListView: View {
             }
             try context.save() // Persist the changes
         } catch {
-            print("Failed to save updated order: \(error.localizedDescription)")
+            validationError.append("Failed to save updated order: \(error.localizedDescription)")
         }
     }
     
@@ -137,9 +145,8 @@ struct CardListView: View {
             
             // Save the changes back to the context
             try context.save()
-            print("Card removed, ID freed, and remaining cards updated.")
         } catch {
-            print("Failed to remove card and update IDs: \(error.localizedDescription)")
+            validationError.append("Failed to remove card: \(error.localizedDescription)")
         }
     }
 }

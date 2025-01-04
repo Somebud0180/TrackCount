@@ -18,15 +18,13 @@ struct GroupListView: View {
     }
     
     @EnvironmentObject private var importManager: ImportManager
-    @Environment(\.modelContext) private var context
-    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var viewModel = GroupViewModel()
+    @Environment(\.modelContext) private var context
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
     @State private var isShowingFilePicker = false
     @State private var isPresentingGroupForm: Bool = false
     @State private var isPresentingDeleteDialog: Bool = false
-    @State private var animateGradient: Bool = false
     @State private var selectedGroup: DMCardGroup?
     @State var viewBehaviour: Behaviour
     
@@ -39,18 +37,21 @@ struct GroupListView: View {
     }
     
     var body: some View {
+        
         NavigationStack {
             ScrollView {
+                // Display validation error if any
+                if !viewModel.validationError.isEmpty {
+                    Text(viewModel.validationError.joined(separator: ", "))
+                        .foregroundColor(.red)
+                        .listRowSeparator(.hidden)
+                        .padding()
+                }
+                
                 LazyVGrid(columns: columnLayout, spacing: 16) {
                     ForEach(savedGroups) { group in
-                        
-                        let groupCardView = GroupCardView(
-                            animateGradient: $animateGradient,
-                            group: group
-                        )
-                        
                         NavigationLink(destination: destinationView(for: group)) {
-                            groupCardView
+                            GroupCardView(group: group)
                                 .frame(height: 200)
                                 .contextMenu {
                                     contextMenu(for: group)
@@ -108,10 +109,10 @@ struct GroupListView: View {
                         switch result {
                         case .success(let urls):
                             if let url = urls.first {
-                                importManager.handleImport(url)
+                                importManager.handleImport(url, with: context)
                             }
                         case .failure(let error):
-                            print("File import failed: \(error.localizedDescription)")
+                            viewModel.validationError.append("File import failed: \(error.localizedDescription)")
                         }
                     }
                 }
@@ -123,7 +124,7 @@ struct GroupListView: View {
                     importManager.reset()
                 }
                 Button("Import") {
-                    viewModel.importGroup(with: context)
+                    importManager.confirmImport(with: context)
                 }
             }
         } message: {
@@ -173,17 +174,21 @@ struct GroupListView: View {
     /// A function that contains the buttons used in the context menu for the cards.
     private func contextMenu(for group: DMCardGroup) -> some View {
         Group {
-            Button("Edit Group", systemImage: "pencil") {
-                viewModel.selectedGroup = group
-                viewModel.fetchGroup()
-                isPresentingGroupForm.toggle()
+            if viewBehaviour == .edit {
+                Button("Edit Group", systemImage: "pencil") {
+                    viewModel.selectedGroup = group
+                    viewModel.fetchGroup()
+                    isPresentingGroupForm.toggle()
+                }
             }
             Button("Share Group", systemImage: "square.and.arrow.up") {
                 shareGroup(group)
             }
-            Button("Delete Group", systemImage: "trash", role: .destructive) {
-                selectedGroup = group
-                isPresentingDeleteDialog = true
+            if viewBehaviour == .edit {
+                Button("Delete Group", systemImage: "trash", role: .destructive) {
+                    selectedGroup = group
+                    isPresentingDeleteDialog = true
+                }
             }
         }
     }
