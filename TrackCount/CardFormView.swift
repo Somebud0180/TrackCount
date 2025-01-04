@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// A view containing the form for creating or editing a card
+/// A view containing the form for creating or editing a card.
 struct CardFormView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) var dismiss
@@ -15,10 +15,10 @@ struct CardFormView: View {
     
     @State private var isSymbolPickerPresented: Bool = false
     
-    // Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046
+    /// Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046.
     static let formatter = NumberFormatter()
     
-    // Binding to manage the TextField input for newCardCount
+    /// Binding to manage the TextField input for newCardCount.
     var countBinding: Binding<String> {
         Binding<String>(
             get: {
@@ -94,7 +94,7 @@ struct CardFormView: View {
                     .listRowSeparator(.hidden)
                     .buttonStyle(PlainButtonStyle())
                     .sheet(isPresented: $isSymbolPickerPresented) {
-                        SymbolPicker(behaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
+                        SymbolPicker(viewBehaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
                             .presentationDetents([.fraction(0.99)])
                     }
                     

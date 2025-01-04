@@ -10,7 +10,7 @@ import SwiftUI
 /// A view containing symbols with the ability to pick one and store it to selectedSymbol.
 struct SymbolPicker: View {
     /// Represents the interaction behavior setting for the symbol picker.
-    enum Behaviour {
+    enum viewBehaviour {
         case tapToSelect // Tap to select
         case tapWithUnselect // Tap to select and tap again to unselect
     }
@@ -20,9 +20,9 @@ struct SymbolPicker: View {
     @Binding var selectedSymbol: String
     
     @State private var searchText: String = ""
-    @State private var behaviour: Behaviour
+    @State private var viewBehaviour: viewBehaviour
     
-    /// The set of pickable symbols
+    /// The set of pickable symbols.
     private let symbols: [String: [String]] = [
         "objects": ["hammer.fill", "wrench.fill", "screwdriver.fill", "paintbrush.fill", "scissors", "pencil", "text.document.fill", "list.clipboard.fill", "archivebox.fill", "tray.2.fill", "bag.fill", "cart.fill", "gift.fill", "lightbulb.fill", "fanblades.fill", "microwave.fill", "oven.fill", "fork.knife", "cup.and.saucer.fill", "book.fill", "umbrella.fill", "balloon.fill", "party.popper.fill"],
         "math": ["plus", "minus", "multiply", "divide", "number"],
@@ -30,18 +30,17 @@ struct SymbolPicker: View {
         "nature": ["clock.fill", "alarm.fill", "stopwatch.fill", "timer", "hourglass"],
         "technology": ["laptopcomputer", "iphone", "ipad", "desktopcomputer", "applewatch", "watch.analog", "tv.fill", "printer.fill", "network", "antenna.radiowaves.left.and.right"],
         "people": ["person.fill", "person.2.fill", "person.circle", "person.crop.circle.badge.checkmark", "person.crop.circle.badge.xmark", "figure.wave", "figure.run", "figure.walk", "figure.stand"],
-        "food": ["fork.knife", "cup.and.saucer.fill", "leaf.fill", "cart.fill", "takeoutbag.and.cup.and.straw.fill"],
+        "food": ["fork.knife", "cup.and.saucer.fill", "mug.fill", "wineglass.fill", "waterbottle.fill", "leaf.fill", "cart.fill", "takeoutbag.and.cup.and.straw.fill"],
         "animals": ["hare.fill", "tortoise.fill", "cat.fill", "dog.fill", "lizard.fill", "bird.fill", "ant.fill", "ladybug.fill", "fish.fill", "pawprint.fill"],
         "fitness": ["gamecontroller.fill", "trophy.fill", "figure.roll", "figure.dance", "figure.strengthtraining.traditional", "figure.surfing", "figure.pool.swim", "figure.run.treadmill", "figure.boxing", "figure.badminton", "figure.hiking", "figure.walk", "figure.run", "figure.golf", "sportscourt.fill", "soccerball", "basketball.fill", "volleyball.fill", "football.fill", "tennis.racket", "tennisball.fill", "hockey.puck.fill"]
     ]
     
-    // Initialize with originScreen and selectedSymbol binding
-    /// Initializes the behaviour and selected symbol binding
+    /// Initializes the viewBehaviour and selected symbol binding.
     /// - Parameters:
-    ///   - behaviour: accepts tapToSelect which allows tapping the symbol to select or tapWithUnselect which also allows to unselect the symbol by tapping it again
-    ///   - selectedSymbol: accepts a variable to modify with the selected symbol
-    init(behaviour: Behaviour, selectedSymbol: Binding<String>) {
-        self.behaviour = behaviour
+    ///   - viewBehaviour: accepts tapToSelect which allows tapping the symbol to select or tapWithUnselect which also allows to unselect the symbol by tapping it again.
+    ///   - selectedSymbol: accepts a variable to modify with the selected symbol.
+    init(viewBehaviour: viewBehaviour, selectedSymbol: Binding<String>) {
+        self.viewBehaviour = viewBehaviour
         self._selectedSymbol = selectedSymbol
     }
     
@@ -91,7 +90,7 @@ struct SymbolPicker: View {
         .filter { !$0.value.isEmpty } // Remove empty categories
     }
     
-    /// A helper function to preprocess the symbol names for better searchability
+    /// A helper function to preprocess the symbol names for better searchability.
     private func preprocess(_ symbol: String) -> String {
         symbol
             .replacingOccurrences(of: ".fill", with: "") // Remove ".fill"
@@ -120,9 +119,9 @@ struct SymbolPicker: View {
     }
     
     /// A function that handles symbol selection.
-    /// The behaviour changes based on the passed over argument
+    /// The viewBehaviour changes based on the passed over argument.
     private func handleSymbolSelection(_ symbol: String) {
-        switch behaviour {
+        switch self.viewBehaviour {
         case .tapToSelect:
             // Select the symbol and dismiss the picker
             selectedSymbol = symbol
@@ -143,5 +142,5 @@ struct SymbolPicker: View {
 #Preview {
     // Sample variable to pass to the picker
     @Previewable @State var testSymbol: String = ""
-    SymbolPicker(behaviour: .tapWithUnselect, selectedSymbol: $testSymbol)
+    SymbolPicker(viewBehaviour: .tapWithUnselect, selectedSymbol: $testSymbol)
 }

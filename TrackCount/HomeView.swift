@@ -18,16 +18,23 @@ struct HomeView: View {
     }
     
     var body: some View {
+        let backgroundGradient = LinearGradient(
+            colors: gradientColors,
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing)
+        
         NavigationStack {
             GeometryReader { proxy in
                 ZStack{
                     if colorScheme == .light {
+                        // A thin material to soften the gradient background
                         Rectangle()
                             .background(.ultraThinMaterial)
                             .ignoresSafeArea()
                     }
                     
                     VStack {
+                        // Title
                         Text("TrackCount")
                             .font(.system(.largeTitle, design: .default, weight: .semibold))
                             .dynamicTypeSize(DynamicTypeSize.accessibility5)
@@ -35,8 +42,11 @@ struct HomeView: View {
                             .lineLimit(1)
                             .foregroundStyle(Color.white.opacity(0.8))
                         
+                        // Buttons
                         Grid(alignment: .center) {
-                            NavigationLink(destination: GroupListView(viewBehaviour: .view)) {
+                            NavigationLink(destination:
+                                            GroupListView(viewBehaviour: .view)
+                            ){
                                 Text("Track It")
                                     .font(.largeTitle)
                                     .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
@@ -52,7 +62,7 @@ struct HomeView: View {
                             NavigationLink(destination:
                                             GroupListView(viewBehaviour: .edit)
                                                 .environmentObject(ImportManager())
-                            ) {
+                            ){
                                 Text("Edit It")
                                     .font(.largeTitle)
                                     .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
@@ -69,17 +79,14 @@ struct HomeView: View {
                 }
                 .frame(maxWidth: .infinity,maxHeight: .infinity)
                 .background {
-                    LinearGradient(
-                        colors: gradientColors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing)
+                    backgroundGradient
                     .edgesIgnoringSafeArea(.all)
                     .hueRotation(.degrees(animateGradient ? 45 : 0))
                     .onAppear {
                         withAnimation(
                             .easeInOut(duration: 3)
-                            .repeatForever())
-                        {
+                            .repeatForever()
+                        ){
                             animateGradient.toggle()
                         }
                     }

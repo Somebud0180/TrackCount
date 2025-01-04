@@ -2,37 +2,41 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>trackcount</string>
-            </array>
-            <key>CFBundleURLName</key>
-            <string>com.ethanjohn.TrackCount</string>
-        </dict>
-    </array>
-    <key>UTExportedTypeDeclarations</key>
-    <array>
-        <dict>
-            <key>UTTypeIdentifier</key>
-            <string>com.ethanjohn.TrackCount</string>
-            <key>UTTypeDescription</key>
-            <string>TrackCount Group</string>
-            <key>UTTypeConformsTo</key>
-            <array>
-                <string>public.data</string>
-                <string>public.content</string>
-            </array>
-            <key>UTTypeTagSpecification</key>
-            <dict>
-                <key>public.filename-extension</key>
-                <array>
-                    <string>trackcount</string>
-                </array>
-            </dict>
-        </dict>
-    </array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLIconFile</key>
+			<string></string>
+			<key>CFBundleURLName</key>
+			<string>com.ethanjohn.TrackCount</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>trackcount</string>
+			</array>
+		</dict>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.content</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>TrackCount Group</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.ethanjohn.TrackCount</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>trackcount</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

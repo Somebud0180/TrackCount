@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-/// A view containing a list of cards in a selected group
+/// A view containing a list of cards in a selected group.
 struct CardListView: View {
     @Environment(\.modelContext) private var context
     @StateObject private var viewModel: CardViewModel
@@ -18,10 +18,10 @@ struct CardListView: View {
     @State private var isPresentingCardFormView: Bool = false
     @State private var validationError: [String] = []
     
-    /// Initializes the selectedGroup and selectedCard variable for editing
+    /// Initializes the selectedGroup and selectedCard variable for editing.
     /// - Parameters:
-    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card
-    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over
+    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card.
+    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over.
     init(selectedGroup: DMCardGroup) {
         _viewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
         self.selectedGroup = selectedGroup
@@ -33,7 +33,7 @@ struct CardListView: View {
             List {
                 // Check if selectedGroup.cards. is empty and display a message if so
                 if selectedGroup.cards.isEmpty {
-                    Text("No cards created yet :O")
+                    Text("Create a new card to get started")
                         .frame(maxWidth: .infinity, alignment: .center)
                         .listRowSeparator(.hidden)
                 } else {
@@ -116,8 +116,8 @@ struct CardListView: View {
         }
     }
     
-    /// A function that removes the card from the data model entity
-    /// Used to delete the card gracefully, adjusting existing card's indexes to take over a free index if applicable
+    /// A function that removes the card from the data model entity.
+    /// Used to delete the card gracefully, adjusting existing card's indexes to take over a free index if applicable.
     private func removeCard(_ card: DMStoredCard) {
         do {
             // Remove the card from the context
@@ -159,7 +159,7 @@ extension View {
 }
 
 #Preview {
-    // Sample DMCardGroup to pass into the preview
+    // Sample DMCardGroup to pass into the preview.
     var sampleGroup: DMCardGroup {
         DMCardGroup(uuid: UUID(), index: 0, groupTitle: "Card 1", groupSymbol: "star.fill")
     }

@@ -9,7 +9,7 @@
 
 import SwiftUI
 
-/// A rounded style with a thin material background and padding
+/// A rounded style with a thin material background and padding.
 struct CustomRoundedStyle: ViewModifier {
     var padding: CGFloat = 12
     var cornerRadius: CGFloat = 8
@@ -24,7 +24,7 @@ struct CustomRoundedStyle: ViewModifier {
 
 // Extend View for easier usage
 extension View {
-    /// A rounded style with a thin material background and padding
+    /// A rounded style with a thin material background and padding.
     func customRoundedStyle(padding: CGFloat = 12, cornerRadius: CGFloat = 8) -> some View {
         self.modifier(CustomRoundedStyle(padding: padding, cornerRadius: cornerRadius))
     }
