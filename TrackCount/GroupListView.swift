@@ -43,8 +43,14 @@ struct GroupListView: View {
                 // Display validation error if any
                 if !viewModel.validationError.isEmpty {
                     Text(viewModel.validationError.joined(separator: ", "))
-                        .foregroundColor(.red)
-                        .listRowSeparator(.hidden)
+                        .foregroundStyle(.red)
+                        .padding()
+                }
+                
+                if savedGroups.isEmpty {
+                    Text("Create a new group by tapping on the plus icon")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                         .padding()
                 }
                 
