@@ -26,7 +26,7 @@ struct TrackView: View {
                         // Display a message when there are no cards
                         Text("You have no cards yet")
                             .font(.title)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                     } else {
                         // Iterate through the sorted cards and display each card
                         ForEach(selectedGroup.cards.sorted(by: { $0.index < $1.index }), id: \.uuid) { card in
@@ -51,8 +51,6 @@ struct TrackView: View {
     private func determineColumns() -> Int {
         let deviceIdiom = UIDevice.current.userInterfaceIdiom
         let isPortrait = verticalSizeClass == .regular
-        
-        print(isPortrait)
         
         switch (deviceIdiom, isPortrait) {
         case (.phone, true):

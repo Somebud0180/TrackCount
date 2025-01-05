@@ -61,6 +61,7 @@ struct HomeView: View {
                         Grid(alignment: .center) {
                             NavigationLink(destination:
                                             GroupListView(viewBehaviour: .view)
+                                .environmentObject(ImportManager())
                             ){
                                 Text("Track It")
                                     .font(.largeTitle)
@@ -92,7 +93,7 @@ struct HomeView: View {
                         }
                     }
                 }
-                .frame(maxWidth: .infinity,maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
     }

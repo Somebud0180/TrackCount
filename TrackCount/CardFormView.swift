@@ -117,7 +117,7 @@ struct CardFormView: View {
                                 
                                 Text("\(viewModel.newButtonText[index].count)/\(characterLimit)")
                                     .padding([.trailing], 3)
-                                    .foregroundColor(.gray)
+                                    .foregroundStyle(.gray)
                                     .font(.footnote)
                             }
                             .listRowSeparator(.hidden)
@@ -132,14 +132,14 @@ struct CardFormView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .cornerRadius(8)
                 }
                 .listRowSeparator(.hidden)
                 
                 if !viewModel.validationError.isEmpty {
                     Text(viewModel.validationError.joined(separator: ", "))
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                         .listRowSeparator(.hidden)
                         .padding()
                 }

@@ -37,7 +37,7 @@ struct GroupFormView: View {
                     
                     Text("\(viewModel.newGroupTitle.count)/\(characterLimit)")
                         .padding([.trailing], 3)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
                         .font(.footnote)
                 }
                 .listRowSeparator(.hidden)
@@ -74,7 +74,7 @@ struct GroupFormView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .cornerRadius(8)
                 }
                 .listRowSeparator(.hidden)
@@ -82,7 +82,7 @@ struct GroupFormView: View {
                 if !viewModel.validationError.isEmpty {
                     Text(viewModel.validationError.joined(separator: ", "))
                         .listRowSeparator(.hidden)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                         .padding(.horizontal)
                 }
             }

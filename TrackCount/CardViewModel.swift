@@ -81,6 +81,29 @@ class CardViewModel: ObservableObject {
         }
     }
     
+    /// A function that removes the card from the data model entity.
+    /// Used to delete the card gracefully, adjusting existing card's indexes to take over a free index if applicable.
+    func removeCard(_ card: DMStoredCard, with context: ModelContext) {
+        do {
+            // Remove the card from the context
+            context.delete(card)
+            
+            // Remove the card from the group's cards array
+            selectedGroup.cards.removeAll { $0.uuid == card.uuid }
+            
+            // Update indices of remaining cards
+            let sortedCards = selectedGroup.cards.sorted(by: { $0.index < $1.index })
+            for (index, card) in sortedCards.enumerated() {
+                card.index = index
+            }
+            
+            // Save the context
+            try context.save()
+        } catch {
+            validationError.append("Failed to remove card: \(error.localizedDescription)")
+        }
+    }
+    
     /// A function that stores the temporary variables to a card and saves it to the data model entity.
     /// Used to save the set variables into the cards within the selected group.
     /// Also checks the card contents and throws errors, if any, to validationError.

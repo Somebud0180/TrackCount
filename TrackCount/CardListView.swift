@@ -40,31 +40,32 @@ struct CardListView: View {
                     // Display validation error if any
                     if !validationError.isEmpty {
                         Text(viewModel.validationError.joined(separator: ", "))
-                            .foregroundColor(.red)
+                            .foregroundStyle(.red)
                             .listRowSeparator(.hidden)
                             .padding()
                     }
                     
                     // Display each card sorted by their id
                     ForEach(selectedGroup.cards.sorted(by: { $0.index < $1.index }), id: \.uuid) { card in
-                        HStack {
-                            Image(systemName: "line.horizontal.3")
-                                .foregroundColor(.secondary)
-                            Text(card.title)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                        Button(action: {
+                            viewModel.selectedCard = card
+                            viewModel.fetchCard()
+                            isPresentingCardFormView.toggle()
+                        }) {
+                            HStack {
+                                Image(systemName: "line.horizontal.3")
+                                    .foregroundStyle(.gray)
+                                Text(card.title)
+                                    .foregroundStyle(Color(.label))
+                            }
                         }
                         .listRowSeparator(.hidden)
                         .swipeActions {
                             Button(role: .destructive) {
-                                removeCard(card)
+                                viewModel.removeCard(card, with: context)
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
-                        }
-                        .onTapGesture {
-                            viewModel.selectedCard = card
-                            viewModel.fetchCard()
-                            isPresentingCardFormView.toggle()
                         }
                     }
                     .onMove(perform: moveCard)
@@ -76,9 +77,18 @@ struct CardListView: View {
                         .foregroundStyle(.white)
                 }
                 .padding()
+                .listRowSeparator(.hidden)
                 .frame(minWidth: 100, maxWidth: .infinity, minHeight: 44)
                 .background(Color.accentColor)
                 .cornerRadius(8)
+                
+                if !selectedGroup.cards.isEmpty {
+                    Text("Tap on a card to edit, drag to reorder, and swipe to delete")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .listRowSeparator(.hidden)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
         }
         .navigationTitleViewBuilder {
@@ -121,32 +131,6 @@ struct CardListView: View {
             try context.save() // Persist the changes
         } catch {
             validationError.append("Failed to save updated order: \(error.localizedDescription)")
-        }
-    }
-    
-    /// A function that removes the card from the data model entity.
-    /// Used to delete the card gracefully, adjusting existing card's indexes to take over a free index if applicable.
-    private func removeCard(_ card: DMStoredCard) {
-        do {
-            // Remove the card from the context
-            context.delete(card)
-            
-            // Save the context after deletion
-            try context.save()
-            
-            // Update the IDs of remaining cards to fill the gap
-            var mutableCards = selectedGroup.cards.sorted(by: { $0.index < $1.index })
-            mutableCards.removeAll { $0.uuid == card.uuid }
-            
-            // Reassign IDs to remaining cards
-            for index in mutableCards.indices {
-                mutableCards[index].index = index
-            }
-            
-            // Save the changes back to the context
-            try context.save()
-        } catch {
-            validationError.append("Failed to remove card: \(error.localizedDescription)")
         }
     }
 }
