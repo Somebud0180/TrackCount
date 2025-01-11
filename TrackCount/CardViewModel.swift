@@ -43,17 +43,17 @@ class CardViewModel: ObservableObject {
     let minTimerLimit = 1
     let maxTimerLimit = 86399
     
-    /// Initializes the selectedGroup and selectedCard variable for editing.
+    /// Initializes the `selectedGroup` and `selectedCard` variable for editing.
     /// - Parameters:
-    ///   - selectedGroup: accepts DMCardGroup entities, reference for which group to store the card.
-    ///   - selectedCard: (optional) accepts DMStoredCard entities, edits the entity that is passed over.
+    ///   - selectedGroup: accepts `DMCardGroup` entities, reference for which group to store the card.
+    ///   - selectedCard: (optional) accepts `DMStoredCard` entities, edits the entity that is passed over.
     init(selectedGroup: DMCardGroup, selectedCard: DMStoredCard? = nil) {
         self.selectedGroup = selectedGroup
         self.selectedCard = selectedCard
     }
     
     /// A function that grabs the saved data from a selected card.
-    /// Used to populate the temporary variables within CardViewModel with the variables from the selected card.
+    /// Used to populate the temporary variables within `CardViewModel` with the variables from the selected card.
     func fetchCard() {
         guard let card = selectedCard else { return }
         self.newCardType = card.type
@@ -68,8 +68,8 @@ class CardViewModel: ObservableObject {
     }
     
     /// A function that adjusts variables related to buttons.
-    /// Used to adjust the arrays 'newButtonText' and 'newCardState' to match the newCardCount.
-    /// Also clamps newCardCount to stay within limits.
+    /// Used to adjust the arrays `newButtonText` and `newCardState` to match the `newCardCount`.
+    /// Also clamps `newCardCount` to stay within limits.
     func initButton() {
         // Clamp newCardCount within valid limits
         newCardCount = min(max(newCardCount, minButtonLimit), maxButtonLimit)
@@ -89,6 +89,10 @@ class CardViewModel: ObservableObject {
         }
     }
     
+    
+    /// A function that adjusts variables related to timers.
+    /// Used to adjust the array `newCardTimer` to match the `newCardCount` and prep `newCardState`.
+    /// Also clamps `newCardCount` to stay within limits
     func initTimer() {
         // Clamp newCardCount within valid limits
         newCardCount = min(max(newCardCount, minTimerAmount), maxTimerAmount)
@@ -100,12 +104,8 @@ class CardViewModel: ObservableObject {
             newCardTimer.removeLast(newCardTimer.count - newCardCount)
         }
         
-        // Adjust `newCardState` array size
-        if newCardState.count < newCardCount {
-            newCardState.append(contentsOf: Array(repeating: false, count: newCardCount - newCardState.count))
-        } else if newCardTimer.count > newCardCount {
-            newCardState.removeLast(newCardState.count - newCardCount)
-        }
+        // Set `newCardState` for timer
+        newCardState = Array(repeating: false, count: 1)
     }
     
     /// A function that removes the card from the data model entity.
@@ -115,7 +115,7 @@ class CardViewModel: ObservableObject {
             // Remove the card from the context
             context.delete(card)
             
-            // Remove the card from the group's cards array
+            // Remove the card from the group`s cards array
             selectedGroup.cards.removeAll { $0.uuid == card.uuid }
             
             // Update indices of remaining cards
@@ -133,7 +133,7 @@ class CardViewModel: ObservableObject {
     
     /// A function that stores the temporary variables to a card and saves it to the data model entity.
     /// Used to save the set variables into the cards within the selected group.
-    /// Also checks the card contents and throws errors, if any, to validationError.
+    /// Also checks the card contents and throws errors, if any, to `validationError`.
     /// Also provides the card's index and uuid on save.
     func saveCard(with context: ModelContext) {
         // Validate button count and update before saving
@@ -214,7 +214,7 @@ class CardViewModel: ObservableObject {
     
     /// A function that checks the card's contents for any issues.
     /// Prevents empty titles for all card types and empty symbols for toggle cards.
-    /// Appends errors to validationError.
+    /// Appends errors to `validationError`.
     private func validateForm() {
         validationError.removeAll()
         

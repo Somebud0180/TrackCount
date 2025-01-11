@@ -21,8 +21,8 @@ class GroupViewModel: ObservableObject {
     // Set limits
     let titleCharacterLimit = 32
     
-    /// Initializes the selectedGroup for editing.
-    /// - Parameter selectedGroup: (optional) accepts DMGroupCard entities, edits the entity that is passed over.
+    /// Initializes the `selectedGroup` for editing.
+    /// - Parameter selectedGroup: (optional) accepts `DMGroupCard` entities, edits the entity that is passed over.
     init(selectedGroup: DMCardGroup? = nil) {
         self.selectedGroup = selectedGroup
     }
@@ -42,8 +42,8 @@ class GroupViewModel: ObservableObject {
     }
     
     /// A function that checks the group's contents for any issues.
-    /// Ensures atleast either one of the two variables (newGroupTitle and newGroupSymbol) is filled.
-    /// Appends errors to validationError.
+    /// Ensures atleast either one of the two variables (`newGroupTitle` and `newGroupSymbol`) is filled.
+    /// Appends errors to `validationError`.
     func validateGroup() {
         validationError.removeAll()
         let trimmedTitle = newGroupTitle.trimmingCharacters(in: .whitespaces)
@@ -58,7 +58,7 @@ class GroupViewModel: ObservableObject {
     
     /// A function that stores the temporary variables to a group and saves it to the data model entity.
     /// Used to save the set variables into the group.
-    /// Also checks the card contents and throws errors, if any, to validationError.
+    /// Also checks the card contents and throws errors, if any, to `validationError`.
     /// Also provides the group's index and uuid on save.
     func addGroup(with context: ModelContext) {
         // Validate entry
@@ -109,7 +109,7 @@ class GroupViewModel: ObservableObject {
     /// Removes the selected group and updates the indices of remaining groups.
     /// - Parameters:
     ///   - context: The ModelContext to perform operations in.
-    ///   - group: The DMCardGroup to be removed.
+    ///   - group: The `DMCardGroup` to be removed.
     func removeGroup(with context: ModelContext, group: DMCardGroup) {
         do {
             // Delete the group

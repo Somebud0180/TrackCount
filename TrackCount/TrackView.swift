@@ -14,10 +14,12 @@ import Combine
 struct TrackView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
-    @State private var timerSubscription: AnyCancellable?
     @State private var audioPlayer: AVAudioPlayer?
     @State private var pausedTimers: Set<Int> = []
-    @State private var completedTimers: Set<Int> = []
+    @State private var selectedTimerIndex: Int = 0
+    @State private var activeTimerValues: [UUID: Int] = [:]
+    @State private var pausedTimerValues: [UUID: Int] = [:]
+    @State private var timerSubscriptions: [UUID: AnyCancellable] = [:]
     
     var selectedGroup: DMCardGroup
     
@@ -50,6 +52,9 @@ struct TrackView: View {
                 } else {
                     Text(selectedGroup.groupTitle)
                 }
+            }
+            .onDisappear {
+                timerCleanup() // Clean up timers on exit
             }
         }
     }
@@ -208,19 +213,40 @@ struct TrackView: View {
                 } else {
                     activeTimerView(card)
                 }
+            } else if card.type == .timer {
+                if card.state?[0] == false {
+                    // Show grid of preset timers
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
+                        ForEach(0..<card.count, id: \.self) { index in
+                            Button(action: {
+                                selectedTimerIndex = index
+                                card.state?[0] = true
+                                startTimer(card)
+                            }) {
+                                Circle()
+                                    .stroke(lineWidth: 10)
+                                    .opacity(0.3)
+                                    .foregroundColor(card.primaryColor.color)
+                                    .overlay(
+                                        Text((card.timer?[index] ?? 0).formatTime())
+                                            .font(.title2)
+                                            .bold()
+                                    )
+                                    .frame(height: 100)
+                                    .padding()
+                            }
+                        }
+                    }
+                } else {
+                    // Show active timer
+                    activeTimerView(card)
+                }
             }
         }
         .padding()
-        .onChange(of: card.state?[0]) {
-            if card.state?[0] == true {
-                startTimer(card)
-            } else {
-                stopTimer()
-            }
-        }
     }
     
-    // Add these helper functions
+    /// Creates the timer (custom) setup view
     private func setupTimerView(_ card: DMStoredCard) -> some View {
         VStack {
             Text("Set Timer")
@@ -233,7 +259,8 @@ struct TrackView: View {
             .frame(height: 150)
             
             Button(action: {
-                card.state?[0].toggle()
+                card.state?[0] = true
+                startTimer(card) // Start timer immediately when button is pressed
             }) {
                 Text("Start")
                     .foregroundStyle(card.secondaryColor.color)
@@ -246,10 +273,11 @@ struct TrackView: View {
         }
     }
     
+    /// Creates the timer countdown view
     private func activeTimerView(_ card: DMStoredCard) -> some View {
-        let timeRemaining = card.timer?[0] ?? 0
-        let initialTime = card.timer?[0] ?? 1
-        let progress = Float(timeRemaining) / Float(initialTime)
+        let initialTime = card.type == .timer ? card.timer?[selectedTimerIndex] ?? 1 : card.timer?[0] ?? 1
+        let currentValue = activeTimerValues[card.uuid] ?? 0
+        let progress = Float(currentValue) / Float(initialTime)
         let isPaused = pausedTimers.contains(card.index)
         
         return VStack {
@@ -261,22 +289,25 @@ struct TrackView: View {
                 
                 Circle()
                     .trim(from: 0.0, to: CGFloat(progress))
-                    .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round, lineJoin: .round))
+                    .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round))
                     .foregroundColor(card.primaryColor.color)
                     .rotationEffect(.degrees(-90))
-                    .animation(.linear, value: progress)
+                    .animation(.linear(duration: 1), value: progress)
                 
-                Text(timeRemaining.formatTime())
-                    .font(.largeTitle)
+                Text(currentValue.formatTime())
+                    .font(.title)
                     .bold()
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: currentValue)
             }
+            .frame(height: 200)
             .padding()
             
             HStack {
                 Button(action: {
-                    stopTimer()
-                    card.state?[0].toggle()
-                    card.timer?[0] = initialTime
+                    stopTimer(for: card)
+                    card.state?[0] = false
+                    card.timer?[selectedTimerIndex] = initialTime
                     pausedTimers.remove(card.index)
                 }) {
                     Text("Cancel")
@@ -293,7 +324,8 @@ struct TrackView: View {
                         startTimer(card)
                     } else {
                         pausedTimers.insert(card.index)
-                        stopTimer()
+                        pausedTimerValues[card.uuid] = activeTimerValues[card.uuid]
+                        stopTimer(for: card)
                     }
                 }) {
                     Text(isPaused ? "Resume" : "Pause")
@@ -305,34 +337,52 @@ struct TrackView: View {
             .padding(.horizontal)
         }
     }
-    
+
+    /// Starts the timer countdown
     private func startTimer(_ card: DMStoredCard) {
-        stopTimer()
+        stopTimer(for: card)
         
-        timerSubscription = Timer.publish(every: 1, on: .main, in: .common)
-            .autoconnect()
-            .sink { _ in
-                guard var time = card.timer?[0], time > 0 else {
-                    timerComplete(card)
-                    return
-                }
-                time -= 1
-                card.timer?[0] = time
+        // Initialize temp value or resume from paused value
+        if let pausedValue = pausedTimerValues[card.uuid] {
+            activeTimerValues[card.uuid] = pausedValue
+            pausedTimerValues.removeValue(forKey: card.uuid)
+        } else if card.type == .timer_custom {
+            activeTimerValues[card.uuid] = card.timer?[0] ?? 0
+        } else {
+            activeTimerValues[card.uuid] = card.timer?[selectedTimerIndex] ?? 0
+        }
+        
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now(), repeating: .seconds(1))
+        timer.setEventHandler {
+            if let currentValue = activeTimerValues[card.uuid],
+               currentValue > 0 {
+                activeTimerValues[card.uuid] = currentValue - 1
+            } else {
+                timer.cancel()
+                timerComplete(card)
             }
+        }
+        timer.resume()
+        
+        timerSubscriptions[card.uuid] = AnyCancellable { timer.cancel() }
     }
-    
-    private func stopTimer() {
-        timerSubscription?.cancel()
-        timerSubscription = nil
+
+    /// Stops the timer countdown
+    private func stopTimer(for card: DMStoredCard) {
+        timerSubscriptions[card.uuid]?.cancel()
+        timerSubscriptions.removeValue(forKey: card.uuid)
     }
-    
+
+    /// Gracefully stops and cleans up the timer and invokes `playTimerSound()`
     private func timerComplete(_ card: DMStoredCard) {
-        completedTimers.insert(card.index)
+        stopTimer(for: card)
         card.state?[0] = false
-        card.timer?[0] = 0
+        activeTimerValues.removeValue(forKey: card.uuid)
         playTimerSound()
     }
     
+    /// Plays the timer complete tone
     private func playTimerSound() {
         // Setup audio session
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
@@ -344,15 +394,17 @@ struct TrackView: View {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
             audioPlayer?.play()
         } catch {
-            print("Could not play sound: \(error)")
+            print("Could not play sound from URL \(url): \(error.localizedDescription)")
         }
-        
-        // Play haptic
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
     }
     
-    private func cleanup() {
+    /// Cleans up timer-related variables
+    private func timerCleanup() {
+        for subscription in timerSubscriptions.values {
+            subscription.cancel()
+        }
+        timerSubscriptions.removeAll()
+        pausedTimerValues.removeAll()
         try? AVAudioSession.sharedInstance().setActive(false)
     }
 }
@@ -376,11 +428,12 @@ extension Int {
 
 #Preview {
     // An example set of cards
-    // Contains 1 counter card and 1 toggle card
+    // Contains 1 of each type of card
     let exampleCards: [DMStoredCard] = [
         DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, primaryColor: .blue, secondaryColor: .white),
         DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", count: 5, buttonText: ["", "", "", "", ""], state: [true, true, true, true, true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow),
-        DMStoredCard(uuid: UUID(), index: 2, type: .timer_custom, title: "Test Timer", count: 1, state: [false], timer: [0], primaryColor: .blue, secondaryColor: .white),
+        DMStoredCard(uuid: UUID(), index: 2, type: .timer, title: "Test Timer", count: 4, state: [false], timer: [60, 120, 144, 240], primaryColor: .blue, secondaryColor: .white),
+        DMStoredCard(uuid: UUID(), index: 3, type: .timer_custom, title: "Test Timer (Custom)", count: 1, state: [false], timer: [0], primaryColor: .blue, secondaryColor: .white),
     ]
     
     // An example group

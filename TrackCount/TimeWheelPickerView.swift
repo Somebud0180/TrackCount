@@ -63,6 +63,7 @@ struct TimePickerView: View {
             .onChange(of: seconds) { updateTotalSeconds() }
             
             Text("s")
+                .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10))
                 .foregroundStyle(.primary)
                 .minimumScaleFactor(0.2)
                 .lineLimit(1)
@@ -72,10 +73,12 @@ struct TimePickerView: View {
         }
     }
     
+    /// Updates total seconds with data combined from each separate wheel
     private func updateTotalSeconds() {
         totalSeconds = hours * 3600 + minutes * 60 + seconds
     }
     
+    /// Fills up with data from existing totalSeconds into each separate wheel
     private func initializeFromTotalSeconds() {
         hours = totalSeconds / 3600
         minutes = (totalSeconds % 3600) / 60
