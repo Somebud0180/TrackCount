@@ -40,9 +40,9 @@ struct GroupListView: View {
         
         NavigationStack {
             ScrollView {
-                // Display validation error if any
-                if !viewModel.validationError.isEmpty {
-                    Text(viewModel.validationError.joined(separator: ", "))
+                // Display logic error if any
+                if !viewModel.logicError.isEmpty {
+                    Text(viewModel.logicError.joined(separator: ", "))
                         .foregroundStyle(.red)
                         .padding()
                 }
@@ -88,7 +88,10 @@ struct GroupListView: View {
                 }
                 .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
                     GroupFormView(viewModel: viewModel)
-                        .presentationDetents([.fraction(0.45)])
+                        .presentationDetents([.fraction(0.5)])
+                        .onDisappear {
+                            viewModel.validationError.removeAll()
+                        }
                 }
                 .alert(isPresented: $isPresentingDeleteDialog) {
                     Alert(
@@ -118,7 +121,7 @@ struct GroupListView: View {
                                 importManager.handleImport(url, with: context)
                             }
                         case .failure(let error):
-                            viewModel.validationError.append("File import failed: \(error.localizedDescription)")
+                            viewModel.logicError.append("File import failed: \(error.localizedDescription)")
                         }
                     }
                 }
@@ -173,7 +176,7 @@ struct GroupListView: View {
                 rootVC.present(activityVC, animated: true)
             }
         } catch {
-            viewModel.validationError.append(error.localizedDescription)
+            viewModel.logicError.append(error.localizedDescription)
         }
     }
     

@@ -1,7 +1,11 @@
 # TrackCount
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Static Badge](https://img.shields.io/badge/Made_with-Swift-%23F05138?style=flat)](https://github.com/swiftlang/swift)
+![Static Badge](https://img.shields.io/badge/iOS-%3E%3D18-green?style=flat)
+
 ### A tracker of some sort
 ![Home](https://github.com/user-attachments/assets/71c2b38d-cb76-4d74-88bf-5b615b7a27f7)
-A simple app to keep a track of things, something I originaly made for a school project.
+A simple app to keep a track of things, something I originaly made for a school project. This app aims to help you keep atop of multiple things easier. With the goal of adding more features over time.
 
 ### Features:
 - **Tracking**
@@ -21,3 +25,7 @@ A simple app to keep a track of things, something I originaly made for a school 
 
 ![Sharing](https://github.com/user-attachments/assets/60f751bc-0702-4728-be73-af49bb56fa10)
 
+### Built With:
+- Swift
+- SwiftUI
+- SwiftData

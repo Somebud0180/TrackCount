@@ -13,6 +13,7 @@ class GroupViewModel: ObservableObject {
     @Published var importManager = ImportManager()
     @Published var selectedGroup: DMCardGroup? = nil
     @Published var validationError: [String] = []
+    @Published var logicError: [String] = []
     @Published var newGroupIndex: Int = 0
     @Published var newGroupSymbol: String = ""
     @Published var newGroupTitle: String = ""
@@ -125,7 +126,7 @@ class GroupViewModel: ObservableObject {
             
             try context.save()
         } catch {
-            validationError.append("Failed to remove group and update IDs: \(error.localizedDescription)")
+            logicError.append("Failed to remove group and update IDs: \(error.localizedDescription)")
         }
     }
     

@@ -124,31 +124,12 @@ struct CardFormView: View {
                         }
                     }
                 }
-                
-                Button(action: {
-                    saveCard()
-                }) {
-                    Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .cornerRadius(8)
-                }
-                .listRowSeparator(.hidden)
-                
-                if !viewModel.validationError.isEmpty {
-                    Text(viewModel.validationError.joined(separator: ", "))
-                        .foregroundStyle(.red)
-                        .listRowSeparator(.hidden)
-                        .padding()
-                }
             }
             .listStyle(PlainListStyle())
             .navigationBarTitle(viewModel.selectedCard == nil ? "Add Card" : "Edit Card", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button("Dismiss") {
                         dismiss()
                     }
                 }
@@ -158,6 +139,24 @@ struct CardFormView: View {
                     }
                 }
             }
+            
+            if !viewModel.validationError.isEmpty {
+                Text(viewModel.validationError.joined(separator: ", "))
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
+            }
+            
+            Button(action: {
+                saveCard()
+            }) {
+                Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundStyle(.white)
+                    .cornerRadius(8)
+            }
+            .padding()
         }
     }
     

@@ -71,25 +71,29 @@ struct CardListView: View {
                     .onMove(perform: moveCard)
                 }
                 
-                Button(action: {isPresentingCardFormView.toggle()}) {
-                    Text("Create a new card")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                }
-                .padding()
-                .listRowSeparator(.hidden)
-                .frame(minWidth: 100, maxWidth: .infinity, minHeight: 44)
-                .background(Color.accentColor)
-                .cornerRadius(8)
-                
                 if !selectedGroup.cards.isEmpty {
                     Text("Tap on a card to edit, drag to reorder, and swipe to delete")
                         .font(.footnote)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
                         .foregroundStyle(.secondary)
                         .listRowSeparator(.hidden)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
+            
+            Button(action: {
+                isPresentingCardFormView.toggle()
+            }) {
+                Text("Create a new card")
+                    .font(.title2)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundStyle(.white)
+                    .cornerRadius(8)
+            }
+            .padding()
         }
         .navigationTitleViewBuilder {
             if selectedGroup.groupTitle.isEmpty {
@@ -103,6 +107,9 @@ struct CardListView: View {
         }) {
             CardFormView(viewModel: viewModel)
                 .presentationDetents([.medium, .fraction(0.99)])
+                .onDisappear {
+                    viewModel.validationError.removeAll()
+                }
         }
     }
     

@@ -63,30 +63,8 @@ struct GroupFormView: View {
                         .presentationDetents([.fraction(0.99)])
                 }
                 .listRowSeparator(.hidden)
-                
-                Button(action : {
-                    viewModel.addGroup(with: context)
-                    if viewModel.validationError.isEmpty {
-                        dismiss()
-                    }
-                }) {
-                    Text(viewModel.selectedGroup == nil ? "Add Group" : "Save Group")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .cornerRadius(8)
-                }
-                .listRowSeparator(.hidden)
-                
-                if !viewModel.validationError.isEmpty {
-                    Text(viewModel.validationError.joined(separator: ", "))
-                        .listRowSeparator(.hidden)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal)
-                }
             }
-            .listStyle(InsetListStyle())
+            .listStyle(PlainListStyle())
             .navigationBarTitle(viewModel.selectedGroup == nil ? "Create Group" : "Edit Group", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -103,6 +81,27 @@ struct GroupFormView: View {
                     }
                 }
             }
+            
+            if !viewModel.validationError.isEmpty {
+                Text(viewModel.validationError.joined(separator: ", "))
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
+            }
+            
+            Button(action : {
+                viewModel.addGroup(with: context)
+                if viewModel.validationError.isEmpty {
+                    dismiss()
+                }
+            }) {
+                Text(viewModel.selectedGroup == nil ? "Add Group" : "Save Changes")
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundStyle(.white)
+                    .cornerRadius(8)
+            }
+            .padding()
         }
     }
 }
