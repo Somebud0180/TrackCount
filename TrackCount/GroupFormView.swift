@@ -59,7 +59,7 @@ struct GroupFormView: View {
                 .buttonStyle(PlainButtonStyle())
                 .listRowSeparator(.hidden)
                 .sheet(isPresented: $isPickerPresented) {
-                    SymbolPicker(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
+                    SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
                         .presentationDetents([.fraction(0.99)])
                 }
                 .listRowSeparator(.hidden)

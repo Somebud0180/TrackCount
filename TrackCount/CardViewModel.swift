@@ -18,9 +18,10 @@ class CardViewModel: ObservableObject {
     @Published var newIndex: Int = 0
     @Published var newCardType: DMStoredCard.Types = .counter
     @Published var newCardTitle: String = ""
-    @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardCount: Int = 1
+    @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
+    @Published var newCardTimer: [Int] = Array(repeating: 0, count: 1)
     @Published var newCardSymbol: String = ""
     @Published var newCardPrimary: Color = .blue
     @Published var newCardSecondary: Color = .white
@@ -35,6 +36,12 @@ class CardViewModel: ObservableObject {
     let buttonTextLimit = 20
     let minButtonLimit = 1
     let maxButtonLimit = 4096
+    
+    // Timer limit
+    let minTimerAmount = 1
+    let maxTimerAmount = 4
+    let minTimerLimit = 1
+    let maxTimerLimit = 86399
     
     /// Initializes the selectedGroup and selectedCard variable for editing.
     /// - Parameters:
@@ -55,6 +62,7 @@ class CardViewModel: ObservableObject {
         self.newButtonText = card.buttonText ?? Array(repeating: "", count: 1)
         self.newCardState = card.state ?? Array(repeating: true, count: 1)
         self.newCardSymbol = card.symbol ?? ""
+        self.newCardTimer = card.timer ?? Array(repeating: 0, count: 1)
         self.newCardPrimary = card.primaryColor.color
         self.newCardSecondary = card.secondaryColor.color
     }
@@ -77,6 +85,25 @@ class CardViewModel: ObservableObject {
         if newCardState.count < newCardCount {
             newCardState.append(contentsOf: Array(repeating: true, count: newCardCount - newCardState.count))
         } else if newCardState.count > newCardCount {
+            newCardState.removeLast(newCardState.count - newCardCount)
+        }
+    }
+    
+    func initTimer() {
+        // Clamp newCardCount within valid limits
+        newCardCount = min(max(newCardCount, minTimerAmount), maxTimerAmount)
+        
+        // Adjust `newCardTimer` array size
+        if newCardTimer.count < newCardCount {
+            newCardTimer.append(contentsOf: Array(repeating: 0, count: newCardCount - newCardTimer.count))
+        } else if newCardTimer.count > newCardCount {
+            newCardTimer.removeLast(newCardTimer.count - newCardCount)
+        }
+        
+        // Adjust `newCardState` array size
+        if newCardState.count < newCardCount {
+            newCardState.append(contentsOf: Array(repeating: false, count: newCardCount - newCardState.count))
+        } else if newCardTimer.count > newCardCount {
             newCardState.removeLast(newCardState.count - newCardCount)
         }
     }
@@ -112,6 +139,9 @@ class CardViewModel: ObservableObject {
         // Validate button count and update before saving
         initButton()
         
+        // Validate timer amount and update before saving
+        initTimer()
+        
         // Validate the form before saving
         validateForm()
         guard validationError.isEmpty else {
@@ -133,6 +163,7 @@ class CardViewModel: ObservableObject {
             card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count)))
             card.state = Array(newCardState.prefix(min(newCardCount, newCardState.count)))
             card.symbol = newCardSymbol
+            card.timer = newCardTimer
             card.primaryColor = CodableColor(color: newCardPrimary)
             card.secondaryColor = CodableColor(color: newCardSecondary)
         } else {
@@ -142,10 +173,12 @@ class CardViewModel: ObservableObject {
                 index: newIndex,
                 type: newCardType,
                 title: newCardTitle,
+                count: newCardType == .counter ? 0 : newCardCount,
                 buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
-                count: newCardType == .toggle ? newCardCount : 0,
-                state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } : nil,
+                state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
+                    (newCardType == .timer || newCardType == .timer_custom) ? Array(repeating: false, count: newCardCount) : nil,
                 symbol: newCardType == .toggle ? newCardSymbol : nil,
+                timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
                 primaryColor: newCardPrimary,
                 secondaryColor: newCardSecondary
             )
@@ -161,7 +194,7 @@ class CardViewModel: ObservableObject {
         
         resetFields(.viewModel)
     }
-
+    
     /// A function that sets the temporary fields to defaults.
     /// Used to reset the contents after saving a card to free the fields for a new card.
     func resetFields(_ behaviour: resetFor? = .dismiss) {
@@ -170,10 +203,11 @@ class CardViewModel: ObservableObject {
         }
         newCardType = .counter
         newCardTitle = ""
-        newButtonText = Array(repeating: "", count: 1)
         newCardCount = 1
+        newButtonText = Array(repeating: "", count: 1)
         newCardState = Array(repeating: true, count: 1)
         newCardSymbol = ""
+        newCardTimer = Array(repeating: 0, count: 1)
         newCardPrimary = .blue
         newCardSecondary = .white
     }
@@ -185,12 +219,20 @@ class CardViewModel: ObservableObject {
         validationError.removeAll()
         
         if newCardTitle.trimmingCharacters(in: .whitespaces).isEmpty {
-            validationError.append("Card title cannot be empty.")
+            validationError.append("Card title cannot be empty")
         }
         
         if newCardType == .toggle {
             if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {
-                validationError.append("Symbol cannot be empty for toggle type.")
+                validationError.append("Symbol cannot be empty for toggle type")
+            }
+        } else if newCardType == .timer {
+            for (index, timerValue) in newCardTimer.enumerated() {
+                if timerValue <= 0 {
+                    validationError.append("Timer \(index + 1) cannot be less than one")
+                } else if timerValue > 7199 {
+                    validationError.append("Timer \(index + 1) cannot exceed limits")
+                }
             }
         }
     }

@@ -106,7 +106,7 @@ struct CardListView: View {
             viewModel.resetFields()
         }) {
             CardFormView(viewModel: viewModel)
-                .presentationDetents([.medium, .fraction(0.99)])
+                .presentationDetents([.fraction(0.6), .fraction(0.99)])
                 .onDisappear {
                     viewModel.validationError.removeAll()
                 }

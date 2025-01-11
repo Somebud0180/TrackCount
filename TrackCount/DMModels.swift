@@ -105,8 +105,8 @@ final class DMCardGroup: Identifiable {
                     index: index,
                     type: cardData.type,
                     title: cardData.title,
-                    buttonText: cardData.buttonText,
                     count: cardData.count,
+                    buttonText: cardData.buttonText,
                     state: Array(repeating: true, count: cardData.count),
                     symbol: cardData.symbol,
                     primaryColor: cardData.primaryColor.color,
@@ -130,6 +130,8 @@ final class DMStoredCard: Identifiable {
         var id: String { self.rawValue }
         case counter // A number counter
         case toggle // A toggle button
+        case timer // A predefined timer
+        case timer_custom // A timer set on the fly
     }
     
     /// A unique identifier for the card.
@@ -145,11 +147,12 @@ final class DMStoredCard: Identifiable {
     /// The title of the card.
     var title: String
     
+    /// The amount counted (counter), amount of buttons (toggle) or amount of timers stored (timer).
+    var count: Int
+    
+    // Button-Specific
     /// The text inside the button (toggle).
     var buttonText: [String]?
-    
-    /// The amount counted (counter) or amount of buttons (toggle).
-    var count: Int
     
     /// The state of the button, either pressed or not (toggle).
     var state: [Bool]?
@@ -157,6 +160,11 @@ final class DMStoredCard: Identifiable {
     /// The symbol of the button (toggle).
     var symbol: String?
     
+    // Timer specific
+    /// The countdown and saved value(s) for timers (timer).
+    var timer: [Int]?
+    
+    // Colors
     /// The color used for buttons.
     var primaryColor: CodableColor
     
@@ -164,13 +172,14 @@ final class DMStoredCard: Identifiable {
     var secondaryColor: CodableColor
     
     /// Initializes a new instance of DMStoredCard.
-    init(uuid: UUID, index: Int, type: Types, title: String, buttonText: [String]? = nil, count: Int, state: [Bool]? = nil, symbol: String? = nil, primaryColor: Color, secondaryColor: Color) {
+    init(uuid: UUID, index: Int, type: Types, title: String, count: Int, buttonText: [String]? = nil, state: [Bool]? = nil, symbol: String? = nil, timer: [Int]? = nil, primaryColor: Color, secondaryColor: Color) {
         self.uuid = uuid
         self.index = index
         self.type = type
         self.title = title
-        self.buttonText = buttonText
         self.count = count
+        self.timer = timer
+        self.buttonText = buttonText
         self.state = state
         self.symbol = symbol
         self.primaryColor = CodableColor(color: primaryColor)
@@ -184,17 +193,39 @@ final class DMStoredCard: Identifiable {
     private func validateStoredCard() {
         switch type {
         case .counter:
-            // For Counter type, ensure toggle-specific properties are nil
+            // For Counter type, ensure counter-specific properties are filled
             assert(buttonText == nil, "buttonText should be nil for Counter type.")
             assert(state == nil, "state should be nil for Counter type.")
             assert(symbol == nil, "symbol should be nil for Counter type.")
             
         case .toggle:
-            // For Toggle type, ensure toggle-specific properties are not nil
-            guard let _ = buttonText,
-                  let _ = state,
-                  let _ = symbol else {
-                fatalError("buttonText, state, and symbol are required for Toggle type.")
+            // For Toggle type, ensure toggle-specific properties are filled
+            guard let _ = buttonText else {
+                fatalError("buttonText is empty but is required for Toggle type.")
+            }
+            guard let _ = state else {
+                fatalError("state is empty but is required for Toggle type.")
+            }
+            guard let _ = symbol else {
+                fatalError("symbol is empty but is required for Toggle type.")
+            }
+            
+        case .timer:
+            // For Timer type, ensure timer-specific properties are filled
+            guard let _ = timer else {
+                fatalError("timer is empty but is required for Timer type.")
+            }
+            guard let _ = state else {
+                fatalError("state is empty but is required for Timer type.")
+            }
+            
+        case .timer_custom:
+            // For Timer type, ensure timer-specific properties are filled
+            guard let _ = timer else {
+                fatalError("timer is empty but is required for Timer type.")
+            }
+            guard let _ = state else {
+                fatalError("state is empty but is required for Timer type.")
             }
         }
     }

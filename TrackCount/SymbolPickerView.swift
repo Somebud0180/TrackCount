@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A view containing symbols with the ability to pick one and store it to selectedSymbol.
-struct SymbolPicker: View {
+struct SymbolPickerView: View {
     /// Represents the interaction behavior setting for the symbol picker.
     enum viewBehaviour {
         case tapToSelect // Tap to select
@@ -142,5 +142,5 @@ struct SymbolPicker: View {
 #Preview {
     // Sample variable to pass to the picker
     @Previewable @State var testSymbol: String = ""
-    SymbolPicker(viewBehaviour: .tapWithUnselect, selectedSymbol: $testSymbol)
+    SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $testSymbol)
 }

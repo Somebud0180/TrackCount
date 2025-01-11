@@ -206,7 +206,7 @@ struct TrackView: View {
     // Contains 1 counter card and 1 toggle card
     let exampleCards: [DMStoredCard] = [
         DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, primaryColor: .blue, secondaryColor: .white),
-        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", buttonText: ["", "", "", "", ""], count: 5, state: [true, true, true, true, true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow)
+        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", count: 5, buttonText: ["", "", "", "", ""], state: [true, true, true, true, true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow)
     ]
     
     // An example group

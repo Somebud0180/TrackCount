@@ -18,32 +18,13 @@ struct CardFormView: View {
     /// Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046.
     static let formatter = NumberFormatter()
     
-    /// Binding to manage the TextField input for newCardCount.
-    var countBinding: Binding<String> {
-        Binding<String>(
-            get: {
-                "\(self.viewModel.newCardCount)"
-            },
-            set: {
-                // Ensure the value is an integer and within limits
-                if let value = Int($0), value >= viewModel.minButtonLimit && value <= viewModel.maxButtonLimit {
-                    self.viewModel.newCardCount = value
-                } else if let value = Int($0), value > viewModel.minButtonLimit {
-                    self.viewModel.newCardCount = viewModel.maxButtonLimit // Set to max if the value is above the limit
-                } else {
-                    self.viewModel.newCardCount = viewModel.minButtonLimit  // Reset to minimum if the value is below the limit
-                }
-            }
-        )
-    }
-    
     var body: some View {
         NavigationStack {
             List {
                 // Picker for card type
                 Picker(selection: $viewModel.newCardType) {
                     ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                        Text(type.rawValue.capitalized).tag(type)
+                        Text(type.formattedName).tag(type)
                     }
                 } label: {
                     Text("Type")
@@ -55,11 +36,12 @@ struct CardFormView: View {
                     .customRoundedStyle()
                     .listRowSeparator(.hidden)
                 
+                let isTimer = (viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom)
                 
-                ColorPicker("Button Color:", selection: $viewModel.newCardPrimary, supportsOpacity: false)
+                ColorPicker(isTimer ? "Progress Color" : "Button Color:", selection: $viewModel.newCardPrimary, supportsOpacity: false)
                     .listRowSeparator(.hidden)
                 
-                ColorPicker("Button Content Color:", selection: $viewModel.newCardSecondary, supportsOpacity: false)
+                ColorPicker(isTimer ? "Text Color" : "Button Content Color:", selection: $viewModel.newCardSecondary, supportsOpacity: false)
                     .listRowSeparator(.hidden)
                 
                 // Check type for toggle to add specific editing fields
@@ -94,7 +76,7 @@ struct CardFormView: View {
                     .listRowSeparator(.hidden)
                     .buttonStyle(PlainButtonStyle())
                     .sheet(isPresented: $isSymbolPickerPresented) {
-                        SymbolPicker(viewBehaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
+                        SymbolPickerView(viewBehaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
                             .presentationDetents([.fraction(0.99)])
                     }
                     
@@ -123,6 +105,28 @@ struct CardFormView: View {
                             .listRowSeparator(.hidden)
                         }
                     }
+                } else if viewModel.newCardType == .timer {
+                    HStack {
+                        Text("Timers: ")
+                        TextField("", value: $viewModel.newCardCount, formatter: NumberFormatter())
+                            .customRoundedStyle()
+                            .keyboardType(.numberPad)
+                        Stepper("", value: $viewModel.newCardCount, in: viewModel.minTimerAmount...viewModel.maxTimerAmount)
+                    }
+                    .onChange(of: viewModel.newCardCount) {
+                        viewModel.initTimer()
+                    }
+                    .listRowSeparator(.hidden)
+                    
+                    ForEach(0..<viewModel.newCardTimer.count, id: \.self) { index in
+                        HStack {
+                            Text("Timer \(index + 1): ")
+                            TimePickerView(totalSeconds: $viewModel.newCardTimer[index])
+                        }
+                        .padding(.horizontal)
+                        .frame(maxHeight: 150)
+                    }
+                    .listRowSeparator(.hidden)
                 }
             }
             .listStyle(PlainListStyle())
@@ -141,7 +145,7 @@ struct CardFormView: View {
             }
             
             if !viewModel.validationError.isEmpty {
-                Text(viewModel.validationError.joined(separator: ", "))
+                Text("\(viewModel.validationError.joined(separator: ", ")).")
                     .foregroundStyle(.red)
                     .padding(.horizontal)
             }
@@ -179,6 +183,18 @@ struct CardFormView: View {
                 dismiss()
             }
         }
+    }
+}
+
+extension DMStoredCard.Types {
+    var formattedName: String {
+        let components = self.rawValue.components(separatedBy: "_")
+        if components.count > 1 {
+            let firstWord = components[0].capitalized
+            let restWords = components[1].capitalized
+            return "\(firstWord) (\(restWords))"
+        }
+        return self.rawValue.capitalized
     }
 }
 
