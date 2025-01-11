@@ -7,10 +7,17 @@
 
 import SwiftUI
 import SwiftData
+import AudioToolbox
+import AVFoundation
+import Combine
 
 struct TrackView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @State private var timerSubscription: AnyCancellable?
+    @State private var audioPlayer: AVAudioPlayer?
+    @State private var pausedTimers: Set<Int> = []
+    @State private var completedTimers: Set<Int> = []
     
     var selectedGroup: DMCardGroup
     
@@ -97,43 +104,12 @@ struct TrackView: View {
                     counterCard(card)
                 } else if card.type == .toggle {
                     toggleCard(card)
+                } else if card.type == .timer || card.type == .timer_custom {
+                    timerCard(card)
                 }
             }
                 .padding()
         )
-    }
-    
-    /// Creates the toggle card contents from the inputted card.
-    private func toggleCard(_ card: DMStoredCard) -> some View {
-        VStack(alignment: .center, spacing: 10) {
-            Text(card.title)
-                .font(.title2)
-                .fontWeight(.bold)
-            
-            Spacer()
-            
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 10) {
-                ForEach(0..<card.count, id: \.self) { index in
-                    toggleButton(card, id: index)
-                }
-            }
-            Spacer()
-        }
-        .padding()
-    }
-    
-    /// Determines the possible column layouts of the toggle card
-    private func determineButtonColumns(_ card: DMStoredCard) -> Int {
-        switch card.count {
-        case 1:
-            return 1
-        case 2:
-            return 2
-        case 3:
-            return 3
-        default:
-            return 1
-        }
     }
     
     /// Creates the counter card contents from the inputted card.
@@ -174,6 +150,25 @@ struct TrackView: View {
         .padding()
     }
     
+    /// Creates the toggle card contents from the inputted card.
+    private func toggleCard(_ card: DMStoredCard) -> some View {
+        VStack(alignment: .center, spacing: 10) {
+            Text(card.title)
+                .font(.title2)
+                .fontWeight(.bold)
+            
+            Spacer()
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 10) {
+                ForEach(0..<card.count, id: \.self) { index in
+                    toggleButton(card, id: index)
+                }
+            }
+            Spacer()
+        }
+        .padding()
+    }
+    
     /// Creates buttons with data from the inputted card and index.
     private func toggleButton(_ card: DMStoredCard, id: Int) -> some View {
         Button(action: {
@@ -199,6 +194,184 @@ struct TrackView: View {
         .buttonStyle(.borderedProminent)
         .tint(card.state![id] ? card.primaryColor.color : .secondary)
     }
+    
+    /// Creates the timer card contents from the inputted card.
+    private func timerCard(_ card: DMStoredCard) -> some View {
+        VStack(alignment: .center, spacing: 10) {
+            Text(card.title)
+                .font(.title2)
+                .fontWeight(.bold)
+            
+            if card.type == .timer_custom {
+                if card.state?[0] == false {
+                    setupTimerView(card)
+                } else {
+                    activeTimerView(card)
+                }
+            }
+        }
+        .padding()
+        .onChange(of: card.state?[0]) {
+            if card.state?[0] == true {
+                startTimer(card)
+            } else {
+                stopTimer()
+            }
+        }
+    }
+    
+    // Add these helper functions
+    private func setupTimerView(_ card: DMStoredCard) -> some View {
+        VStack {
+            Text("Set Timer")
+                .font(.headline)
+            
+            TimePickerView(totalSeconds: Binding(
+                get: { card.timer?[0] ?? 0 },
+                set: { card.timer?[0] = $0 }
+            ))
+            .frame(height: 150)
+            
+            Button(action: {
+                card.state?[0].toggle()
+            }) {
+                Text("Start")
+                    .foregroundStyle(card.secondaryColor.color)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(card.primaryColor.color)
+            .disabled(card.timer?[0] == 0)
+        }
+    }
+    
+    private func activeTimerView(_ card: DMStoredCard) -> some View {
+        let timeRemaining = card.timer?[0] ?? 0
+        let initialTime = card.timer?[0] ?? 1
+        let progress = Float(timeRemaining) / Float(initialTime)
+        let isPaused = pausedTimers.contains(card.index)
+        
+        return VStack {
+            ZStack {
+                Circle()
+                    .stroke(lineWidth: 20)
+                    .opacity(0.3)
+                    .foregroundColor(card.primaryColor.color)
+                
+                Circle()
+                    .trim(from: 0.0, to: CGFloat(progress))
+                    .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round, lineJoin: .round))
+                    .foregroundColor(card.primaryColor.color)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear, value: progress)
+                
+                Text(timeRemaining.formatTime())
+                    .font(.largeTitle)
+                    .bold()
+            }
+            .padding()
+            
+            HStack {
+                Button(action: {
+                    stopTimer()
+                    card.state?[0].toggle()
+                    card.timer?[0] = initialTime
+                    pausedTimers.remove(card.index)
+                }) {
+                    Text("Cancel")
+                        .foregroundStyle(card.secondaryColor.color)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.secondary)
+                
+                Spacer()
+                
+                Button(action: {
+                    if isPaused {
+                        pausedTimers.remove(card.index)
+                        startTimer(card)
+                    } else {
+                        pausedTimers.insert(card.index)
+                        stopTimer()
+                    }
+                }) {
+                    Text(isPaused ? "Resume" : "Pause")
+                        .foregroundStyle(card.secondaryColor.color)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(card.primaryColor.color)
+            }
+            .padding(.horizontal)
+        }
+    }
+    
+    private func startTimer(_ card: DMStoredCard) {
+        stopTimer()
+        
+        timerSubscription = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { _ in
+                guard var time = card.timer?[0], time > 0 else {
+                    timerComplete(card)
+                    return
+                }
+                time -= 1
+                card.timer?[0] = time
+            }
+    }
+    
+    private func stopTimer() {
+        timerSubscription?.cancel()
+        timerSubscription = nil
+    }
+    
+    private func timerComplete(_ card: DMStoredCard) {
+        completedTimers.insert(card.index)
+        card.state?[0] = false
+        card.timer?[0] = 0
+        playTimerSound()
+    }
+    
+    private func playTimerSound() {
+        // Setup audio session
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        
+        // Play system sound
+        let url = URL(fileURLWithPath: "/Library/Ringtones/Radial-EncoreInfinitum.m4r")
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.play()
+        } catch {
+            print("Could not play sound: \(error)")
+        }
+        
+        // Play haptic
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    
+    private func cleanup() {
+        try? AVAudioSession.sharedInstance().setActive(false)
+    }
+}
+
+/// Extends the Int type to format time in hours, minutes and seconds.
+extension Int {
+    func formatTime() -> String {
+        let hours = self / 3600
+        let minutes = (self % 3600) / 60
+        let seconds = self % 60
+        
+        if hours > 0 {
+            return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
+        } else if minutes > 0 {
+            return String(format: "%02i:%02i", minutes, seconds)
+        } else {
+            return String(format: "%02i", seconds)
+        }
+    }
 }
 
 #Preview {
@@ -206,7 +379,8 @@ struct TrackView: View {
     // Contains 1 counter card and 1 toggle card
     let exampleCards: [DMStoredCard] = [
         DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, primaryColor: .blue, secondaryColor: .white),
-        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", count: 5, buttonText: ["", "", "", "", ""], state: [true, true, true, true, true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow)
+        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", count: 5, buttonText: ["", "", "", "", ""], state: [true, true, true, true, true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow),
+        DMStoredCard(uuid: UUID(), index: 2, type: .timer_custom, title: "Test Timer", count: 1, state: [false], timer: [0], primaryColor: .blue, secondaryColor: .white),
     ]
     
     // An example group
