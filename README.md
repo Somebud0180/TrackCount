@@ -2,6 +2,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Static Badge](https://img.shields.io/badge/Made_with-Swift-%23F05138?style=flat)](https://github.com/swiftlang/swift)
 ![Static Badge](https://img.shields.io/badge/iOS-%3E%3D18-green?style=flat)
+[![Static Badge](https://img.shields.io/badge/Available_on-TestFlight-blue?style=flat)](https://testflight.apple.com/join/P8fadwdF)
+
 
 ### A tracker of some sort
 ![Home](https://github.com/user-attachments/assets/71c2b38d-cb76-4d74-88bf-5b615b7a27f7)
