@@ -19,6 +19,10 @@ class CardViewModel: ObservableObject {
     @Published var newCardType: DMStoredCard.Types = .counter
     @Published var newCardTitle: String = ""
     @Published var newCardCount: Int = 1
+    @Published var newCardModifier1: Int = 1
+    @Published var newCardModifier2: Int = 0
+    @Published var newCardModifier3: Int = 0
+    @Published var newCardModifier: [Int] = [1]
     @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
     @Published var newCardTimer: [Int] = Array(repeating: 0, count: 1)
@@ -59,12 +63,22 @@ class CardViewModel: ObservableObject {
         self.newCardType = card.type
         self.newCardTitle = card.title
         self.newCardCount = card.count
-        self.newButtonText = card.buttonText ?? Array(repeating: "", count: 1)
         self.newCardState = card.state ?? Array(repeating: true, count: 1)
+        self.newCardModifier = card.modifier ?? [1]
+        self.newButtonText = card.buttonText ?? Array(repeating: "", count: 1)
         self.newCardSymbol = card.symbol ?? ""
         self.newCardTimer = card.timer ?? Array(repeating: 0, count: 1)
         self.newCardPrimary = card.primaryColor.color
         self.newCardSecondary = card.secondaryColor.color
+    }
+    
+    /// A function that consolidates the modifiers into one
+    func initModifier() {
+        var modifiers = [Int]()
+        if newCardModifier1 != 0 { modifiers.append(newCardModifier1) }
+        if newCardModifier2 != 0 { modifiers.append(newCardModifier2) }
+        if newCardModifier3 != 0 { modifiers.append(newCardModifier3) }
+        newCardModifier = modifiers
     }
     
     /// A function that adjusts variables related to buttons.
@@ -136,6 +150,9 @@ class CardViewModel: ObservableObject {
     /// Also checks the card contents and throws errors, if any, to `validationError`.
     /// Also provides the card's index and uuid on save.
     func saveCard(with context: ModelContext) {
+        // Validate modifier and update before saving
+        initModifier()
+
         // Validate button count and update before saving
         initButton()
         
@@ -160,8 +177,9 @@ class CardViewModel: ObservableObject {
             card.title = newCardTitle
             card.type = newCardType
             card.count = newCardCount
-            card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count)))
             card.state = Array(newCardState.prefix(min(newCardCount, newCardState.count)))
+            card.modifier = newCardModifier
+            card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count)))
             card.symbol = newCardSymbol
             card.timer = newCardTimer
             card.primaryColor = CodableColor(color: newCardPrimary)
@@ -174,9 +192,10 @@ class CardViewModel: ObservableObject {
                 type: newCardType,
                 title: newCardTitle,
                 count: newCardType == .counter ? 0 : newCardCount,
-                buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
                 state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
                     (newCardType == .timer || newCardType == .timer_custom) ? Array(repeating: false, count: newCardCount) : nil,
+                modifier: newCardType == .counter ? newCardModifier : nil,
+                buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
                 symbol: newCardType == .toggle ? newCardSymbol : nil,
                 timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
                 primaryColor: newCardPrimary,
@@ -204,6 +223,10 @@ class CardViewModel: ObservableObject {
         newCardType = .counter
         newCardTitle = ""
         newCardCount = 1
+        newCardModifier1 = 1
+        newCardModifier2 = 0
+        newCardModifier3 = 0
+        newCardModifier = [1]
         newButtonText = Array(repeating: "", count: 1)
         newCardState = Array(repeating: true, count: 1)
         newCardSymbol = ""
@@ -222,7 +245,15 @@ class CardViewModel: ObservableObject {
             validationError.append("Card title cannot be empty")
         }
         
-        if newCardType == .toggle {
+        if newCardType == .counter {
+            if newCardModifier.contains(where: { $0 < 0 }) {
+            validationError.append("Modifiers cannot be negative")
+            }
+            
+            if newCardModifier.isEmpty {
+            validationError.append("There can't be less than one modifier")
+            }
+        } else if newCardType == .toggle {
             if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {
                 validationError.append("Symbol cannot be empty for toggle type")
             }

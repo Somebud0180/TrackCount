@@ -13,6 +13,8 @@ import SwiftUI
 /// Includes metadata like group title, symbol, and the associated cards.
 @Model
 final class DMCardGroup: Identifiable {
+    // Version
+    var schemaVersion: Int = 2
     
     /// A unique identifier for the group.
     @Attribute(.unique) var uuid: UUID
@@ -37,10 +39,11 @@ final class DMCardGroup: Identifiable {
         self.groupSymbol = groupSymbol
         self.cards = cards
         
-        validateCardGroup() // Validate group card after initialization
+        // Validate group card after initialization
+        validateCardGroup()
     }
     
-    /// A function that checks the card group for any issues.
+    /// Checks if the card contains at least either one of two variables (groupTitle and groupSymbol).
     /// Checks if the card contains atlease either one of two variables (groupTitle and groupSymbol).
     private func validateCardGroup() {
         let titleIsEmpty = groupTitle.isEmpty
@@ -62,9 +65,11 @@ final class DMCardGroup: Identifiable {
                 ShareableCard(
                     type: card.type,
                     title: card.title,
-                    buttonText: card.buttonText,
                     count: card.count,
+                    modifier: card.modifier,
+                    buttonText: card.buttonText,
                     symbol: card.symbol,
+                    timer: card.timer,
                     primaryColor: card.primaryColor,
                     secondaryColor: card.secondaryColor
                 )
@@ -96,6 +101,7 @@ final class DMCardGroup: Identifiable {
                     type: cardData.type,
                     title: cardData.title,
                     count: cardData.count,
+                    modifier: cardData.modifier,
                     primaryColor: cardData.primaryColor.color,
                     secondaryColor: cardData.secondaryColor.color
                 )
@@ -106,9 +112,21 @@ final class DMCardGroup: Identifiable {
                     type: cardData.type,
                     title: cardData.title,
                     count: cardData.count,
-                    buttonText: cardData.buttonText,
                     state: Array(repeating: true, count: cardData.count),
+                    buttonText: cardData.buttonText,
                     symbol: cardData.symbol,
+                    primaryColor: cardData.primaryColor.color,
+                    secondaryColor: cardData.secondaryColor.color
+                )
+            } else if cardData.type == .timer || cardData.type == .timer_custom {
+                return DMStoredCard(
+                    uuid: UUID(),
+                    index: index,
+                    type: cardData.type,
+                    title: cardData.title,
+                    count: cardData.count,
+                    state: Array(repeating: false, count: 1),
+                    timer: cardData.timer,
                     primaryColor: cardData.primaryColor.color,
                     secondaryColor: cardData.secondaryColor.color
                 )
@@ -125,6 +143,9 @@ final class DMCardGroup: Identifiable {
 /// Includes metadata like the card's index, type, title, and other contents.
 @Model
 final class DMStoredCard: Identifiable {
+    // Version
+    var schemaVersion: Int = 2
+
     // Types of tracker
     enum Types: String, Codable, CaseIterable, Identifiable {
         var id: String { self.rawValue }
@@ -147,59 +168,89 @@ final class DMStoredCard: Identifiable {
     /// The title of the card.
     var title: String
     
+    // Shared
     /// The amount counted (counter), amount of buttons (toggle) or amount of timers stored (timer).
     var count: Int
     
-    // Button-Specific
-    /// The text inside the button (toggle).
-    var buttonText: [String]?
-    
-    /// The state of the button, either pressed or not (toggle).
+    /// The state of the button, either pressed or not (toggle) or the state of the timer, either paused or counting (timer).
     var state: [Bool]?
     
-    /// The symbol of the button (toggle).
+    // Counter-Specific
+    /// The different modifiers for the counter.
+    /// Example: [1] will add a button that modifies the variable by one
+    var modifier: [Int]?
+    
+    // Button-Specific
+    /// The text inside the button.
+    var buttonText: [String]?
+    
+    
+    /// The symbol of the button.
     var symbol: String?
     
     // Timer specific
-    /// The countdown and saved value(s) for timers (timer).
+    /// The countdown and saved value(s) for timers.
     var timer: [Int]?
     
     // Colors
-    /// The color used for buttons.
+    /// The color used for buttons or progress bars.
     var primaryColor: CodableColor
     
-    /// The color used for the button contents (text and symbols).
+    /// The color used for the button contents (text and symbols) and timer text.
     var secondaryColor: CodableColor
     
     /// Initializes a new instance of DMStoredCard.
-    init(uuid: UUID, index: Int, type: Types, title: String, count: Int, buttonText: [String]? = nil, state: [Bool]? = nil, symbol: String? = nil, timer: [Int]? = nil, primaryColor: Color, secondaryColor: Color) {
+    init(uuid: UUID,
+         index: Int,
+         type: Types,
+         title: String,
+         count: Int,
+         state: [Bool]? = nil,
+         modifier: [Int]? = nil,
+         buttonText: [String]? = nil,
+         symbol: String? = nil,
+         timer: [Int]? = nil,
+         primaryColor: Color,
+         secondaryColor: Color)
+    {
         self.uuid = uuid
         self.index = index
         self.type = type
         self.title = title
         self.count = count
-        self.timer = timer
-        self.buttonText = buttonText
         self.state = state
+        self.modifier = modifier
+        self.buttonText = buttonText
         self.symbol = symbol
+        self.timer = timer
         self.primaryColor = CodableColor(color: primaryColor)
         self.secondaryColor = CodableColor(color: secondaryColor)
         
-        validateStoredCard() // Perform card validation after initialization
+        // Perform card validation after initialization
+        validateStoredCard()
     }
     
     /// A function that checks the stored cards for any issues.
     /// Checks if a counter card contains extraneous variables or if a toggle card is missing required variables.
-    private func validateStoredCard() {
+    /// In some cases, patches missing variables with defaults where possible.
+    func validateStoredCard() {
         switch type {
         case .counter:
             // For Counter type, ensure counter-specific properties are filled
             assert(buttonText == nil, "buttonText should be nil for Counter type.")
             assert(state == nil, "state should be nil for Counter type.")
             assert(symbol == nil, "symbol should be nil for Counter type.")
+            assert(timer == nil, "timer should be nil for Counter type.")
+            
+            if modifier == nil || modifier?.isEmpty == true {
+                self.modifier = [1]
+            }
             
         case .toggle:
             // For Toggle type, ensure toggle-specific properties are filled
+            assert(modifier == nil, "modifier should be nil for Timer type.")
+            assert(timer == nil, "timer should be nil for Counter type.")
+            
             guard let _ = buttonText else {
                 fatalError("buttonText is empty but is required for Toggle type.")
             }
@@ -210,23 +261,37 @@ final class DMStoredCard: Identifiable {
                 fatalError("symbol is empty but is required for Toggle type.")
             }
             
-        case .timer:
+        case .timer, .timer_custom:
             // For Timer type, ensure timer-specific properties are filled
-            guard let _ = timer else {
-                fatalError("timer is empty but is required for Timer type.")
-            }
-            guard let _ = state else {
-                fatalError("state is empty but is required for Timer type.")
+            assert(modifier == nil, "modifier should be nil for Timer type.")
+            assert(buttonText == nil, "buttonText should be nil for Timer type.")
+            assert(symbol == nil, "symbol should be nil for Timer type.")
+            
+            if state == nil || state?.isEmpty == true {
+                self.state = [false]
             }
             
-        case .timer_custom:
-            // For Timer type, ensure timer-specific properties are filled
             guard let _ = timer else {
                 fatalError("timer is empty but is required for Timer type.")
             }
-            guard let _ = state else {
-                fatalError("state is empty but is required for Timer type.")
-            }
+        }
+    }
+}
+
+/// Definition for DMStoredCard types
+extension DMStoredCard.Types {
+    var typeDescription: String {
+        switch self {
+        case .counter:
+            return "Contains a simple counter that can be increased or decreased with a defined amount."
+        case .toggle:
+            return "Contains buttons that can be toggled with customizable text and symbols."
+        case .timer:
+            return "Contains up to 4 preset timers that can be started with a tap."
+        case .timer_custom:
+            return "Contains a single customizable timer."
+        default:
+            return "A card type"
         }
     }
 }
@@ -242,9 +307,53 @@ struct ShareableGroup: Codable {
 struct ShareableCard: Codable {
     let type: DMStoredCard.Types
     let title: String
-    let buttonText: [String]?
     let count: Int
+    let modifier: [Int]?
+    let buttonText: [String]?
     let symbol: String?
+    let timer: [Int]?
     let primaryColor: CodableColor
     let secondaryColor: CodableColor
+}
+
+// Define the V1 schema (original)
+enum DMModelSchemaV1: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 0, 0)
+    
+    static var models: [any PersistentModel.Type] {
+        [DMCardGroup.self, DMStoredCard.self]
+    }
+}
+
+// Define the V2 schema with changes
+enum DMModelSchemaV2: VersionedSchema {
+    static var versionIdentifier = Schema.Version(2, 0, 0)
+    
+    static var models: [any PersistentModel.Type] {
+        [DMCardGroup.self, DMStoredCard.self]
+    }
+}
+
+// Migration plan
+struct ModelMigrationPlan: SchemaMigrationPlan {
+    static var schemas: [any VersionedSchema.Type] {
+        [DMModelSchemaV1.self]
+    }
+    
+    static var stages: [MigrationStage] {
+        []
+    }
+}
+
+// Add this to both model classes
+extension DMCardGroup {
+    func migrateV1toV2() {
+        validateCardGroup()
+    }
+}
+
+extension DMStoredCard {
+    func migrateV1toV2() {
+        validateStoredCard()
+    }
 }

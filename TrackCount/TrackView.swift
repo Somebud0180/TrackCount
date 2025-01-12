@@ -43,19 +43,19 @@ struct TrackView: View {
                         }
                     }
                 }
-                .padding()
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationTitleViewBuilder {
-                if selectedGroup.groupTitle.isEmpty {
-                    Image(systemName: selectedGroup.groupSymbol)
-                } else {
-                    Text(selectedGroup.groupTitle)
-                }
+            .padding()
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitleViewBuilder {
+            if selectedGroup.groupTitle.isEmpty {
+                Image(systemName: selectedGroup.groupSymbol)
+            } else {
+                Text(selectedGroup.groupTitle)
             }
-            .onDisappear {
-                timerCleanup() // Clean up timers on exit
-            }
+        }
+        .onDisappear {
+            timerCleanup() // Clean up timers on exit
         }
     }
     
@@ -126,29 +126,73 @@ struct TrackView: View {
             
             Spacer()
             
-            // Increment Button
-            Button(action: { card.count += 1 }) {
-                Image(systemName: "plus")
-                    .font(.title)
-                    .foregroundStyle(card.secondaryColor.color)
-                    .frame(height: 30)
+            // Increment Button(s)
+            HStack {
+                if let modifiers = card.modifier {
+                    ForEach(0..<modifiers.count, id: \.self) { index in
+                        Button(action: {
+                            withAnimation(.spring) {
+                                card.count += modifiers[index]
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "plus")
+                                    .font(.title)
+                                    .minimumScaleFactor(0.5)
+                                    .foregroundStyle(card.secondaryColor.color)
+                                    .frame(height: 30)
+                                if modifiers[index] != 1 {
+                                    Text("\(modifiers[index])")
+                                        .font(.title2)
+                                        .minimumScaleFactor(0.5)
+                                        .foregroundStyle(card.secondaryColor.color)
+                                }
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(card.primaryColor.color)
+                        .accessibilityLabel("Increase \(card.title) by \(modifiers[index])")
+                    }
+                    .padding(.horizontal, 3)
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(card.primaryColor.color)
             
             // Current Count
             Text(String(card.count))
-                .font(.title)
+                .font(.largeTitle)
+                .contentTransition(.numericText())
+                .animation(.spring, value: card.count)
+                .accessibilityValue("\(card.count)")
             
             // Decrement Button
-            Button(action: { card.count -= 1 }) {
-                Image(systemName: "minus")
-                    .font(.title)
-                    .foregroundStyle(card.secondaryColor.color)
-                    .frame(height: 30)
+            HStack {
+                if let modifiers = card.modifier {
+                    ForEach(0..<modifiers.count, id: \.self) { index in
+                        Button(action: {
+                            withAnimation(.spring) {
+                                card.count -= modifiers[index]
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "minus")
+                                    .font(.title)
+                                    .foregroundStyle(card.secondaryColor.color)
+                                    .frame(height: 30)
+                                if modifiers[index] != 1 {
+                                    Text("\(modifiers[index])")
+                                        .font(.title)
+                                        .minimumScaleFactor(0.5)
+                                        .foregroundStyle(card.secondaryColor.color)
+                                }
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(card.primaryColor.color)
+                        .accessibilityLabel("Reduce \(card.title) by \(modifiers[index])")
+                    }
+                    .padding(.horizontal, 3)
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(card.primaryColor.color)
             
             Spacer()
         }
@@ -176,8 +220,14 @@ struct TrackView: View {
     
     /// Creates buttons with data from the inputted card and index.
     private func toggleButton(_ card: DMStoredCard, id: Int) -> some View {
-        Button(action: {
-            card.state![id].toggle()
+        // Safely access state array
+        let isActive = card.state?.indices.contains(id) == true ? card.state![id] : false
+        
+        return Button(action: {
+            // Safely toggle state
+            if card.state?.indices.contains(id) == true {
+                card.state![id].toggle()
+            }
         }) {
             HStack {
                 if let buttonText = card.buttonText?[id], !buttonText.isEmpty {
@@ -185,21 +235,21 @@ struct TrackView: View {
                         .font(.body)
                         .minimumScaleFactor(0.3)
                         .lineLimit(2)
-                        .foregroundStyle(card.state![id] ? card.secondaryColor.color : .black)
+                        .foregroundStyle(isActive ? card.secondaryColor.color : .black)
                 }
-                Image(systemName: card.symbol!)
+                Image(systemName: card.symbol ?? "")
                     .font(.body)
                     .minimumScaleFactor(0.2)
-                    .foregroundStyle(card.state![id] ? card.secondaryColor.color : .black)
+                    .foregroundStyle(isActive ? card.secondaryColor.color : .black)
             }
-            // Make the button fill available space
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(1)
         }
         .buttonStyle(.borderedProminent)
-        .tint(card.state![id] ? card.primaryColor.color : .secondary)
+        .tint(isActive ? card.primaryColor.color : .secondary)
     }
     
+    // Timer Card Functions
     /// Creates the timer card contents from the inputted card.
     private func timerCard(_ card: DMStoredCard) -> some View {
         VStack(alignment: .center, spacing: 10) {
@@ -430,8 +480,8 @@ extension Int {
     // An example set of cards
     // Contains 1 of each type of card
     let exampleCards: [DMStoredCard] = [
-        DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, primaryColor: .blue, secondaryColor: .white),
-        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", count: 5, buttonText: ["", "", "", "", ""], state: [true, true, true, true, true], symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow),
+        DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, modifier: [1, 5], primaryColor: .blue, secondaryColor: .white),
+        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", count: 5, state: Array(repeating: true, count: 5), buttonText: Array(repeating: "", count: 5), symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow),
         DMStoredCard(uuid: UUID(), index: 2, type: .timer, title: "Test Timer", count: 4, state: [false], timer: [60, 120, 144, 240], primaryColor: .blue, secondaryColor: .white),
         DMStoredCard(uuid: UUID(), index: 3, type: .timer_custom, title: "Test Timer (Custom)", count: 1, state: [false], timer: [0], primaryColor: .blue, secondaryColor: .white),
     ]

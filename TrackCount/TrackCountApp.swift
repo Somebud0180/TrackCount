@@ -11,11 +11,15 @@ import SwiftData
 @main
 struct TrackCountApp: App {
     @StateObject private var importManager = ImportManager()
+    let container = try! ModelContainer(
+        for: DMCardGroup.self, DMStoredCard.self,
+        migrationPlan: ModelMigrationPlan.self
+    )
     
     var body: some Scene {
         WindowGroup {
             HomeView()
-                .modelContainer(for: DMCardGroup.self)
+                .modelContainer(container)
                 .environmentObject(importManager)
         }
     }

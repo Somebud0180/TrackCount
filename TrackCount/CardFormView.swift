@@ -17,17 +17,31 @@ struct CardFormView: View {
     
     /// Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046.
     static let formatter = NumberFormatter()
+
+    private let positiveIntFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.allowsFloats = false
+        formatter.minimum = 0
+        return formatter
+    }()
     
     var body: some View {
         NavigationStack {
             List {
-                // Picker for card type
-                Picker(selection: $viewModel.newCardType) {
-                    ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                        Text(type.formattedName).tag(type)
+                VStack(alignment: .leading) {
+                    // Picker for card type
+                    Picker(selection: $viewModel.newCardType) {
+                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                            Text(type.formattedName).tag(type)
+                        }
+                    } label: {
+                        Text("Type")
                     }
-                } label: {
-                    Text("Type")
+                    
+                    // Definition for selected card type
+                    Text(viewModel.newCardType.typeDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 .listRowSeparator(.hidden)
                 
@@ -44,8 +58,29 @@ struct CardFormView: View {
                 ColorPicker(isTimer ? "Text Color" : "Button Content Color:", selection: $viewModel.newCardSecondary, supportsOpacity: false)
                     .listRowSeparator(.hidden)
                 
-                // Check type for toggle to add specific editing fields
-                if viewModel.newCardType == .toggle {
+                // Check for type and add specific fields for that type
+                if viewModel.newCardType == .counter {
+                    VStack(alignment: .leading) {
+                        Text("Set the button increments:")
+                                                    
+                        Text("Leave at 0 to disable")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .listRowSeparator(.hidden)
+
+                    TextField("Modifier 1", value: $viewModel.newCardModifier1, formatter: positiveIntFormatter)
+                        .customRoundedStyle()
+                        .listRowSeparator(.hidden)
+                    
+                    TextField("Modifier 2", value: $viewModel.newCardModifier2, formatter: positiveIntFormatter)
+                        .customRoundedStyle()
+                        .listRowSeparator(.hidden)
+                    
+                    TextField("Modifier 3", value: $viewModel.newCardModifier3, formatter: positiveIntFormatter)
+                        .customRoundedStyle()
+                        .listRowSeparator(.hidden)
+                } else if viewModel.newCardType == .toggle {
                     // A stepper with an editable text field
                     HStack {
                         Text("Buttons: ")

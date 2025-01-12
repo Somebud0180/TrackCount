@@ -32,11 +32,8 @@ struct HomeView: View {
                         .foregroundStyle(backgroundGradient)
                         .edgesIgnoringSafeArea(.all)
                         .hueRotation(.degrees(animateGradient ? 45 : 0))
-                        .onAppear {
-                            withAnimation(
-                                .easeInOut(duration: 3)
-                                .repeatForever(autoreverses: true)
-                            ){
+                        .task {
+                            withAnimation(.easeInOut(duration: 2).repeatForever()) {
                                 animateGradient.toggle()
                             }
                         }
