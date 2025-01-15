@@ -23,14 +23,18 @@ struct TimePickerView: View {
             Picker("Hours", selection: $hours) {
                 ForEach(hourRange, id: \.self) { hour in
                     Text("\(hour)").tag(hour)
+                        .font(.title3)
+                        .minimumScaleFactor(0.2)
+                        .lineLimit(1)
                 }
             }
             .pickerStyle(.wheel)
-            .frame(minWidth: 45, maxWidth: 60)
+            .frame(minWidth: 45, maxWidth: 80)
             .onChange(of: hours) { updateTotalSeconds() }
             
             let isOneHour = totalSeconds >= 3600 && totalSeconds < 7199
             Text(isOneHour ? "hr" : "hrs")
+                .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                 .foregroundStyle(.primary)
                 .minimumScaleFactor(0.2)
                 .lineLimit(1)
@@ -40,13 +44,17 @@ struct TimePickerView: View {
             Picker("Minutes", selection: $minutes) {
                 ForEach(minuteSecondRange, id: \.self) { minute in
                     Text("\(minute)").tag(minute)
+                        .font(.title3)
+                        .minimumScaleFactor(0.2)
+                        .lineLimit(1)
                 }
             }
             .pickerStyle(.wheel)
-            .frame(minWidth: 45, maxWidth: 60)
+            .frame(minWidth: 45, maxWidth: 80)
             .onChange(of: minutes) { updateTotalSeconds() }
             
             Text("m")
+                .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                 .foregroundStyle(.primary)
                 .minimumScaleFactor(0.2)
                 .lineLimit(1)
@@ -56,13 +64,17 @@ struct TimePickerView: View {
             Picker("Seconds", selection: $seconds) {
                 ForEach(minuteSecondRange, id: \.self) { second in
                     Text("\(second)").tag(second)
+                        .font(.title3)
+                        .minimumScaleFactor(0.2)
+                        .lineLimit(1)
                 }
             }
             .pickerStyle(.wheel)
-            .frame(minWidth: 45, maxWidth: 60)
+            .frame(minWidth: 45, maxWidth: 80)
             .onChange(of: seconds) { updateTotalSeconds() }
             
             Text("s")
+                .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10))
                 .foregroundStyle(.primary)
                 .minimumScaleFactor(0.2)

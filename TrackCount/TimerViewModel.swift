@@ -38,13 +38,13 @@ class TimerViewModel: ObservableObject {
                 .font(.headline)
             
             TimePickerView(totalSeconds: Binding(
-                get: { card.timer?[0] ?? 0 },
-                set: { card.timer?[0] = $0 }
+                get: { card.timer?[0].timerValue ?? 0 },
+                set: { card.timer?[0] = TimerValue(timerValue: $0) }
             ))
             .frame(height: 150)
             
             Button(action: {
-                card.state?[0] = true
+                card.state?[0] = CardState(state: true)
                 self.startTimer(card) // Start timer immediately when button is pressed
             }) {
                 Text("Start")
@@ -54,19 +54,21 @@ class TimerViewModel: ObservableObject {
             }
             .buttonStyle(.borderedProminent)
             .tint(card.primaryColor.color)
-            .disabled(card.timer?[0] == 0)
+            .disabled(card.timer?[0].timerValue == 0)
         }
     }
     
     /// Creates the timer countdown view
     func activeTimerView(_ card: DMStoredCard) -> some View {
-        let initialTime = card.type == .timer ? card.timer?[selectedTimerIndex] ?? 1 : card.timer?[0] ?? 1
+        let initialTime = card.type == .timer ? 
+            card.timer?[selectedTimerIndex].timerValue ?? 1 : 
+            card.timer?[0].timerValue ?? 1
         let currentValue = activeTimerValues[card.uuid] ?? 0
         let progress = Float(currentValue) / Float(initialTime)
         let isPaused = pausedTimers.contains(card.index)
         
         return VStack {
-            ZStack {
+            ZStack(alignment: .center) {
                 Circle()
                     .stroke(lineWidth: 20)
                     .opacity(0.3)
@@ -81,16 +83,20 @@ class TimerViewModel: ObservableObject {
                 
                 if (activeTimerValues[card.uuid] != nil) {
                     Text(currentValue.formatTime())
-                        .font(.title)
-                        .bold()
+                        .font(.system(.title, weight: .bold))
+                        .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                         .contentTransition(.numericText())
                         .animation(.snappy, value: currentValue)
+                        .minimumScaleFactor(0.3)
+                        .frame(width: 130, alignment: .leading) // Add fixed width frame
                 } else {
                     Text("Time's Up!")
-                        .font(.title)
-                        .bold()
+                        .font(.system(.title, weight: .bold))
+                        .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                         .contentTransition(.numericText())
                         .animation(.snappy, value: currentValue)
+                        .minimumScaleFactor(0.3)
+                        .frame(width: 130, alignment: .leading) // Add fixed width frame
                 }
             }
             .frame(height: 200)
@@ -100,11 +106,11 @@ class TimerViewModel: ObservableObject {
                 if (activeTimerValues[card.uuid] != nil) {
                     Button(action: {
                         self.stopTimer(for: card)
-                        card.state?[0] = false
+                        card.state?[0] = CardState(state: false)
                         if card.type == .timer_custom {
-                            card.timer?[0] = initialTime
+                            card.timer?[0] = TimerValue(timerValue: initialTime)
                         } else {
-                            card.timer?[self.selectedTimerIndex] = initialTime
+                            card.timer?[self.selectedTimerIndex] = TimerValue(timerValue: initialTime)
                         }
                         self.pausedTimers.remove(card.index)
                     }) {
@@ -135,11 +141,11 @@ class TimerViewModel: ObservableObject {
                     Spacer()
                     
                     Button(action: {
-                        card.state?[0] = false
+                        card.state?[0] = CardState(state: false)
                         if card.type == .timer_custom {
-                            card.timer?[0] = initialTime
+                            card.timer?[0] = TimerValue(timerValue: initialTime)
                         } else {
-                            card.timer?[self.selectedTimerIndex] = initialTime
+                            card.timer?[self.selectedTimerIndex] = TimerValue(timerValue: initialTime)
                         }
                         self.pausedTimers.remove(card.index)
                         self.timerSound(card, mode: .stop)
@@ -164,9 +170,9 @@ class TimerViewModel: ObservableObject {
             activeTimerValues[card.uuid] = pausedValue
             pausedTimerValues.removeValue(forKey: card.uuid)
         } else if card.type == .timer_custom {
-            activeTimerValues[card.uuid] = card.timer?[0] ?? 0
+            activeTimerValues[card.uuid] = card.timer?[0].timerValue ?? 0
         } else {
-            activeTimerValues[card.uuid] = card.timer?[selectedTimerIndex] ?? 0
+            activeTimerValues[card.uuid] = card.timer?[selectedTimerIndex].timerValue ?? 0
         }
         
         let timer = DispatchSource.makeTimerSource(queue: .main)

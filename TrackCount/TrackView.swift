@@ -126,7 +126,7 @@ struct TrackView: View {
             
             // Increment Button(s)
             HStack {
-                if let modifiers = card.modifier {
+                if let modifiers = card.modifier?.map({ $0.modifier }) {
                     ForEach(0..<modifiers.count, id: \.self) { index in
                         Button(action: {
                             withAnimation(.spring) {
@@ -164,7 +164,7 @@ struct TrackView: View {
             
             // Decrement Button
             HStack {
-                if let modifiers = card.modifier {
+                if let modifiers = card.modifier?.map({ $0.modifier }) {
                     ForEach(0..<modifiers.count, id: \.self) { index in
                         Button(action: {
                             withAnimation(.spring) {
@@ -219,16 +219,16 @@ struct TrackView: View {
     /// Creates buttons with data from the inputted card and index.
     private func toggleButton(_ card: DMStoredCard, id: Int) -> some View {
         // Safely access state array
-        let isActive = card.state?.indices.contains(id) == true ? card.state![id] : false
+        let isActive = card.state?.indices.contains(id) == true ? card.state![id].state : false
         
         return Button(action: {
             // Safely toggle state
             if card.state?.indices.contains(id) == true {
-                card.state![id].toggle()
+                card.state![id].state.toggle()
             }
         }) {
             HStack {
-                if let buttonText = card.buttonText?[id], !buttonText.isEmpty {
+                if let buttonText = card.buttonText?[id].buttonText, !buttonText.isEmpty {
                     Text(buttonText)
                         .font(.body)
                         .minimumScaleFactor(0.3)
@@ -255,19 +255,18 @@ struct TrackView: View {
                 .fontWeight(.bold)
             
             if card.type == .timer_custom {
-                if card.state?[0] == false {
+                if card.state?[0].state == false {
                     viewModel.setupTimerView(card)
                 } else {
                     viewModel.activeTimerView(card)
                 }
             } else if card.type == .timer {
-                if card.state?[0] == false {
-                    // Show grid of preset timers
+                if card.state?[0].state == false {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                         ForEach(0..<card.count, id: \.self) { index in
                             Button(action: {
                                 viewModel.selectedTimerIndex = index
-                                card.state?[0] = true
+                                card.state?[0] = CardState(state: true)
                                 viewModel.startTimer(card)
                             }) {
                                 Circle()
@@ -275,17 +274,18 @@ struct TrackView: View {
                                     .opacity(0.3)
                                     .foregroundColor(card.primaryColor.color)
                                     .overlay(
-                                        Text((card.timer?[index] ?? 0).formatTime())
-                                            .font(.title2)
-                                            .bold()
+                                        Text((card.timer?[index].timerValue ?? 0).formatTime())
+                                            .font(.system(.title2, weight: .bold))
+                                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.3)
                                     )
                                     .frame(height: 100)
-                                    .padding()
+                                    .padding(10)
                             }
                         }
                     }
                 } else {
-                    // Show active timer
                     viewModel.activeTimerView(card)
                 }
             }
@@ -317,7 +317,7 @@ extension Int {
     let exampleCards: [DMStoredCard] = [
         DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, modifier: [1, 5], primaryColor: .blue, secondaryColor: .white),
         DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", count: 5, state: Array(repeating: true, count: 5), buttonText: Array(repeating: "", count: 5), symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow),
-        DMStoredCard(uuid: UUID(), index: 2, type: .timer, title: "Test Timer", count: 4, state: [false], timer: [5, 15, 60, 240], primaryColor: .blue, secondaryColor: .white),
+        DMStoredCard(uuid: UUID(), index: 2, type: .timer, title: "Test Timer", count: 4, state: [false], timer: [5, 15, 60, 3600], primaryColor: .blue, secondaryColor: .white),
         DMStoredCard(uuid: UUID(), index: 3, type: .timer_custom, title: "Test Timer (Custom)", count: 1, state: [false], timer: [0], primaryColor: .blue, secondaryColor: .white),
     ]
     

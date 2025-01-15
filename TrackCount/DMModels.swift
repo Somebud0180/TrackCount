@@ -13,9 +13,6 @@ import SwiftUI
 /// Includes metadata like group title, symbol, and the associated cards.
 @Model
 final class DMCardGroup: Identifiable {
-    // Version
-    var schemaVersion: Int = 2
-    
     /// A unique identifier for the group.
     @Attribute(.unique) var uuid: UUID
     
@@ -66,10 +63,10 @@ final class DMCardGroup: Identifiable {
                     type: card.type,
                     title: card.title,
                     count: card.count,
-                    modifier: card.modifier,
-                    buttonText: card.buttonText,
+                    modifier: card.modifier?.map { $0.modifier },
+                    buttonText: card.buttonText?.map { $0.buttonText },
                     symbol: card.symbol,
-                    timer: card.timer,
+                    timer: card.timer?.map { $0.timerValue },
                     primaryColor: card.primaryColor,
                     secondaryColor: card.secondaryColor
                 )
@@ -143,9 +140,6 @@ final class DMCardGroup: Identifiable {
 /// Includes metadata like the card's index, type, title, and other contents.
 @Model
 final class DMStoredCard: Identifiable {
-    // Version
-    var schemaVersion: Int = 2
-
     // Types of tracker
     enum Types: String, Codable, CaseIterable, Identifiable {
         var id: String { self.rawValue }
@@ -173,24 +167,23 @@ final class DMStoredCard: Identifiable {
     var count: Int
     
     /// The state of the button, either pressed or not (toggle) or the state of the timer, either paused or counting (timer).
-    var state: [Bool]?
+    var state: [CardState]?
     
     // Counter-Specific
     /// The different modifiers for the counter.
     /// Example: [1] will add a button that modifies the variable by one
-    var modifier: [Int]?
+    var modifier: [CounterModifier]?
     
     // Button-Specific
     /// The text inside the button.
-    var buttonText: [String]?
-    
+    var buttonText: [ButtonText]?
     
     /// The symbol of the button.
     var symbol: String?
     
     // Timer specific
     /// The countdown and saved value(s) for timers.
-    var timer: [Int]?
+    var timer: [TimerValue]?
     
     /// The timer card custom ringtone
     var timerRingtone: String?
@@ -222,11 +215,11 @@ final class DMStoredCard: Identifiable {
         self.type = type
         self.title = title
         self.count = count
-        self.state = state
-        self.modifier = modifier
-        self.buttonText = buttonText
+        self.state = state?.map { CardState(state: $0) }
+        self.modifier = modifier?.map { CounterModifier(modifier: $0) }
+        self.buttonText = buttonText?.map { ButtonText(buttonText: $0) }
         self.symbol = symbol
-        self.timer = timer
+        self.timer = timer?.map { TimerValue(timerValue: $0) }
         self.timerRingtone = timerRingtone
         self.primaryColor = CodableColor(color: primaryColor)
         self.secondaryColor = CodableColor(color: secondaryColor)
@@ -248,7 +241,7 @@ final class DMStoredCard: Identifiable {
             assert(timer == nil, "timer should be nil for Counter type.")
             
             if modifier == nil || modifier?.isEmpty == true {
-                self.modifier = [1]
+                self.modifier = [CounterModifier(modifier: 1)]
             }
             
         case .toggle:
@@ -273,7 +266,7 @@ final class DMStoredCard: Identifiable {
             assert(symbol == nil, "symbol should be nil for Timer type.")
             
             if state == nil || state?.isEmpty == true {
-                self.state = [false]
+                self.state = [CardState(state: false)]
             }
             
             guard let _ = timer else {
@@ -281,6 +274,25 @@ final class DMStoredCard: Identifiable {
             }
         }
     }
+}
+
+// Wrap types to conform to Codable, supresses CoreData faults
+// via https://stackoverflow.com/a/79060754
+
+struct CardState: Codable {
+    var state: Bool
+}
+
+struct CounterModifier: Codable {
+    let modifier: Int
+}
+
+struct ButtonText: Codable {
+    let buttonText: String
+}
+
+struct TimerValue: Codable {
+    let timerValue: Int
 }
 
 /// Definition for DMStoredCard types
@@ -301,6 +313,7 @@ extension DMStoredCard.Types {
     }
 }
 
+
 /// Codable group structure for sharing.
 struct ShareableGroup: Codable {
     let groupTitle: String
@@ -319,46 +332,4 @@ struct ShareableCard: Codable {
     let timer: [Int]?
     let primaryColor: CodableColor
     let secondaryColor: CodableColor
-}
-
-// Define the V1 schema (original)
-enum DMModelSchemaV1: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 0, 0)
-    
-    static var models: [any PersistentModel.Type] {
-        [DMCardGroup.self, DMStoredCard.self]
-    }
-}
-
-// Define the V2 schema with changes
-enum DMModelSchemaV2: VersionedSchema {
-    static var versionIdentifier = Schema.Version(2, 0, 0)
-    
-    static var models: [any PersistentModel.Type] {
-        [DMCardGroup.self, DMStoredCard.self]
-    }
-}
-
-// Migration plan
-struct ModelMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] {
-        [DMModelSchemaV1.self]
-    }
-    
-    static var stages: [MigrationStage] {
-        []
-    }
-}
-
-// Add this to both model classes
-extension DMCardGroup {
-    func migrateV1toV2() {
-        validateCardGroup()
-    }
-}
-
-extension DMStoredCard {
-    func migrateV1toV2() {
-        validateStoredCard()
-    }
 }
