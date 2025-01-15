@@ -8,11 +8,21 @@
 import SwiftUI
 import SwiftData
 
+struct DefaultSettings {
+    static let timerDefaultRingtone = "Kalimba"
+    static let timerAlertEnabled = true
+}
+
 struct HomeView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) private var colorScheme
+    
+    @AppStorage("timerAlertEnabled") var isTimerAlertEnabled: Bool = DefaultSettings.timerAlertEnabled
+    @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
+    
     @Query private var savedGroups: [DMCardGroup]
     @State private var animateGradient: Bool = false
+    @State private var isPresentingSettingsView: Bool = false
 
     /// Dynamically computes gradient colors based on colorScheme.
     private var gradientColors: [Color] {
@@ -65,7 +75,7 @@ struct HomeView: View {
                                     .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
                                     .minimumScaleFactor(0.5)
                                     .lineLimit(1)
-                                    .frame(minWidth: 150, minHeight: 25)
+                                    .frame(minWidth: 200, minHeight: 25)
                                     .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
                                     .background(.ultraThinMaterial)
                                     .foregroundStyle(.white)
@@ -81,7 +91,22 @@ struct HomeView: View {
                                     .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
                                     .minimumScaleFactor(0.5)
                                     .lineLimit(1)
-                                    .frame(minWidth: 150, minHeight: 25)
+                                    .frame(minWidth: 200, minHeight: 25)
+                                    .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
+                                    .background(.ultraThinMaterial)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(10)
+                            }
+                            
+                            Button(action: {
+                                isPresentingSettingsView.toggle()
+                            }) {
+                                Text("Settings")
+                                    .font(.largeTitle)
+                                    .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
+                                    .minimumScaleFactor(0.5)
+                                    .lineLimit(1)
+                                    .frame(minWidth: 200, minHeight: 25)
                                     .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
                                     .background(.ultraThinMaterial)
                                     .foregroundStyle(.white)
@@ -91,6 +116,9 @@ struct HomeView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .sheet(isPresented: $isPresentingSettingsView) {
+                    SettingsView()
+                }
             }
         }
     }

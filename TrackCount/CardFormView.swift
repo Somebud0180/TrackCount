@@ -14,6 +14,7 @@ struct CardFormView: View {
     @StateObject var viewModel: CardViewModel
     
     @State private var isSymbolPickerPresented: Bool = false
+    @State private var isPresentingRingtonePickerView: Bool = false
     
     /// Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046.
     static let formatter = NumberFormatter()
@@ -106,9 +107,9 @@ struct CardFormView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 24, height: 24)
                         }
-                        .customRoundedStyle()
                     }
                     .listRowSeparator(.hidden)
+                    .customRoundedStyle()
                     .buttonStyle(PlainButtonStyle())
                     .sheet(isPresented: $isSymbolPickerPresented) {
                         SymbolPickerView(viewBehaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
@@ -140,28 +141,48 @@ struct CardFormView: View {
                             .listRowSeparator(.hidden)
                         }
                     }
-                } else if viewModel.newCardType == .timer {
-                    HStack {
-                        Text("Timers: ")
-                        TextField("", value: $viewModel.newCardCount, formatter: NumberFormatter())
-                            .customRoundedStyle()
-                            .keyboardType(.numberPad)
-                        Stepper("", value: $viewModel.newCardCount, in: viewModel.minTimerAmount...viewModel.maxTimerAmount)
-                    }
-                    .onChange(of: viewModel.newCardCount) {
-                        viewModel.initTimer()
+                } else if viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom {
+                    Button(action: {
+                        isPresentingRingtonePickerView.toggle()
+                    }) {
+                        Text("Timer Ringtone")
+                        
+                        Spacer()
+                        
+                        Text("\(viewModel.newCardRingtone.isEmpty ? "Default" : viewModel.newCardRingtone)")
+                            .foregroundStyle(.secondary)
                     }
                     .listRowSeparator(.hidden)
+                    .customRoundedStyle()
+                    .buttonStyle(PlainButtonStyle())
+                    .sheet(isPresented: $isPresentingRingtonePickerView) {
+                        RingtonePickerView(setVariable: $viewModel.newCardRingtone, fromSettings: false)
+                    }
                     
-                    ForEach(0..<viewModel.newCardTimer.count, id: \.self) { index in
+                    if viewModel.newCardType == .timer {
                         HStack {
-                            Text("Timer \(index + 1): ")
-                            TimePickerView(totalSeconds: $viewModel.newCardTimer[index])
+                            Text("Timers: ")
+                            TextField("", value: $viewModel.newCardCount, formatter: NumberFormatter())
+                                .customRoundedStyle()
+                                .keyboardType(.numberPad)
+                            Stepper("", value: $viewModel.newCardCount, in: viewModel.minTimerAmount...viewModel.maxTimerAmount)
                         }
-                        .padding(.horizontal)
-                        .frame(maxHeight: 150)
+                        .onChange(of: viewModel.newCardCount) {
+                            viewModel.initTimer()
+                        }
+                        .listRowSeparator(.hidden)
+                        
+                        
+                        ForEach(0..<viewModel.newCardTimer.count, id: \.self) { index in
+                            HStack {
+                                Text("Timer \(index + 1): ")
+                                TimePickerView(totalSeconds: $viewModel.newCardTimer[index])
+                            }
+                            .padding(.horizontal)
+                            .frame(maxHeight: 150)
+                        }
+                        .listRowSeparator(.hidden)
                     }
-                    .listRowSeparator(.hidden)
                 }
             }
             .listStyle(PlainListStyle())

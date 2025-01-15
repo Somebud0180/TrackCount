@@ -37,7 +37,6 @@ struct GroupListView: View {
     }
     
     var body: some View {
-        
         NavigationStack {
             ScrollView {
                 // Display logic error if any

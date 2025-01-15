@@ -192,6 +192,9 @@ final class DMStoredCard: Identifiable {
     /// The countdown and saved value(s) for timers.
     var timer: [Int]?
     
+    /// The timer card custom ringtone
+    var timerRingtone: String?
+    
     // Colors
     /// The color used for buttons or progress bars.
     var primaryColor: CodableColor
@@ -210,6 +213,7 @@ final class DMStoredCard: Identifiable {
          buttonText: [String]? = nil,
          symbol: String? = nil,
          timer: [Int]? = nil,
+         timerRingtone: String? = nil,
          primaryColor: Color,
          secondaryColor: Color)
     {
@@ -223,6 +227,7 @@ final class DMStoredCard: Identifiable {
         self.buttonText = buttonText
         self.symbol = symbol
         self.timer = timer
+        self.timerRingtone = timerRingtone
         self.primaryColor = CodableColor(color: primaryColor)
         self.secondaryColor = CodableColor(color: secondaryColor)
         

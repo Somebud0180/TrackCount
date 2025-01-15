@@ -26,6 +26,7 @@ class CardViewModel: ObservableObject {
     @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
     @Published var newCardTimer: [Int] = Array(repeating: 0, count: 1)
+    @Published var newCardRingtone: String = ""
     @Published var newCardSymbol: String = ""
     @Published var newCardPrimary: Color = .blue
     @Published var newCardSecondary: Color = .white
@@ -68,6 +69,7 @@ class CardViewModel: ObservableObject {
         self.newButtonText = card.buttonText ?? Array(repeating: "", count: 1)
         self.newCardSymbol = card.symbol ?? ""
         self.newCardTimer = card.timer ?? Array(repeating: 0, count: 1)
+        self.newCardRingtone = card.timerRingtone ?? ""
         self.newCardPrimary = card.primaryColor.color
         self.newCardSecondary = card.secondaryColor.color
     }
@@ -182,6 +184,7 @@ class CardViewModel: ObservableObject {
             card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count)))
             card.symbol = newCardSymbol
             card.timer = newCardTimer
+            card.timerRingtone = newCardRingtone
             card.primaryColor = CodableColor(color: newCardPrimary)
             card.secondaryColor = CodableColor(color: newCardSecondary)
         } else {
@@ -198,6 +201,7 @@ class CardViewModel: ObservableObject {
                 buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
                 symbol: newCardType == .toggle ? newCardSymbol : nil,
                 timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
+                timerRingtone: (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil,
                 primaryColor: newCardPrimary,
                 secondaryColor: newCardSecondary
             )
@@ -231,6 +235,7 @@ class CardViewModel: ObservableObject {
         newCardState = Array(repeating: true, count: 1)
         newCardSymbol = ""
         newCardTimer = Array(repeating: 0, count: 1)
+        newCardRingtone = ""
         newCardPrimary = .blue
         newCardSecondary = .white
     }
