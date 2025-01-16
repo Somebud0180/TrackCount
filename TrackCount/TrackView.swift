@@ -306,7 +306,7 @@ extension Int {
         } else if minutes > 0 {
             return String(format: "%02i:%02i", minutes, seconds)
         } else {
-            return String(format: "%02i", seconds)
+            return String(format: "00:%02i", seconds)
         }
     }
 }

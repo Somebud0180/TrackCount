@@ -82,21 +82,36 @@ class TimerViewModel: ObservableObject {
                     .animation(.linear(duration: 1), value: progress)
                 
                 if (activeTimerValues[card.uuid] != nil) {
-                    Text(currentValue.formatTime())
-                        .font(.system(.title, weight: .bold))
-                        .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                        .contentTransition(.numericText())
-                        .animation(.snappy, value: currentValue)
-                        .minimumScaleFactor(0.3)
-                        .frame(width: 130, alignment: .leading) // Add fixed width frame
+                    if currentValue.formatTime().count == 7 {
+                        Text(currentValue.formatTime())
+                            .font(.system(.title, weight: .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.3)
+                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
+                            .contentTransition(.numericText())
+                            .animation(.snappy, value: currentValue)
+                            .minimumScaleFactor(0.3)
+                            .frame(width: 130, alignment: .leading)
+                    } else {
+                        Text(currentValue.formatTime())
+                            .font(.system(.largeTitle, weight: .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.3)
+                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
+                            .contentTransition(.numericText())
+                            .animation(.snappy, value: currentValue)
+                            .minimumScaleFactor(0.3)
+                            .frame(width: 100, alignment: .leading)
+                    }
                 } else {
                     Text("Time's Up!")
                         .font(.system(.title, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.3)
                         .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                         .contentTransition(.numericText())
                         .animation(.snappy, value: currentValue)
                         .minimumScaleFactor(0.3)
-                        .frame(width: 130, alignment: .leading) // Add fixed width frame
                 }
             }
             .frame(height: 200)
@@ -208,7 +223,7 @@ class TimerViewModel: ObservableObject {
     /// Handles simultaneous playback of the same tone by pausing the existing timer tone and playing a new one, with the paused tone being resumed after the existing tone is cancelled.
     func timerSound(_ card: DMStoredCard, mode: audioMode) {
         if isTimerAlertEnabled {
-            let ringtoneToPlay = card.timerRingtone ?? timerDefaultRingtone
+            let ringtoneToPlay = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
             
             guard let asset = NSDataAsset(name: ringtoneToPlay) else {
                 print("Data asset not found for: \(ringtoneToPlay)")
@@ -280,11 +295,28 @@ class TimerViewModel: ObservableObject {
     
     /// Cleans up timer-related variables
     func timerCleanup() {
+        // Cancel all active timer subscriptions
         for subscription in timerSubscriptions.values {
             subscription.cancel()
         }
+        
+        // Clear all timer-related state
         timerSubscriptions.removeAll()
         pausedTimerValues.removeAll()
+        pausedTimers.removeAll()
+        activeTimerValues.removeAll() // Add this line to clear active timer values
+        
+        // Clean up audio
+        for (_, player) in audioPlayers {
+            player.pause()
+            player.removeAllItems()
+        }
+        audioPlayers.removeAll()
+        audioLoopers.removeAll()
+        playerItems.removeAll()
+        activeRingtones.removeAll()
+        pausedRingtones.removeAll()
+        
         try? AVAudioSession.sharedInstance().setActive(false)
     }
 }

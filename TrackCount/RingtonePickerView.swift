@@ -91,6 +91,9 @@ struct RingtonePickerView: View {
                     }
                 }
             }
+            .onDisappear {
+                player?.stop()
+            }
         }
     }
     
