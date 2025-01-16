@@ -40,7 +40,7 @@ class TimerViewModel: ObservableObject {
             Text("Set Timer")
                 .font(.headline)
             
-            TimePickerView(totalSeconds: Binding(
+            TimeWheelPickerView(totalSeconds: Binding(
                 get: { card.timer?[0].timerValue ?? 0 },
                 set: { card.timer?[0] = TimerValue(timerValue: $0) }
             ), isPickerMoving: Binding(

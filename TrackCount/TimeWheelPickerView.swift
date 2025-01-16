@@ -8,14 +8,17 @@
 
 import SwiftUI
 
-struct TimePickerView: View {
+struct TimeWheelPickerView: View {
     @Binding var totalSeconds: Int
     @Binding var isPickerMoving: Bool
 
-    @State var hours: Int = 0
-    @State var minutes: Int = 0
-    @State var seconds: Int = 0
-    @State var debounceTimer: Timer?
+    @State private var hours: Int = 0
+    @State private var minutes: Int = 0
+    @State private var seconds: Int = 0
+    @State private var debounceTimer: Timer?
+    @State private var hoursMoving: Bool = false
+    @State private var minutesMoving: Bool = false
+    @State private var secondsMoving: Bool = false
     
     let hourRange = 0...23
     let minuteSecondRange = 0...59
@@ -32,7 +35,10 @@ struct TimePickerView: View {
             }
             .pickerStyle(.wheel)
             .frame(minWidth: 45, maxWidth: 80)
-            .onChange(of: hours) { handlePickerChange() }
+            .onChange(of: hours) {
+                isPickerMoving = true
+                handlePickerChange()
+            }
             
             let isOneHour = totalSeconds >= 3600 && totalSeconds < 7199
             Text(isOneHour ? "hr" : "hrs")
@@ -53,7 +59,10 @@ struct TimePickerView: View {
             }
             .pickerStyle(.wheel)
             .frame(minWidth: 45, maxWidth: 80)
-            .onChange(of: minutes) { handlePickerChange() }
+            .onChange(of: minutes) {
+                isPickerMoving = true
+                handlePickerChange()
+            }
             
             Text("m")
                 .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
@@ -73,7 +82,10 @@ struct TimePickerView: View {
             }
             .pickerStyle(.wheel)
             .frame(minWidth: 45, maxWidth: 80)
-            .onChange(of: seconds) { handlePickerChange() }
+            .onChange(of: seconds) {
+                isPickerMoving = true
+                handlePickerChange()
+            }
             
             Text("s")
                 .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
@@ -89,15 +101,13 @@ struct TimePickerView: View {
     
     /// Handles simultaneous picker changes
     func handlePickerChange() {
-        // Set flag to indicate picker is moving
-        isPickerMoving = true
-
         // Cancel any existing timer
         debounceTimer?.invalidate()
         
         // Create new timer that will fire after picker stops moving
         debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
             updateTotalSeconds()
+            isPickerMoving = false
         }
     }
     
@@ -123,5 +133,5 @@ struct TimePickerView: View {
     // Sample variable to pass to the picker
     @Previewable @State var testSeconds = 0
     @Previewable @State var isPickerMoving = false
-    TimePickerView(totalSeconds: $testSeconds, isPickerMoving: $isPickerMoving)
+    TimeWheelPickerView(totalSeconds: $testSeconds, isPickerMoving: $isPickerMoving)
 }

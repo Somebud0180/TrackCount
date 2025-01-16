@@ -176,7 +176,7 @@ struct CardFormView: View {
                         ForEach(0..<viewModel.newCardTimer.count, id: \.self) { index in
                             HStack {
                                 Text("Timer \(index + 1): ")
-                                TimePickerView(totalSeconds: $viewModel.newCardTimer[index],
+                                TimeWheelPickerView(totalSeconds: $viewModel.newCardTimer[index],
                                                isPickerMoving: $viewModel.isPickerMoving[index])
                             }
                             .padding(.horizontal)
@@ -221,6 +221,8 @@ struct CardFormView: View {
                     .cornerRadius(8)
             }
             .padding()
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
             .disabled(viewModel.isPickerMoving.contains(true))
         }
     }
