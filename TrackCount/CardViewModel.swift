@@ -165,70 +165,64 @@ class CardViewModel: ObservableObject {
     /// Also checks the card contents and throws errors, if any, to `validationError`.
     /// Also provides the card's index and uuid on save.
     func saveCard(with context: ModelContext) {
-        Task { @MainActor in
-            while isPickerMoving.contains(true) {
-                try await Task.sleep(nanoseconds: 200_000_000)
-            }
-            
-            // Validate types and update them before saving
-            initTypes(for: .validation)
-            
-            // Validate the form before saving
-            validateForm()
-            guard validationError.isEmpty else {
-                return
-            }
-            
-            // Check if there are any existing cards
-            if selectedGroup.cards.count == 0 {
-                newIndex = 0 // Set new index to 0 if there are no cards
-            } else {
-                newIndex = selectedGroup.cards.count + 1 // Set new index to the next highest number
-            }
-            
-            if let card = selectedCard {
-                // Update the existing card
-                card.title = newCardTitle
-                card.type = newCardType
-                card.count = newCardCount
-                card.state = Array(newCardState.prefix(min(newCardCount, newCardState.count))).map { CardState(state: $0) }
-                card.modifier = newCardModifier.map { CounterModifier(modifier: $0) }
-                card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count))).map { ButtonText(buttonText: $0) }
-                card.symbol = newCardSymbol
-                card.timer = newCardTimer.map { TimerValue(timerValue: $0) }
-                card.timerRingtone = newCardRingtone
-                card.primaryColor = CodableColor(color: newCardPrimary)
-                card.secondaryColor = CodableColor(color: newCardSecondary)
-            } else {
-                // Create a new card
-                let newCard = DMStoredCard(
-                    uuid: UUID(),
-                    index: newIndex,
-                    type: newCardType,
-                    title: newCardTitle,
-                    count: newCardType == .counter ? 0 : newCardCount,
-                    state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
-                        (newCardType == .timer || newCardType == .timer_custom) ? Array(repeating: false, count: newCardCount) : nil,
-                    modifier: newCardType == .counter ? newCardModifier : nil,
-                    buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
-                    symbol: newCardType == .toggle ? newCardSymbol : nil,
-                    timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
-                    timerRingtone: (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil,
-                    primaryColor: newCardPrimary,
-                    secondaryColor: newCardSecondary
-                )
-                selectedGroup.cards.append(newCard) // Save the new card to the selected group
-            }
-            
-            // Save the context
-            do {
-                try context.save()
-            } catch {
-                validationError.append("Failed to save the card: \(error.localizedDescription)")
-            }
-            
-            resetFields(.viewModel)
+        // Validate types and update them before saving
+        initTypes(for: .validation)
+        
+        // Validate the form before saving
+        validateForm()
+        guard validationError.isEmpty else {
+            return
         }
+        
+        // Check if there are any existing cards
+        if selectedGroup.cards.count == 0 {
+            newIndex = 0 // Set new index to 0 if there are no cards
+        } else {
+            newIndex = selectedGroup.cards.count + 1 // Set new index to the next highest number
+        }
+        
+        if let card = selectedCard {
+            // Update the existing card
+            card.title = newCardTitle
+            card.type = newCardType
+            card.count = newCardCount
+            card.state = Array(newCardState.prefix(min(newCardCount, newCardState.count))).map { CardState(state: $0) }
+            card.modifier = newCardModifier.map { CounterModifier(modifier: $0) }
+            card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count))).map { ButtonText(buttonText: $0) }
+            card.symbol = newCardSymbol
+            card.timer = newCardTimer.map { TimerValue(timerValue: $0) }
+            card.timerRingtone = newCardRingtone
+            card.primaryColor = CodableColor(color: newCardPrimary)
+            card.secondaryColor = CodableColor(color: newCardSecondary)
+        } else {
+            // Create a new card
+            let newCard = DMStoredCard(
+                uuid: UUID(),
+                index: newIndex,
+                type: newCardType,
+                title: newCardTitle,
+                count: newCardType == .counter ? 0 : newCardCount,
+                state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
+                    (newCardType == .timer || newCardType == .timer_custom) ? Array(repeating: false, count: newCardCount) : nil,
+                modifier: newCardType == .counter ? newCardModifier : nil,
+                buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
+                symbol: newCardType == .toggle ? newCardSymbol : nil,
+                timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
+                timerRingtone: (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil,
+                primaryColor: newCardPrimary,
+                secondaryColor: newCardSecondary
+            )
+            selectedGroup.cards.append(newCard) // Save the new card to the selected group
+        }
+        
+        // Save the context
+        do {
+            try context.save()
+        } catch {
+            validationError.append("Failed to save the card: \(error.localizedDescription)")
+        }
+        
+        resetFields(.viewModel)
     }
     
     /// A function that sets the temporary fields to defaults.
