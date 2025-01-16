@@ -1,1 +1,34 @@
-[{"name": "Kalimba"}, {"name": "Kalimba (Tri-tone)"}, {"name": "Playful"}, {"name": "Code"}]
+[
+    {
+        "name": "Code",
+        "category": "Melodic"
+    },
+    {
+        "name": "Kalimba",
+        "category": "Melodic"
+    },
+    {
+        "name": "Kalimba (Tri-tone)",
+        "category": "Melodic"
+    },
+    {
+        "name": "Playful",
+        "category": "Melodic"
+    },
+    {
+        "name": "Arcade",
+        "category": "Special"
+    },
+    {
+        "name": "Cacophony",
+        "category": "Special"
+    },
+    {
+        "name": "Quirks",
+        "category": "Special"
+    },
+    {
+        "name": "Temple",
+        "category": "Special"
+    }
+]

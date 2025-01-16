@@ -10,10 +10,12 @@ import SwiftUI
 
 struct TimePickerView: View {
     @Binding var totalSeconds: Int
-    
-    @State private var hours: Int = 0
-    @State private var minutes: Int = 0
-    @State private var seconds: Int = 0
+    @Binding var isPickerMoving: Bool
+
+    @State var hours: Int = 0
+    @State var minutes: Int = 0
+    @State var seconds: Int = 0
+    @State var debounceTimer: Timer?
     
     let hourRange = 0...23
     let minuteSecondRange = 0...59
@@ -30,7 +32,7 @@ struct TimePickerView: View {
             }
             .pickerStyle(.wheel)
             .frame(minWidth: 45, maxWidth: 80)
-            .onChange(of: hours) { updateTotalSeconds() }
+            .onChange(of: hours) { handlePickerChange() }
             
             let isOneHour = totalSeconds >= 3600 && totalSeconds < 7199
             Text(isOneHour ? "hr" : "hrs")
@@ -51,7 +53,7 @@ struct TimePickerView: View {
             }
             .pickerStyle(.wheel)
             .frame(minWidth: 45, maxWidth: 80)
-            .onChange(of: minutes) { updateTotalSeconds() }
+            .onChange(of: minutes) { handlePickerChange() }
             
             Text("m")
                 .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
@@ -71,7 +73,7 @@ struct TimePickerView: View {
             }
             .pickerStyle(.wheel)
             .frame(minWidth: 45, maxWidth: 80)
-            .onChange(of: seconds) { updateTotalSeconds() }
+            .onChange(of: seconds) { handlePickerChange() }
             
             Text("s")
                 .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
@@ -85,21 +87,41 @@ struct TimePickerView: View {
         }
     }
     
+    /// Handles simultaneous picker changes
+    func handlePickerChange() {
+        // Set flag to indicate picker is moving
+        isPickerMoving = true
+
+        // Cancel any existing timer
+        debounceTimer?.invalidate()
+        
+        // Create new timer that will fire after picker stops moving
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
+            updateTotalSeconds()
+        }
+    }
+    
     /// Updates total seconds with data combined from each separate wheel
-    private func updateTotalSeconds() {
+    func updateTotalSeconds() {
+        // Clamp values as a safeguard
+        hours = min(max(hours, hourRange.lowerBound), hourRange.upperBound)
+        minutes = min(max(minutes, minuteSecondRange.lowerBound), minuteSecondRange.upperBound)
+        seconds = min(max(seconds, minuteSecondRange.lowerBound), minuteSecondRange.upperBound)
         totalSeconds = hours * 3600 + minutes * 60 + seconds
     }
     
     /// Fills up with data from existing totalSeconds into each separate wheel
-    private func initializeFromTotalSeconds() {
+    func initializeFromTotalSeconds() {
         hours = totalSeconds / 3600
         minutes = (totalSeconds % 3600) / 60
         seconds = totalSeconds % 60
     }
+    
 }
 
 #Preview {
     // Sample variable to pass to the picker
     @Previewable @State var testSeconds = 0
-    TimePickerView(totalSeconds: $testSeconds)
+    @Previewable @State var isPickerMoving = false
+    TimePickerView(totalSeconds: $testSeconds, isPickerMoving: $isPickerMoving)
 }

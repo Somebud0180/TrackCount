@@ -58,11 +58,13 @@ struct GroupListView: View {
                         NavigationLink(destination: destinationView(for: group)) {
                             GroupCardView(group: group)
                                 .frame(height: 200)
-                                .contextMenu {
-                                    contextMenu(for: group)
-                                }
                         }
                         .buttonStyle(PlainButtonStyle())
+                        .shadow(radius: 5)
+                        .transition(.identity)
+                        .contextMenu {
+                            contextMenu(for: group)
+                        }
                     }
                 }
                 .padding()
@@ -182,21 +184,22 @@ struct GroupListView: View {
     /// A function that contains the buttons used in the context menu for the cards.
     private func contextMenu(for group: DMCardGroup) -> some View {
         Group {
-            if viewBehaviour == .edit {
-                Button("Edit Group", systemImage: "pencil") {
-                    viewModel.selectedGroup = group
-                    viewModel.fetchGroup()
-                    isPresentingGroupForm.toggle()
-                }
+            NavigationLink(destination: CardListView(selectedGroup: group)) {
+                Text("Edit Cards")
+                Spacer()
+                Image(systemName: "folder")
+            }
+            Button("Edit Group", systemImage: "pencil") {
+                viewModel.selectedGroup = group
+                viewModel.fetchGroup()
+                isPresentingGroupForm.toggle()
             }
             Button("Share Group", systemImage: "square.and.arrow.up") {
                 shareGroup(group)
             }
-            if viewBehaviour == .edit {
-                Button("Delete Group", systemImage: "trash", role: .destructive) {
-                    selectedGroup = group
-                    isPresentingDeleteDialog = true
-                }
+            Button("Delete Group", systemImage: "trash", role: .destructive) {
+                selectedGroup = group
+                isPresentingDeleteDialog = true
             }
         }
     }

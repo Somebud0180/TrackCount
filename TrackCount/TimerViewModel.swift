@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import AVFoundation
 import Combine
 
@@ -25,6 +26,7 @@ class TimerViewModel: ObservableObject {
     @Published var audioLoopers: [UUID: AVPlayerLooper] = [:]
     @Published var activeRingtones: [String: UUID] = [:]
     @Published var pausedRingtones: [String: [(UUID, AVQueuePlayer, AVPlayerLooper)]] = [:]
+    @Published var isPickerMovingForCard: [UUID: Bool] = [:]
     
     enum audioMode {
         case play
@@ -33,13 +35,17 @@ class TimerViewModel: ObservableObject {
     
     /// Creates the timer (custom) setup view
     func setupTimerView(_ card: DMStoredCard) -> some View {
-        VStack {
+        let cardID = card.uuid
+        return VStack {
             Text("Set Timer")
                 .font(.headline)
             
             TimePickerView(totalSeconds: Binding(
                 get: { card.timer?[0].timerValue ?? 0 },
                 set: { card.timer?[0] = TimerValue(timerValue: $0) }
+            ), isPickerMoving: Binding(
+                get: { self.isPickerMovingForCard[cardID] ?? false },
+                set: { self.isPickerMovingForCard[cardID] = $0 }
             ))
             .frame(height: 150)
             
@@ -54,7 +60,7 @@ class TimerViewModel: ObservableObject {
             }
             .buttonStyle(.borderedProminent)
             .tint(card.primaryColor.color)
-            .disabled(card.timer?[0].timerValue == 0)
+            .disabled(card.timer?[0].timerValue == 0 || (isPickerMovingForCard[cardID] ?? false))
         }
     }
     
@@ -294,7 +300,7 @@ class TimerViewModel: ObservableObject {
     }
     
     /// Cleans up timer-related variables
-    func timerCleanup() {
+    func timerCleanup(for context: ModelContext, group: DMCardGroup) {
         // Cancel all active timer subscriptions
         for subscription in timerSubscriptions.values {
             subscription.cancel()
@@ -304,7 +310,26 @@ class TimerViewModel: ObservableObject {
         timerSubscriptions.removeAll()
         pausedTimerValues.removeAll()
         pausedTimers.removeAll()
-        activeTimerValues.removeAll() // Add this line to clear active timer values
+        activeTimerValues.removeAll()
+        
+        for card in group.cards {
+            let initialTime = card.type == .timer ? card.timer?[self.selectedTimerIndex].timerValue ?? 1 : card.timer?[0].timerValue ?? 1
+            
+            if card.type == .timer || card.type == .timer_custom {
+                card.state?[0] = CardState(state: false)
+                if card.type == .timer_custom {
+                    card.timer?[0] = TimerValue(timerValue: initialTime)
+                } else {
+                    card.timer?[self.selectedTimerIndex] = TimerValue(timerValue: initialTime)
+                }
+            }
+        }
+        
+        do {
+            try context.save()
+        } catch {
+            fatalError("Failed to save context after timer cleanup: \(error)")
+        }
         
         // Clean up audio
         for (_, player) in audioPlayers {
@@ -317,6 +342,10 @@ class TimerViewModel: ObservableObject {
         activeRingtones.removeAll()
         pausedRingtones.removeAll()
         
-        try? AVAudioSession.sharedInstance().setActive(false)
+        do {
+            try AVAudioSession.sharedInstance().setActive(false)
+        } catch {
+            print("Failed to deactivate AVAudioSession: \(error)")
+        }
     }
 }

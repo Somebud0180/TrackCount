@@ -31,10 +31,16 @@ class CardViewModel: ObservableObject {
     @Published var newCardPrimary: Color = .blue
     @Published var newCardSecondary: Color = .white
     @Published var validationError: [String] = []
+    @Published var isPickerMoving: [Bool] = Array(repeating: false, count: 1)
     
     enum resetFor {
         case viewModel
         case dismiss
+    }
+    
+    enum initFor {
+        case switchType
+        case validation
     }
     
     // Button limit
@@ -74,6 +80,22 @@ class CardViewModel: ObservableObject {
         self.newCardSecondary = card.secondaryColor.color
     }
     
+    /// A function that calls the corresponding initializers dynamically based on the type
+    func initTypes(for behaviour: initFor) {
+        // When switching cards, reset shared values
+        if behaviour == .switchType {
+            newCardCount = 1
+        }
+        
+        if newCardType == .counter {
+            initModifier()
+        } else if newCardType == .toggle {
+            initButton()
+        } else if newCardType == .timer || newCardType == .timer_custom {
+            initTimer()
+        }
+    }
+    
     /// A function that consolidates the modifiers into one
     func initModifier() {
         var modifiers = [Int]()
@@ -91,18 +113,10 @@ class CardViewModel: ObservableObject {
         newCardCount = min(max(newCardCount, minButtonLimit), maxButtonLimit)
         
         // Adjust `newButtonText` array size
-        if newButtonText.count < newCardCount {
-            newButtonText.append(contentsOf: Array(repeating: "", count: newCardCount - newButtonText.count))
-        } else if newButtonText.count > newCardCount {
-            newButtonText.removeLast(newButtonText.count - newCardCount)
-        }
+        newButtonText = Array(repeating: "", count: newCardCount)
         
         // Adjust `newCardState` array size
-        if newCardState.count < newCardCount {
-            newCardState.append(contentsOf: Array(repeating: true, count: newCardCount - newCardState.count))
-        } else if newCardState.count > newCardCount {
-            newCardState.removeLast(newCardState.count - newCardCount)
-        }
+        newCardState = Array(repeating: true, count: newCardCount)
     }
     
     
@@ -114,11 +128,10 @@ class CardViewModel: ObservableObject {
         newCardCount = min(max(newCardCount, minTimerAmount), maxTimerAmount)
         
         // Adjust `newCardTimer` array size
-        if newCardTimer.count < newCardCount {
-            newCardTimer.append(contentsOf: Array(repeating: 0, count: newCardCount - newCardTimer.count))
-        } else if newCardTimer.count > newCardCount {
-            newCardTimer.removeLast(newCardTimer.count - newCardCount)
-        }
+        newCardTimer = Array(repeating: 0, count: newCardCount)
+
+        // Adjust `newCardState` array size
+        isPickerMoving = Array(repeating: false, count: newCardCount)
         
         // Set `newCardState` for timer
         newCardState = Array(repeating: false, count: 1)
@@ -152,70 +165,70 @@ class CardViewModel: ObservableObject {
     /// Also checks the card contents and throws errors, if any, to `validationError`.
     /// Also provides the card's index and uuid on save.
     func saveCard(with context: ModelContext) {
-        // Validate modifier and update before saving
-        initModifier()
-
-        // Validate button count and update before saving
-        initButton()
-        
-        // Validate timer amount and update before saving
-        initTimer()
-        
-        // Validate the form before saving
-        validateForm()
-        guard validationError.isEmpty else {
-            return
+        Task { @MainActor in
+            while isPickerMoving.contains(true) {
+                try await Task.sleep(nanoseconds: 200_000_000)
+            }
+            
+            // Validate types and update them before saving
+            initTypes(for: .validation)
+            
+            // Validate the form before saving
+            validateForm()
+            guard validationError.isEmpty else {
+                return
+            }
+            
+            // Check if there are any existing cards
+            if selectedGroup.cards.count == 0 {
+                newIndex = 0 // Set new index to 0 if there are no cards
+            } else {
+                newIndex = selectedGroup.cards.count + 1 // Set new index to the next highest number
+            }
+            
+            if let card = selectedCard {
+                // Update the existing card
+                card.title = newCardTitle
+                card.type = newCardType
+                card.count = newCardCount
+                card.state = Array(newCardState.prefix(min(newCardCount, newCardState.count))).map { CardState(state: $0) }
+                card.modifier = newCardModifier.map { CounterModifier(modifier: $0) }
+                card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count))).map { ButtonText(buttonText: $0) }
+                card.symbol = newCardSymbol
+                card.timer = newCardTimer.map { TimerValue(timerValue: $0) }
+                card.timerRingtone = newCardRingtone
+                card.primaryColor = CodableColor(color: newCardPrimary)
+                card.secondaryColor = CodableColor(color: newCardSecondary)
+            } else {
+                // Create a new card
+                let newCard = DMStoredCard(
+                    uuid: UUID(),
+                    index: newIndex,
+                    type: newCardType,
+                    title: newCardTitle,
+                    count: newCardType == .counter ? 0 : newCardCount,
+                    state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
+                        (newCardType == .timer || newCardType == .timer_custom) ? Array(repeating: false, count: newCardCount) : nil,
+                    modifier: newCardType == .counter ? newCardModifier : nil,
+                    buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
+                    symbol: newCardType == .toggle ? newCardSymbol : nil,
+                    timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
+                    timerRingtone: (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil,
+                    primaryColor: newCardPrimary,
+                    secondaryColor: newCardSecondary
+                )
+                selectedGroup.cards.append(newCard) // Save the new card to the selected group
+            }
+            
+            // Save the context
+            do {
+                try context.save()
+            } catch {
+                validationError.append("Failed to save the card: \(error.localizedDescription)")
+            }
+            
+            resetFields(.viewModel)
         }
-        
-        // Check if there are any existing cards
-        if selectedGroup.cards.count == 0 {
-            newIndex = 0 // Set new index to 0 if there are no cards
-        } else {
-            newIndex = selectedGroup.cards.count + 1 // Set new index to the next highest number
-        }
-        
-        if let card = selectedCard {
-            // Update the existing card
-            card.title = newCardTitle
-            card.type = newCardType
-            card.count = newCardCount
-            card.state = Array(newCardState.prefix(min(newCardCount, newCardState.count))).map { CardState(state: $0) }
-            card.modifier = newCardModifier.map { CounterModifier(modifier: $0) }
-            card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count))).map { ButtonText(buttonText: $0) }
-            card.symbol = newCardSymbol
-            card.timer = newCardTimer.map { TimerValue(timerValue: $0) }
-            card.timerRingtone = newCardRingtone
-            card.primaryColor = CodableColor(color: newCardPrimary)
-            card.secondaryColor = CodableColor(color: newCardSecondary)
-        } else {
-            // Create a new card
-            let newCard = DMStoredCard(
-                uuid: UUID(),
-                index: newIndex,
-                type: newCardType,
-                title: newCardTitle,
-                count: newCardType == .counter ? 0 : newCardCount,
-                state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
-                    (newCardType == .timer || newCardType == .timer_custom) ? Array(repeating: false, count: newCardCount) : nil,
-                modifier: newCardType == .counter ? newCardModifier : nil,
-                buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
-                symbol: newCardType == .toggle ? newCardSymbol : nil,
-                timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
-                timerRingtone: (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil,
-                primaryColor: newCardPrimary,
-                secondaryColor: newCardSecondary
-            )
-            selectedGroup.cards.append(newCard) // Save the new card to the selected group
-        }
-        
-        // Save the context
-        do {
-            try context.save()
-        } catch {
-            validationError.append("Failed to save the card: \(error.localizedDescription)")
-        }
-        
-        resetFields(.viewModel)
     }
     
     /// A function that sets the temporary fields to defaults.
@@ -238,6 +251,7 @@ class CardViewModel: ObservableObject {
         newCardRingtone = ""
         newCardPrimary = .blue
         newCardSecondary = .white
+        isPickerMoving = Array(repeating: false, count: 1)
     }
     
     /// A function that checks the card's contents for any issues.
@@ -252,11 +266,11 @@ class CardViewModel: ObservableObject {
         
         if newCardType == .counter {
             if newCardModifier.contains(where: { $0 < 0 }) {
-            validationError.append("Modifiers cannot be negative")
+                validationError.append("Modifiers cannot be negative")
             }
             
             if newCardModifier.isEmpty {
-            validationError.append("There can't be less than one modifier")
+                validationError.append("There can't be less than one modifier")
             }
         } else if newCardType == .toggle {
             if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {

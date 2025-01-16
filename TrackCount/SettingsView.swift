@@ -12,7 +12,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
     @AppStorage("timerAlertEnabled") var isTimerAlertEnabled: Bool = DefaultSettings.timerAlertEnabled
-    @AppStorage("timerDeafultRingtone") var timerDeafultRingtone: String = DefaultSettings.timerDefaultRingtone
+    @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
     
     @State private var isPresentingRingtonePickerView: Bool = false
     let version : Any! = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
@@ -45,16 +45,16 @@ struct SettingsView: View {
                 .padding()
                 
                 Section(header: Text("Timers")) {
-                    Toggle("Timer Alerts", isOn: $isTimerAlertEnabled)
+                    Toggle("Play Ringtone When Timer Ends", isOn: $isTimerAlertEnabled)
                     HStack {
-                        Button("Default Timer Ringtone") {
+                        Button("Default Ringtone") {
                             isPresentingRingtonePickerView.toggle()
                         }
                         .foregroundStyle(isLight ? .black : .white)
                         
                         Spacer()
                         
-                        Text("\(timerDeafultRingtone)")
+                        Text("\(timerDefaultRingtone)")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -77,7 +77,7 @@ struct SettingsView: View {
                 }
             }
             .sheet(isPresented: $isPresentingRingtonePickerView) {
-                RingtonePickerView(setVariable: $timerDeafultRingtone, fromSettings: true)
+                RingtonePickerView(setVariable: $timerDefaultRingtone, fromSettings: true)
             }
         }
     }

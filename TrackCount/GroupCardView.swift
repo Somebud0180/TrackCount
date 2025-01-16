@@ -35,7 +35,6 @@ struct GroupCardView: View {
             // Background Gradient
             RoundedRectangle(cornerRadius: 12)
                 .fill(backgroundGradient)
-                .shadow(radius: 5) // Adds a subtle shadow for depth
                 .onAppear {
                     withAnimation(
                         .easeInOut(duration: 3)

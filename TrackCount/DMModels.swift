@@ -292,7 +292,7 @@ struct ButtonText: Codable {
 }
 
 struct TimerValue: Codable {
-    let timerValue: Int
+    var timerValue: Int
 }
 
 /// Definition for DMStoredCard types

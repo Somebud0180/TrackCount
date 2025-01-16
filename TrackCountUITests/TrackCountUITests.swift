@@ -4,6 +4,9 @@
 // Created by Ethan John Lagera on 11/20/24.
 
 import XCTest
+import SwiftUI
+import Combine
+@testable import TrackCount
 
 final class TrackCountUITests: XCTestCase {
     

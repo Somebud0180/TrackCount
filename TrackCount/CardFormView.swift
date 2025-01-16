@@ -176,7 +176,8 @@ struct CardFormView: View {
                         ForEach(0..<viewModel.newCardTimer.count, id: \.self) { index in
                             HStack {
                                 Text("Timer \(index + 1): ")
-                                TimePickerView(totalSeconds: $viewModel.newCardTimer[index])
+                                TimePickerView(totalSeconds: $viewModel.newCardTimer[index],
+                                               isPickerMoving: $viewModel.isPickerMoving[index])
                             }
                             .padding(.horizontal)
                             .frame(maxHeight: 150)
@@ -187,6 +188,9 @@ struct CardFormView: View {
             }
             .listStyle(PlainListStyle())
             .navigationBarTitle(viewModel.selectedCard == nil ? "Add Card" : "Edit Card", displayMode: .inline)
+            .onChange(of: viewModel.newCardType) {
+                viewModel.initTypes(for: .switchType)
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Dismiss") {
@@ -197,6 +201,7 @@ struct CardFormView: View {
                     Button("Save") {
                         saveCard()
                     }
+                    .disabled(viewModel.isPickerMoving.contains(true))
                 }
             }
             
@@ -212,11 +217,11 @@ struct CardFormView: View {
                 Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
                     .foregroundStyle(.white)
                     .cornerRadius(8)
             }
             .padding()
+            .disabled(viewModel.isPickerMoving.contains(true))
         }
     }
     

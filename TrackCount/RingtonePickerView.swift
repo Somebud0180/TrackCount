@@ -9,15 +9,16 @@ import SwiftUI
 import AVFoundation
 
 struct Ringtone: Identifiable, Decodable {
-    var id: String { name }
     let name: String
+    let category: String
+    var id: String { name }
 }
 
 struct RingtonePickerView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss
     
-    @AppStorage("timerDeafultRingtone") var timerDeafultRingtone: String = DefaultSettings.timerDefaultRingtone
+    @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
     
     @Binding var setVariable: String
     @State private var player: AVAudioPlayer?
@@ -65,23 +66,28 @@ struct RingtonePickerView: View {
                     }
                 }
                 
-                ForEach(ringtones) { ringtone in
-                    Button(action: {
-                        // Set variable with selected ringtone
-                        setVariable = ringtone.name
-                        playAudio(audio: setVariable)
-                    }) {
-                        HStack {
-                            Text(ringtone.name)
-                                .foregroundStyle(primaryColor)
-                            Spacer()
-                            if setVariable == ringtone.name {
-                                Image(systemName: "checkmark")
+                let categories = Array(Set(ringtones.map { $0.category })).sorted()
+                
+                ForEach(categories, id: \.self) { category in
+                    Section(header: Text(category)) {
+                        ForEach(ringtones.filter { $0.category == category }) { ringtone in
+                            Button(action: {
+                                // Set variable with selected ringtone
+                                setVariable = ringtone.name
+                                playAudio(audio: setVariable)
+                            }) {
+                                HStack {
+                                    Text(ringtone.name)
+                                        .foregroundStyle(primaryColor)
+                                    Spacer()
+                                    if setVariable == ringtone.name {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                
             }
             .navigationBarTitle("Select a ringtone", displayMode: .inline)
             .toolbar {
@@ -102,7 +108,7 @@ struct RingtonePickerView: View {
             // Handle default audio
             var ringtonePlaying = audio
             if audio.isEmpty {
-                ringtonePlaying = timerDeafultRingtone
+                ringtonePlaying = timerDefaultRingtone
             }
             
             // Grab audio
