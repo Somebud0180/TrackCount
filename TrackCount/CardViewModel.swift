@@ -25,13 +25,17 @@ class CardViewModel: ObservableObject {
     @Published var newCardModifier: [Int] = [1]
     @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
-    @Published var newCardTimer: [Int] = Array(repeating: 0, count: 1)
+    @Published var newCardTimer1: [Int] = [0, 0, 0]
+    @Published var newCardTimer2: [Int] = [0, 0, 0]
+    @Published var newCardTimer3: [Int] = [0, 0, 0]
+    @Published var newCardTimer4: [Int] = [0, 0, 0]
+    @Published var newCardTimer: [Int] = [0]
     @Published var newCardRingtone: String = ""
     @Published var newCardSymbol: String = ""
     @Published var newCardPrimary: Color = .blue
     @Published var newCardSecondary: Color = .white
     @Published var validationError: [String] = []
-    @Published var isPickerMoving: [Bool] = Array(repeating: false, count: 1)
+    @Published var isPickerMoving: [Bool] = Array(repeating: false, count: 4)
     
     enum resetFor {
         case viewModel
@@ -113,12 +117,23 @@ class CardViewModel: ObservableObject {
         newCardCount = min(max(newCardCount, minButtonLimit), maxButtonLimit)
         
         // Adjust `newButtonText` array size
-        newButtonText = Array(repeating: "", count: newCardCount)
+        if newButtonText.count < newCardCount {
+            newButtonText.append(contentsOf: Array(repeating: "", count: newCardCount - newButtonText.count))
+        } else if newButtonText.count > newCardCount {
+            newButtonText.removeLast(newButtonText.count - newCardCount)
+        }
         
         // Adjust `newCardState` array size
         newCardState = Array(repeating: true, count: newCardCount)
     }
     
+    /// A function that converts the timer values [hour, minute, second] into total seconds.
+    /// - Parameter timeArray: Timer array to turn into total seconds
+    /// - Returns: Returns an integer containing the total seconds
+    private func convertToTotalSeconds(_ timeArray: [Int]) -> Int {
+        guard timeArray.count >= 3 else { return 0 }
+        return timeArray[0] * 3600 + timeArray[1] * 60 + timeArray[2]
+    }
     
     /// A function that adjusts variables related to timers.
     /// Used to adjust the array `newCardTimer` to match the `newCardCount` and prep `newCardState`.
@@ -127,14 +142,46 @@ class CardViewModel: ObservableObject {
         // Clamp newCardCount within valid limits
         newCardCount = min(max(newCardCount, minTimerAmount), maxTimerAmount)
         
-        // Adjust `newCardTimer` array size
-        newCardTimer = Array(repeating: 0, count: newCardCount)
-
-        // Adjust `newCardState` array size
-        isPickerMoving = Array(repeating: false, count: newCardCount)
+        // Convert time arrays to total seconds
+        let timerTotals = [
+            convertToTotalSeconds(newCardTimer1),
+            convertToTotalSeconds(newCardTimer2),
+            convertToTotalSeconds(newCardTimer3),
+            convertToTotalSeconds(newCardTimer4)
+        ]
         
-        // Set `newCardState` for timer
+        // Adjust newCardTimer array size and populate with total seconds
+        newCardTimer = Array(timerTotals.prefix(newCardCount))
+        
+        // Set newCardState for timer
         newCardState = Array(repeating: false, count: 1)
+        
+        // Validate timer values
+        if newCardTimer.isEmpty {
+            newCardTimer = Array(repeating: 0, count: newCardCount)
+        }
+    }
+    
+    /// A function that updates the timer values based on the index.
+    func updateTimerValue(index: Int, hours: Int, minutes: Int, seconds: Int) {
+    // Input validation
+    let validatedHours = max(0, min(hours, 23))
+    let validatedMinutes = max(0, min(minutes, 59))
+    let validatedSeconds = max(0, min(seconds, 59))
+    
+    switch index {
+        case 0:
+            newCardTimer1 = [validatedHours, validatedMinutes, validatedSeconds]
+        case 1:
+            newCardTimer2 = [validatedHours, validatedMinutes, validatedSeconds]
+        case 2:
+            newCardTimer3 = [validatedHours, validatedMinutes, validatedSeconds]
+        case 3:
+           newCardTimer4 = [validatedHours, validatedMinutes, validatedSeconds]
+        default:
+            break
+    }
+        initTimer() // Recalculate timer values
     }
     
     /// A function that removes the card from the data model entity.
@@ -245,7 +292,6 @@ class CardViewModel: ObservableObject {
         newCardRingtone = ""
         newCardPrimary = .blue
         newCardSecondary = .white
-        isPickerMoving = Array(repeating: false, count: 1)
     }
     
     /// A function that checks the card's contents for any issues.
@@ -274,7 +320,7 @@ class CardViewModel: ObservableObject {
             for (index, timerValue) in newCardTimer.enumerated() {
                 if timerValue <= 0 {
                     validationError.append("Timer \(index + 1) cannot be less than one")
-                } else if timerValue > 7199 {
+                } else if timerValue > 86399 {
                     validationError.append("Timer \(index + 1) cannot exceed limits")
                 }
             }

@@ -9,9 +9,14 @@
 import SwiftUI
 
 struct TimeWheelPickerView: View {
-    @Binding var totalSeconds: Int
+    enum ModifySeconds {
+        case first(Int)
+        case second([Int])
+    }
+    
+    @Binding var modifySeconds: ModifySeconds
     @Binding var isPickerMoving: Bool
-
+    
     @State private var hours: Int = 0
     @State private var minutes: Int = 0
     @State private var seconds: Int = 0
@@ -40,7 +45,18 @@ struct TimeWheelPickerView: View {
                 handlePickerChange()
             }
             
-            let isOneHour = totalSeconds >= 3600 && totalSeconds < 7199
+            let isOneHour = {
+                switch modifySeconds {
+                case .first(let total):
+                    return total >= 3600 && total < 7199
+                case .second(let array):
+                    guard array.count >= 1 else { return false }
+                    return array[0] == 1
+                default:
+                    return false
+                }
+            }()
+            
             Text(isOneHour ? "hr" : "hrs")
                 .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                 .foregroundStyle(.primary)
@@ -101,37 +117,75 @@ struct TimeWheelPickerView: View {
     
     /// Handles simultaneous picker changes
     func handlePickerChange() {
-        // Cancel any existing timer
+        // Update total seconds immediately
+        updateTotalSeconds()
+        
+        // Cancel any existing timer for picker movement state
         debounceTimer?.invalidate()
         
         // Create new timer that will fire after picker stops moving
         debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-            updateTotalSeconds()
             isPickerMoving = false
         }
     }
     
     /// Updates total seconds with data combined from each separate wheel
     func updateTotalSeconds() {
-        // Clamp values as a safeguard
+        // Validate ranges
         hours = min(max(hours, hourRange.lowerBound), hourRange.upperBound)
         minutes = min(max(minutes, minuteSecondRange.lowerBound), minuteSecondRange.upperBound)
         seconds = min(max(seconds, minuteSecondRange.lowerBound), minuteSecondRange.upperBound)
-        totalSeconds = hours * 3600 + minutes * 60 + seconds
+        
+        switch modifySeconds {
+        case .first:
+            let totalSeconds = hours * 3600 + minutes * 60 + seconds
+            modifySeconds = .first(totalSeconds)
+        case .second:
+            modifySeconds = .second([hours, minutes, seconds])
+        }
     }
     
     /// Fills up with data from existing totalSeconds into each separate wheel
     func initializeFromTotalSeconds() {
-        hours = totalSeconds / 3600
-        minutes = (totalSeconds % 3600) / 60
-        seconds = totalSeconds % 60
+        switch modifySeconds {
+        case .first(let total):
+            hours = total / 3600
+            minutes = (total % 3600) / 60
+            seconds = total % 60
+        case .second(let array):
+            if array.count >= 3 {
+                hours = min(max(array[0], 0), 23)
+                minutes = min(max(array[1], 0), 59)
+                seconds = min(max(array[2], 0), 59)
+            } else {
+                // Default values if array is incomplete
+                hours = 0
+                minutes = 0
+                seconds = 0
+            }
+        }
+        
+        // Validate ranges
+        hours = min(max(hours, hourRange.lowerBound), hourRange.upperBound)
+        minutes = min(max(minutes, minuteSecondRange.lowerBound), minuteSecondRange.upperBound)
+        seconds = min(max(seconds, minuteSecondRange.lowerBound), minuteSecondRange.upperBound)
     }
-    
 }
 
 #Preview {
     // Sample variable to pass to the picker
     @Previewable @State var testSeconds = 0
     @Previewable @State var isPickerMoving = false
-    TimeWheelPickerView(totalSeconds: $testSeconds, isPickerMoving: $isPickerMoving)
+    
+    TimeWheelPickerView(
+        modifySeconds: Binding(
+            get: { .first(testSeconds ?? 0) },
+            set: { newValue in
+                if case .first(let value) = newValue {
+                    testSeconds = value
+                }
+            }
+        ),
+        isPickerMoving: $isPickerMoving
+    )
 }

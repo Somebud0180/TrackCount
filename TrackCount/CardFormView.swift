@@ -176,8 +176,25 @@ struct CardFormView: View {
                         ForEach(0..<viewModel.newCardTimer.count, id: \.self) { index in
                             HStack {
                                 Text("Timer \(index + 1): ")
-                                TimeWheelPickerView(totalSeconds: $viewModel.newCardTimer[index],
-                                               isPickerMoving: $viewModel.isPickerMoving[index])
+                                TimeWheelPickerView(
+                                    modifySeconds: Binding(
+                                        get: { .second(index == 0 ? viewModel.newCardTimer1 :
+                                                        index == 1 ? viewModel.newCardTimer2 :
+                                                        index == 2 ? viewModel.newCardTimer3 :
+                                                        viewModel.newCardTimer4) },
+                                        set: { newValue in
+                                            if case .second(let timeArray) = newValue {
+                                                viewModel.updateTimerValue(
+                                                    index: index,
+                                                    hours: timeArray[0],
+                                                    minutes: timeArray[1],
+                                                    seconds: timeArray[2]
+                                                )
+                                            }
+                                        }
+                                    ),
+                                    isPickerMoving: $viewModel.isPickerMoving[index]
+                                )
                             }
                             .padding(.horizontal)
                             .frame(maxHeight: 150)
@@ -240,7 +257,7 @@ struct CardFormView: View {
         
         // Defer the save action to the next run loop to ensure all UI updates are completed.
         // This helps in making sure that the text fields have updated their bound variables before saving.
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             viewModel.saveCard(with: context)
             if viewModel.validationError.isEmpty {
                 dismiss()

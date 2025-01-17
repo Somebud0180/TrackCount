@@ -298,6 +298,7 @@ struct TrackView: View {
                                             .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.3)
+                                            .padding(.horizontal)
                                     )
                                     .frame(height: 100)
                                     .padding(10)

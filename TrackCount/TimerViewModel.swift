@@ -36,17 +36,25 @@ class TimerViewModel: ObservableObject {
     /// Creates the timer (custom) setup view
     func setupTimerView(_ card: DMStoredCard) -> some View {
         let cardID = card.uuid
+        
         return VStack {
             Text("Set Timer")
                 .font(.headline)
             
-            TimeWheelPickerView(totalSeconds: Binding(
-                get: { card.timer?[0].timerValue ?? 0 },
-                set: { card.timer?[0] = TimerValue(timerValue: $0) }
-            ), isPickerMoving: Binding(
-                get: { self.isPickerMovingForCard[cardID] ?? false },
-                set: { self.isPickerMovingForCard[cardID] = $0 }
-            ))
+            TimeWheelPickerView(
+                modifySeconds: Binding(
+                    get: { .first(card.timer?[0].timerValue ?? 0) },
+                    set: { newValue in
+                        if case .first(let value) = newValue {
+                            card.timer?[0] = TimerValue(timerValue: value)
+                        }
+                    }
+                ),
+                isPickerMoving: Binding(
+                    get: { self.isPickerMovingForCard[cardID] ?? false },
+                    set: { self.isPickerMovingForCard[cardID] = $0 }
+                )
+            )
             .frame(height: 150)
             
             Button(action: {
