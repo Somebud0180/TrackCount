@@ -110,7 +110,7 @@ class GroupViewModel: ObservableObject {
     /// - Parameters:
     ///   - context: The ModelContext to perform operations in.
     ///   - group: The `DMCardGroup` to be removed.
-    func removeGroup(with context: ModelContext, group: DMCardGroup) {
+    func removeGroup(_ group: DMCardGroup, with context: ModelContext) {
         do {
             // Delete the group
             context.delete(group)

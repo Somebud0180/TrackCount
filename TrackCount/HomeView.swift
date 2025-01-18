@@ -49,6 +49,7 @@ struct HomeView: View {
                         .hueRotation(.degrees(animateGradient ? 30 : 0))
                         .task {
                             if isGradientAnimated {
+                                print("Home Gradient Animated")
                                 withAnimation(.easeInOut(duration: 2).repeatForever()) {
                                     animateGradient.toggle()
                                 }
@@ -75,15 +76,29 @@ struct HomeView: View {
                         // Buttons
                         Grid(alignment: .center) {
                             NavigationLink(destination:
-                                            GroupListView()
-                                .environmentObject(ImportManager())
+                                GroupListView()
+                                    .environmentObject(ImportManager())
                             ){
                                 Text("Track It")
                                     .font(.largeTitle)
                                     .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
                                     .minimumScaleFactor(0.5)
                                     .lineLimit(1)
-                                    .frame(minWidth: 200, minHeight: 25)
+                                    .frame(minWidth: 150, minHeight: 25)
+                                    .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
+                                    .background(.ultraThinMaterial)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(10)
+                            }
+                            .shadow(radius: 1)
+                            
+                            NavigationLink(destination: GuideListView()){
+                                Text("Guides")
+                                    .font(.largeTitle)
+                                    .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
+                                    .minimumScaleFactor(0.5)
+                                    .lineLimit(1)
+                                    .frame(minWidth: 150, minHeight: 25)
                                     .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
                                     .background(.ultraThinMaterial)
                                     .foregroundStyle(.white)
@@ -99,7 +114,7 @@ struct HomeView: View {
                                     .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
                                     .minimumScaleFactor(0.5)
                                     .lineLimit(1)
-                                    .frame(minWidth: 200, minHeight: 25)
+                                    .frame(minWidth: 150, minHeight: 25)
                                     .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
                                     .background(.ultraThinMaterial)
                                     .foregroundStyle(.white)

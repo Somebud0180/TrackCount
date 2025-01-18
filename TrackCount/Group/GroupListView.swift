@@ -20,8 +20,9 @@ struct GroupListView: View {
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
-    @State private var isShowingFilePicker = false
+    @State private var isPresentingFilePicker = false
     @State private var isPresentingGroupForm: Bool = false
+    @State private var isPresentingGroupOrder: Bool = false
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var selectedGroup: DMCardGroup?
     @State private var animateGradient: Bool = false
@@ -40,6 +41,7 @@ struct GroupListView: View {
             .hueRotation(.degrees(animateGradient ? 30 : 0))
             .task {
                 if isGradientAnimated {
+                    print("Group List View Animated")
                     withAnimation(.easeInOut(duration: 2).repeatForever()) {
                         animateGradient.toggle()
                     }
@@ -64,10 +66,20 @@ struct GroupListView: View {
                     }
                     
                     if savedGroups.isEmpty {
-                        Text("Create a new group by tapping on the plus icon")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .padding()
+                        (
+                            Text("Create a new group by tapping the ")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            +
+                            Text(Image(systemName: "ellipsis.circle"))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            +
+                            Text(" in the top-right corner")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        )
+                        .padding()
                     }
                     
                     LazyVGrid(columns: columnLayout, spacing: 16) {
@@ -92,15 +104,18 @@ struct GroupListView: View {
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Menu {
+                                Button(action: { isPresentingGroupOrder.toggle() }) {
+                                    Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
+                                }
                                 Button(action: { isPresentingGroupForm.toggle() }) {
                                     Label("New Group", systemImage: "plus.square")
                                 }
                                 
-                                Button(action: { isShowingFilePicker = true }) {
+                                Button(action: { isPresentingFilePicker = true }) {
                                     Label("Import Group", systemImage: "square.and.arrow.down")
                                 }
                             } label: {
-                                Image(systemName: "plus")
+                                Image(systemName: "ellipsis.circle")
                             }
                         }
                     }
@@ -111,13 +126,17 @@ struct GroupListView: View {
                                 viewModel.validationError.removeAll()
                             }
                     }
+                    .sheet(isPresented: $isPresentingGroupOrder) {
+                        GroupOrderView()
+                            .environmentObject(viewModel)
+                    }
                     .alert(isPresented: $isPresentingDeleteDialog) {
                         Alert(
                             title: alertTitle,
                             message: Text("Are you sure you want to delete this group? This cannot be undone."),
                             primaryButton: .destructive(Text("Confirm")) {
                                 if let group = selectedGroup {
-                                    viewModel.removeGroup(with: context, group: group)
+                                    viewModel.removeGroup(group, with: context)
                                     selectedGroup = nil
                                 }
                             },
@@ -128,7 +147,7 @@ struct GroupListView: View {
                         )
                     }
                     .fileImporter(
-                        isPresented: $isShowingFilePicker,
+                        isPresented: $isPresentingFilePicker,
                         allowedContentTypes: [.trackCountGroup],
                         allowsMultipleSelection: false
                     ) { result in

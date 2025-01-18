@@ -1,0 +1,10 @@
+{
+    "guides": [
+      {
+        "id": 1,
+        "title": "Edit, Share, Delete Groups and Edit Cards",
+        "videoFilename": "HoldGroup",
+        "description": "To access the group options, hold the group card and select your desired action."
+      }
+    ]
+}
