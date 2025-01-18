@@ -27,7 +27,6 @@
 		AA4A52D62CEDF57D00C79994 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA4A52E62CEDF57E00C79994 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA4A52F02CEDF57E00C79994 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA6B7C932D1B27B400520D57 /* TrackCount.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TrackCount.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -47,16 +46,6 @@
 				AA8CD27B2CF392060066518E /* Exceptions for "TrackCount" folder in "TrackCount" target */,
 			);
 			path = TrackCount;
-			sourceTree = "<group>";
-		};
-		AA4A52E92CEDF57E00C79994 /* TrackCountTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TrackCountTests;
-			sourceTree = "<group>";
-		};
-		AA4A52F32CEDF57E00C79994 /* TrackCountUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TrackCountUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -89,10 +78,7 @@
 		AA4A52CD2CEDF57D00C79994 = {
 			isa = PBXGroup;
 			children = (
-				AA6B7C932D1B27B400520D57 /* TrackCount.xctestplan */,
 				AA4A52D82CEDF57D00C79994 /* TrackCount */,
-				AA4A52E92CEDF57E00C79994 /* TrackCountTests */,
-				AA4A52F32CEDF57E00C79994 /* TrackCountUITests */,
 				AA4A52D72CEDF57D00C79994 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -145,9 +131,6 @@
 			dependencies = (
 				AA4A52E82CEDF57E00C79994 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				AA4A52E92CEDF57E00C79994 /* TrackCountTests */,
-			);
 			name = TrackCountTests;
 			packageProductDependencies = (
 			);
@@ -167,9 +150,6 @@
 			);
 			dependencies = (
 				AA4A52F22CEDF57E00C79994 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				AA4A52F32CEDF57E00C79994 /* TrackCountUITests */,
 			);
 			name = TrackCountUITests;
 			packageProductDependencies = (
