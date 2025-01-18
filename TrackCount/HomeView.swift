@@ -11,22 +11,27 @@ import SwiftData
 struct DefaultSettings {
     static let timerDefaultRingtone = "Kalimba"
     static let timerAlertEnabled = true
+    static let gradientAnimated = true
+    static let gradientInDarkHome = false
+    static let gradientInDarkGroup = false
+    static let primaryThemeColor = RawColor(color: Color.blue.light)
 }
 
 struct HomeView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) private var colorScheme
     
-    @AppStorage("timerAlertEnabled") var isTimerAlertEnabled: Bool = DefaultSettings.timerAlertEnabled
-    @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
+    @AppStorage("gradientAnimated") var isGradientAnimated: Bool = DefaultSettings.gradientAnimated
+    @AppStorage("gradientInDarkHome") var isGradientInDarkHome: Bool = DefaultSettings.gradientInDarkHome
+    @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     @Query private var savedGroups: [DMCardGroup]
     @State private var animateGradient: Bool = false
     @State private var isPresentingSettingsView: Bool = false
-
+    
     /// Dynamically computes gradient colors based on colorScheme.
     private var gradientColors: [Color] {
-        colorScheme == .light ? [.white, .blue] : [.black, .gray]
+        colorScheme == .light ? [.white, primaryThemeColor.color] : [.black, isGradientInDarkHome ? primaryThemeColor.color : .gray]
     }
     
     var body: some View {
@@ -41,17 +46,19 @@ struct HomeView: View {
                     Rectangle()
                         .foregroundStyle(backgroundGradient)
                         .edgesIgnoringSafeArea(.all)
-                        .hueRotation(.degrees(animateGradient ? 45 : 0))
+                        .hueRotation(.degrees(animateGradient ? 30 : 0))
                         .task {
-                            withAnimation(.easeInOut(duration: 2).repeatForever()) {
-                                animateGradient.toggle()
+                            if isGradientAnimated {
+                                withAnimation(.easeInOut(duration: 2).repeatForever()) {
+                                    animateGradient.toggle()
+                                }
                             }
                         }
 
                     if colorScheme == .light {
                         // A thin material to soften the gradient background
                         Rectangle()
-                            .background(.ultraThinMaterial)
+                            .foregroundStyle(.secondary.opacity(0.2))
                             .ignoresSafeArea()
                     }
                     
@@ -63,11 +70,12 @@ struct HomeView: View {
                             .minimumScaleFactor(0.5)
                             .lineLimit(1)
                             .foregroundStyle(Color.white.opacity(0.8))
+                            .shadow(radius: 1)
                         
                         // Buttons
                         Grid(alignment: .center) {
                             NavigationLink(destination:
-                                            GroupListView(viewBehaviour: .view)
+                                            GroupListView()
                                 .environmentObject(ImportManager())
                             ){
                                 Text("Track It")
@@ -81,22 +89,7 @@ struct HomeView: View {
                                     .foregroundStyle(.white)
                                     .cornerRadius(10)
                             }
-                            
-                            NavigationLink(destination:
-                                            GroupListView(viewBehaviour: .edit)
-                                .environmentObject(ImportManager())
-                            ){
-                                Text("Edit It")
-                                    .font(.largeTitle)
-                                    .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.accessibility1)
-                                    .minimumScaleFactor(0.5)
-                                    .lineLimit(1)
-                                    .frame(minWidth: 200, minHeight: 25)
-                                    .padding(EdgeInsets(top: 15, leading: 25, bottom: 15, trailing: 25))
-                                    .background(.ultraThinMaterial)
-                                    .foregroundStyle(.white)
-                                    .cornerRadius(10)
-                            }
+                            .shadow(radius: 1)
                             
                             Button(action: {
                                 isPresentingSettingsView.toggle()
@@ -112,6 +105,7 @@ struct HomeView: View {
                                     .foregroundStyle(.white)
                                     .cornerRadius(10)
                             }
+                            .shadow(radius: 1)
                         }
                     }
                 }
@@ -121,6 +115,21 @@ struct HomeView: View {
                 }
             }
         }
+        .accentColor(colorScheme == .light ? .black : .primary)
+    }
+}
+
+extension Color {
+    var light: Self {
+        var environment = EnvironmentValues()
+        environment.colorScheme = .light
+        return Color(resolve(in: environment))
+    }
+    
+    var dark: Self {
+        var environment = EnvironmentValues()
+        environment.colorScheme = .dark
+        return Color(resolve(in: environment))
     }
 }
 

@@ -26,7 +26,8 @@ class TimerViewModel: ObservableObject {
     @Published var audioLoopers: [UUID: AVPlayerLooper] = [:]
     @Published var activeRingtones: [String: UUID] = [:]
     @Published var pausedRingtones: [String: [(UUID, AVQueuePlayer, AVPlayerLooper)]] = [:]
-    @Published var isPickerMovingForCard: [UUID: Bool] = [:]
+    
+    @State var cardTimerValues: [Int] = [0, 0, 0]
     
     enum audioMode {
         case play
@@ -35,24 +36,23 @@ class TimerViewModel: ObservableObject {
     
     /// Creates the timer (custom) setup view
     func setupTimerView(_ card: DMStoredCard) -> some View {
-        let cardID = card.uuid
-        
         return VStack {
             Text("Set Timer")
                 .font(.headline)
             
             TimeWheelPickerView(
-                modifySeconds: Binding(
-                    get: { .first(card.timer?[0].timerValue ?? 0) },
-                    set: { newValue in
-                        if case .first(let value) = newValue {
-                            card.timer?[0] = TimerValue(timerValue: value)
-                        }
+                timerArray: Binding(
+                    get: {
+                        let seconds = card.timer?[0].timerValue ?? 0
+                        let h = seconds / 3600
+                        let m = (seconds % 3600) / 60
+                        let s = seconds % 60
+                        return [h, m, s]
+                    },
+                    set: { timerArray in
+                        let totalSeconds = timerArray[0] * 3600 + timerArray[1] * 60 + timerArray[2]
+                        card.timer?[0] = TimerValue(timerValue: totalSeconds)
                     }
-                ),
-                isPickerMoving: Binding(
-                    get: { self.isPickerMovingForCard[cardID] ?? false },
-                    set: { self.isPickerMovingForCard[cardID] = $0 }
                 )
             )
             .frame(height: 150)
@@ -68,7 +68,6 @@ class TimerViewModel: ObservableObject {
             }
             .buttonStyle(.borderedProminent)
             .tint(card.primaryColor.color)
-            .disabled(card.timer?[0].timerValue == 0 || (isPickerMovingForCard[cardID] ?? false))
         }
     }
     

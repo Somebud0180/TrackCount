@@ -36,6 +36,7 @@ struct CardListView: View {
                     Text("Create a new card to get started")
                         .frame(maxWidth: .infinity, alignment: .center)
                         .listRowSeparator(.hidden)
+                        .transition(.opacity)
                 } else {
                     // Display validation error if any
                     if !validationError.isEmpty {
@@ -69,6 +70,7 @@ struct CardListView: View {
                         }
                     }
                     .onMove(perform: moveCard)
+                    .transition(.slide)
                 }
                 
                 if !selectedGroup.cards.isEmpty {
@@ -79,8 +81,10 @@ struct CardListView: View {
                         .foregroundStyle(.secondary)
                         .listRowSeparator(.hidden)
                         .frame(maxWidth: .infinity, alignment: .center)
+                        .transition(.opacity)
                 }
             }
+            .animation(.easeInOut(duration: 1), value: selectedGroup.cards)
             
             Button(action: {
                 isPresentingCardFormView.toggle()

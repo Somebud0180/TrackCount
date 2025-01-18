@@ -12,10 +12,9 @@ import SwiftUI
 
 class CardViewModel: ObservableObject {
     // Set variable defaults
-    @Environment(\.self) var environment
     @Published var selectedGroup: DMCardGroup
-    @Published var selectedCard: DMStoredCard? = nil
-    @Published var newIndex: Int = 0
+    @Published var selectedCard: DMStoredCard?
+    @Published var newCardIndex: Int = 0
     @Published var newCardType: DMStoredCard.Types = .counter
     @Published var newCardTitle: String = ""
     @Published var newCardCount: Int = 1
@@ -35,7 +34,6 @@ class CardViewModel: ObservableObject {
     @Published var newCardPrimary: Color = .blue
     @Published var newCardSecondary: Color = .white
     @Published var validationError: [String] = []
-    @Published var isPickerMoving: [Bool] = Array(repeating: false, count: 4)
     
     enum resetFor {
         case viewModel
@@ -74,11 +72,11 @@ class CardViewModel: ObservableObject {
         self.newCardType = card.type
         self.newCardTitle = card.title
         self.newCardCount = card.count
-        self.newCardState = card.state?.map { $0.state } ?? Array(repeating: true, count: 1)
-        self.newCardModifier = card.modifier?.map { $0.modifier } ?? [1]
-        self.newButtonText = card.buttonText?.map { $0.buttonText } ?? Array(repeating: "", count: 1)
+        self.newCardState = card.state?.isEmpty == false ? card.state!.map { $0.state } : Array(repeating: true, count: 1)
+        self.newCardModifier = card.modifier?.isEmpty == false ? card.modifier!.map { $0.modifier } : [1]
+        self.newButtonText = card.buttonText?.isEmpty == false ? card.buttonText!.map { $0.buttonText } : Array(repeating: "", count: 1)
         self.newCardSymbol = card.symbol ?? ""
-        self.newCardTimer = card.timer?.map { $0.timerValue } ?? Array(repeating: 0, count: 1)
+        self.newCardTimer = card.timer?.isEmpty == false ? card.timer!.map { $0.timerValue } : Array(repeating: 0, count: 1)
         self.newCardRingtone = card.timerRingtone ?? ""
         self.newCardPrimary = card.primaryColor.color
         self.newCardSecondary = card.secondaryColor.color
@@ -113,6 +111,11 @@ class CardViewModel: ObservableObject {
     /// Used to adjust the arrays `newButtonText` and `newCardState` to match the `newCardCount`.
     /// Also clamps `newCardCount` to stay within limits.
     func initButton() {
+        // Validate newCardCount
+        guard newCardCount >= minButtonLimit && newCardCount <= maxButtonLimit else {
+            validationError.append("newCardCount must be between \(minButtonLimit) and \(maxButtonLimit)")
+            return
+        }
         // Clamp newCardCount within valid limits
         newCardCount = min(max(newCardCount, minButtonLimit), maxButtonLimit)
         
@@ -135,10 +138,14 @@ class CardViewModel: ObservableObject {
         return timeArray[0] * 3600 + timeArray[1] * 60 + timeArray[2]
     }
     
-    /// A function that adjusts variables related to timers.
     /// Used to adjust the array `newCardTimer` to match the `newCardCount` and prep `newCardState`.
     /// Also clamps `newCardCount` to stay within limits
     func initTimer() {
+        // Validate newCardCount
+        guard newCardCount >= minTimerAmount && newCardCount <= maxTimerAmount else {
+            validationError.append("newCardCount must be between \(minTimerAmount) and \(maxTimerAmount)")
+            return
+        }
         // Clamp newCardCount within valid limits
         newCardCount = min(max(newCardCount, minTimerAmount), maxTimerAmount)
         
@@ -164,12 +171,12 @@ class CardViewModel: ObservableObject {
     
     /// A function that updates the timer values based on the index.
     func updateTimerValue(index: Int, hours: Int, minutes: Int, seconds: Int) {
-    // Input validation
-    let validatedHours = max(0, min(hours, 23))
-    let validatedMinutes = max(0, min(minutes, 59))
-    let validatedSeconds = max(0, min(seconds, 59))
-    
-    switch index {
+        // Input validation
+        let validatedHours = max(0, min(hours, 23))
+        let validatedMinutes = max(0, min(minutes, 59))
+        let validatedSeconds = max(0, min(seconds, 59))
+        
+        switch index {
         case 0:
             newCardTimer1 = [validatedHours, validatedMinutes, validatedSeconds]
         case 1:
@@ -177,10 +184,10 @@ class CardViewModel: ObservableObject {
         case 2:
             newCardTimer3 = [validatedHours, validatedMinutes, validatedSeconds]
         case 3:
-           newCardTimer4 = [validatedHours, validatedMinutes, validatedSeconds]
+            newCardTimer4 = [validatedHours, validatedMinutes, validatedSeconds]
         default:
             break
-    }
+        }
         initTimer() // Recalculate timer values
     }
     
@@ -223,53 +230,52 @@ class CardViewModel: ObservableObject {
         
         // Check if there are any existing cards
         if selectedGroup.cards.count == 0 {
-            newIndex = 0 // Set new index to 0 if there are no cards
+            newCardIndex = 0 // Set new index to 0 if there are no cards
         } else {
-            newIndex = selectedGroup.cards.count + 1 // Set new index to the next highest number
+            newCardIndex = selectedGroup.cards.count // Set new index to the next highest number
         }
         
-        if let card = selectedCard {
-            // Update the existing card
-            card.title = newCardTitle
-            card.type = newCardType
-            card.count = newCardCount
-            card.state = Array(newCardState.prefix(min(newCardCount, newCardState.count))).map { CardState(state: $0) }
-            card.modifier = newCardModifier.map { CounterModifier(modifier: $0) }
-            card.buttonText = Array(newButtonText.prefix(min(newCardCount, newButtonText.count))).map { ButtonText(buttonText: $0) }
-            card.symbol = newCardSymbol
-            card.timer = newCardTimer.map { TimerValue(timerValue: $0) }
-            card.timerRingtone = newCardRingtone
-            card.primaryColor = CodableColor(color: newCardPrimary)
-            card.secondaryColor = CodableColor(color: newCardSecondary)
-        } else {
-            // Create a new card
-            let newCard = DMStoredCard(
-                uuid: UUID(),
-                index: newIndex,
-                type: newCardType,
-                title: newCardTitle,
-                count: newCardType == .counter ? 0 : newCardCount,
-                state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
-                    (newCardType == .timer || newCardType == .timer_custom) ? Array(repeating: false, count: newCardCount) : nil,
-                modifier: newCardType == .counter ? newCardModifier : nil,
-                buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
-                symbol: newCardType == .toggle ? newCardSymbol : nil,
-                timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
-                timerRingtone: (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil,
-                primaryColor: newCardPrimary,
-                secondaryColor: newCardSecondary
-            )
-            selectedGroup.cards.append(newCard) // Save the new card to the selected group
-        }
-        
-        // Save the context
         do {
+            if let card = selectedCard {
+                // Update existing card
+                card.title = newCardTitle
+                card.type = newCardType
+                card.count = newCardType == .counter ? 0 : newCardCount
+                card.state = newCardType == .toggle ? newCardState.prefix(newCardCount).map { CardState(state: $0) } : (newCardType == .timer || newCardType == .timer_custom) ? [CardState(state: false)] : nil
+                card.modifier = newCardType == .counter ? newCardModifier.map { CounterModifier(modifier: $0) } : nil
+                card.buttonText = newCardType == .toggle ? newButtonText.prefix(newCardCount).map { ButtonText(buttonText: $0) } : nil
+                card.symbol = newCardType == .toggle ? newCardSymbol : nil
+                card.timer = (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer.map { TimerValue(timerValue: $0) } : nil
+                card.timerRingtone = (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil
+                card.primaryColor = CodableColor(color: newCardPrimary)
+                card.secondaryColor = CodableColor(color: newCardSecondary)
+            } else {
+                // Create new card with guaranteed unique UUID
+                let newCard = DMStoredCard(
+                    uuid: UUID(),
+                    index: newCardIndex,
+                    type: newCardType,
+                    title: newCardTitle,
+                    count: newCardType == .counter ? 0 : newCardCount,
+                    state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
+                        (newCardType == .timer || newCardType == .timer_custom) ? [false] : nil,
+                    modifier: newCardType == .counter ? newCardModifier : nil,
+                    buttonText: newCardType == .toggle ? newButtonText.prefix(newCardCount).map { $0 } : nil,
+                    symbol: newCardType == .toggle ? newCardSymbol : nil,
+                    timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
+                    timerRingtone: (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil,
+                    primaryColor: newCardPrimary,
+                    secondaryColor: newCardSecondary
+                )
+                selectedGroup.cards.append(newCard)
+            }
+            
+            // Save the context
             try context.save()
+            resetFields(.viewModel)
         } catch {
             validationError.append("Failed to save the card: \(error.localizedDescription)")
         }
-        
-        resetFields(.viewModel)
     }
     
     /// A function that sets the temporary fields to defaults.
@@ -320,7 +326,7 @@ class CardViewModel: ObservableObject {
             for (index, timerValue) in newCardTimer.enumerated() {
                 if timerValue <= 0 {
                     validationError.append("Timer \(index + 1) cannot be less than one")
-                } else if timerValue > 86399 {
+                } else if timerValue >= 86400 {
                     validationError.append("Timer \(index + 1) cannot exceed limits")
                 }
             }

@@ -13,10 +13,15 @@ struct SettingsView: View {
     
     @AppStorage("timerAlertEnabled") var isTimerAlertEnabled: Bool = DefaultSettings.timerAlertEnabled
     @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
+    @AppStorage("gradientAnimated") var isGradientAnimated: Bool = DefaultSettings.gradientAnimated
+    @AppStorage("gradientInDarkHome") var isGradientInDarkHome: Bool = DefaultSettings.gradientInDarkHome
+    @AppStorage("gradientInDarkGroup") var isGradientInDarkGroup: Bool = DefaultSettings.gradientInDarkGroup
+    @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     @State private var isPresentingRingtonePickerView: Bool = false
-    let version : Any! = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
-    let build : Any! = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion")
+    @State private var primaryThemeSwiftColor: Color = .blue
+    let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+    let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     
     var body: some View {
         let isLight = colorScheme == .light
@@ -44,6 +49,23 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding()
                 
+                Section(header: Text("Theme")) {
+                    Toggle("Animate Gradient", isOn: $isGradientAnimated)
+                    ColorPicker("Gradient Color", selection: $primaryThemeSwiftColor) 
+                        .onChange(of: primaryThemeSwiftColor) {
+                            saveColor(primaryThemeSwiftColor, to: &primaryThemeColor)
+                        }
+                    Button("Reset Gradient Color") {
+                        primaryThemeColor = DefaultSettings.primaryThemeColor
+                        primaryThemeSwiftColor = primaryThemeColor.color
+                    }
+                }
+                
+                Section(header: Text("Theme (Dark)")) {
+                    Toggle("Use Gradient in Home", isOn: $isGradientInDarkHome)
+                    Toggle("Use Gradient in Group Cards", isOn: $isGradientInDarkGroup)
+                }
+                
                 Section(header: Text("Timers")) {
                     Toggle("Play Ringtone When Timer Ends", isOn: $isTimerAlertEnabled)
                     HStack {
@@ -63,9 +85,11 @@ struct SettingsView: View {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text("\(version ?? "Unknown") (\(build ?? "1"))")
+                        Text("\(version) (\(build))")
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Version")
+                    .accessibilityValue(Text("\(version) (\(build))"))
                 }
             }
             .navigationBarTitle("Settings", displayMode: .inline)
@@ -80,6 +104,12 @@ struct SettingsView: View {
                 RingtonePickerView(setVariable: $timerDefaultRingtone, fromSettings: true)
             }
         }
+        .onAppear { primaryThemeSwiftColor = primaryThemeColor.color }
+    }
+    
+    private func saveColor(_ swiftColor: Color, to appStorageColor: inout RawColor) {
+        let newColor = RawColor(color: swiftColor)
+        appStorageColor = newColor
     }
 }
 

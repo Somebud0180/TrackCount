@@ -34,6 +34,7 @@ struct TrackView: View {
                         Text("You have no cards yet")
                             .font(.title)
                             .foregroundStyle(.gray)
+                            .multilineTextAlignment(.center)
                     } else {
                         // Iterate through the sorted cards and display each card
                         ForEach(selectedGroup.cards.sorted(by: { $0.index < $1.index }), id: \.uuid) { card in
@@ -124,6 +125,7 @@ struct TrackView: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
+                .accessibilityHint("Counter Card")
             
             Spacer()
             
@@ -154,6 +156,8 @@ struct TrackView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(card.primaryColor.color)
+                            .accessibilityLabel("Increase counter")
+                            .accessibilityHint("Increase \(card.title) by \(modifiers[index])")
                         }
                     }
                 }
@@ -165,7 +169,6 @@ struct TrackView: View {
                     .font(.largeTitle)
                     .contentTransition(.numericText())
                     .animation(.spring, value: card.count)
-                    .accessibilityValue("\(card.count)")
                 
                 // Similar updates for decrement buttons
                 HStack {
@@ -194,6 +197,8 @@ struct TrackView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(card.primaryColor.color)
+                            .accessibilityLabel("Reduce counter")
+                            .accessibilityHint("Reduce \(card.title) by \(modifiers[index])")
                         }
                     }
                 }
@@ -213,6 +218,7 @@ struct TrackView: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
+                .accessibilityHint("Toggle Card")
             
             Spacer()
             
@@ -272,6 +278,7 @@ struct TrackView: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
+                .accessibilityHint("Timer Card")
             
             if card.type == .timer_custom {
                 if card.state?[0].state == false {

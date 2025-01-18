@@ -2,7 +2,7 @@
 //  RingtonePickerView.swift
 //  TrackCount
 //
-//  Created by Ethan John Lagera on 1/13/25.
+//  Contains a list of ringtones from the asset `Ringtone.json` that can be selected
 //
 
 import SwiftUI
@@ -103,6 +103,8 @@ struct RingtonePickerView: View {
         }
     }
     
+    /// Plays the selected audio from asset.
+    /// - Parameter audio: The audio to be played, accepts the names of the audio.
     private func playAudio(audio: String) {
         do {
             // Handle default audio

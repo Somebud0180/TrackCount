@@ -18,7 +18,7 @@ struct CardFormView: View {
     
     /// Format number for Stepper with Text Field hybrid. via https://stackoverflow.com/a/63695046.
     static let formatter = NumberFormatter()
-
+    
     private let positiveIntFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.allowsFloats = false
@@ -63,13 +63,13 @@ struct CardFormView: View {
                 if viewModel.newCardType == .counter {
                     VStack(alignment: .leading) {
                         Text("Set the button increments:")
-                                                    
+                        
                         Text("Leave at 0 to disable")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     .listRowSeparator(.hidden)
-
+                    
                     TextField("Modifier 1", value: $viewModel.newCardModifier1, formatter: positiveIntFormatter)
                         .customRoundedStyle()
                         .listRowSeparator(.hidden)
@@ -173,31 +173,33 @@ struct CardFormView: View {
                         .listRowSeparator(.hidden)
                         
                         
-                        ForEach(0..<viewModel.newCardTimer.count, id: \.self) { index in
+                        ForEach(Array(viewModel.newCardTimer.enumerated()), id: \.offset) { index, timer in
                             HStack {
                                 Text("Timer \(index + 1): ")
                                 TimeWheelPickerView(
-                                    modifySeconds: Binding(
-                                        get: { .second(index == 0 ? viewModel.newCardTimer1 :
-                                                        index == 1 ? viewModel.newCardTimer2 :
-                                                        index == 2 ? viewModel.newCardTimer3 :
-                                                        viewModel.newCardTimer4) },
-                                        set: { newValue in
-                                            if case .second(let timeArray) = newValue {
-                                                viewModel.updateTimerValue(
-                                                    index: index,
-                                                    hours: timeArray[0],
-                                                    minutes: timeArray[1],
-                                                    seconds: timeArray[2]
-                                                )
+                                    timerArray: Binding(
+                                        get: {
+                                            switch index {
+                                            case 0: return viewModel.newCardTimer1
+                                            case 1: return viewModel.newCardTimer2
+                                            case 2: return viewModel.newCardTimer3
+                                            case 3: return viewModel.newCardTimer4
+                                            default: return [0, 0, 0]
                                             }
+                                        },
+                                        set: { newValue in
+                                            viewModel.updateTimerValue(
+                                                index: index,
+                                                hours: newValue[0],
+                                                minutes: newValue[1],
+                                                seconds: newValue[2]
+                                            )
                                         }
-                                    ),
-                                    isPickerMoving: $viewModel.isPickerMoving[index]
+                                    )
                                 )
+                                .padding(.horizontal)
+                                .frame(maxHeight: 150)
                             }
-                            .padding(.horizontal)
-                            .frame(maxHeight: 150)
                         }
                         .listRowSeparator(.hidden)
                     }
@@ -218,7 +220,6 @@ struct CardFormView: View {
                     Button("Save") {
                         saveCard()
                     }
-                    .disabled(viewModel.isPickerMoving.contains(true))
                 }
             }
             
@@ -240,12 +241,7 @@ struct CardFormView: View {
             .padding()
             .buttonStyle(.borderedProminent)
             .tint(.blue)
-            .disabled(viewModel.isPickerMoving.contains(true))
         }
-    }
-    
-    func buttonTextField() {
-        
     }
     
     /// A  function that saves the current card and dismisses the screen.

@@ -1,5 +1,5 @@
 //
-//  SymbolPicker.swift
+//  SymbolPickerView.swift
 //  TrackCount
 //
 //  Contains symbols and a symbol picker functionality

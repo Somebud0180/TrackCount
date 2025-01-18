@@ -10,12 +10,14 @@ import SwiftUI
 /// A card containing a rounded rectangle with a gradient background, contains the group symbol and title.
 struct GroupCardView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("gradientInDarkGroup") var isGradientInDarkGroup: Bool = DefaultSettings.gradientInDarkGroup
+    @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     @State private var animateGradient: Bool = false
     let group: DMCardGroup
     
     /// Dynamically computes gradient colors based on colorScheme.
     private var gradientColors: [Color] {
-        colorScheme == .light ? [.blue, .white] : [.white, .black]
+        colorScheme == .light ? [primaryThemeColor.color, .white] : [isGradientInDarkGroup ? primaryThemeColor.color : .white, .black]
     }
     
     var body: some View {
@@ -51,7 +53,7 @@ struct GroupCardView: View {
             // Background Glass
             RoundedRectangle(cornerRadius: 12)
                 .fill(.thinMaterial) // Applies the frosted glass effect
-            
+                
             // Content
             VStack {
                 if !group.groupSymbol.isEmpty {

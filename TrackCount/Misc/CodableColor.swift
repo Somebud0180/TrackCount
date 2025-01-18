@@ -2,7 +2,7 @@
 //  CodableColor.swift
 //  TrackCount
 //
-//  A codable version of color, used for storage. via https://medium.com/geekculture/using-appstorage-with-swiftui-colors-and-some-nskeyedarchiver-magic-a38038383c5e
+//  A codable version of color, used for model storage. via https://medium.com/geekculture/using-appstorage-with-swiftui-colors-and-some-nskeyedarchiver-magic-a38038383c5e
 //
 
 import SwiftUI
