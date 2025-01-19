@@ -1,10 +1,32 @@
 {
     "guides": [
-      {
-        "id": 1,
-        "title": "Edit, Share, Delete Groups and Edit Cards",
-        "videoFilename": "HoldGroup",
-        "description": "To access the group options, hold the group card and select your desired action."
-      }
+        {
+            "category": "Create",
+            "id": 1,
+            "title": "Create A Group",
+            "videoFilename": "CreateGroup",
+            "description": "To create a group, navigate to \"Track It\", press the button on the top-right and click \"New Group\"."
+        },
+        {
+            "category": "Create",
+            "id": 2,
+            "title": "Create A Card In A Group",
+            "videoFilename": "AddCard",
+            "description": "To add a card to a group, navigate to \"Track It\", hold your group, and select \"Edit Cards\".\n\nYou are now in the card list editor, press \"Create a new card\" to add a new card."
+        },
+        {
+            "category": "Edit",
+            "id": 3,
+            "title": "Edit, Share, Delete Groups And Edit Cards",
+            "videoFilename": "HoldGroup",
+            "description": "To access the group options, hold the group card and select your desired action."
+        },
+        {
+            "category": "Edit",
+            "id": 4,
+            "title": "Edit A Card In A Group",
+            "videoFilename": "EditCard",
+            "description": "To edit a card in a group, navigate to \"Track It\", hold your group, and select \"Edit Cards\".\n\nYou are now in the card list editor, tap an entry to edit it, drag it to change the order it appears in the tracking screen, or swipe it to the left to delete it."
+        }
     ]
 }

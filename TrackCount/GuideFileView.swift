@@ -9,47 +9,95 @@ import SwiftUI
 import AVKit
 
 struct GuideFileView: View {
-    let guide: Guide
     @Environment(\.colorScheme) var colorScheme
     @State private var playerLooper: AVPlayerLooper?
     @State private var queuePlayer: AVQueuePlayer?
+    @State private var reloadID = UUID()
+    let guide: Guide
     
     var body: some View {
-        GeometryReader { geometry in
-            VStack(alignment: .center) {
-                Text(guide.description)
-                    .padding()
-                
-                if let player = queuePlayer {
-                    CustomVideoPlayer(player: player)
-                        .frame(width: geometry.size.width * 0.9, height: (geometry.size.width * 0.9) * (3.0/2.0))
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.secondary, lineWidth: 0.5)
+        NavigationStack {
+            GeometryReader { geometry in
+                ScrollView {
+                    let safeWidth = max(geometry.size.width, 1)
+                    let safeHeight = max(geometry.size.height, 1)
+                    let isLandscape = safeWidth > safeHeight
+                    
+                    if isLandscape {
+                        // Landscape layout
+                        HStack(alignment: .top, spacing: 16) {
+                            Spacer()
+                            
+                            Text(guide.description)
+                                .multilineTextAlignment(.leading)
+                                .padding()
+                                .frame(maxWidth: geometry.size.width * 0.62, alignment: .leading)
+                            
+                            videoView(width: safeWidth, height: safeHeight, isLandscape: isLandscape)
+                            
+                            Spacer()
                         }
-                        .padding()
-                } else {
-                    RoundedRectangle(cornerRadius: 20)
-                        .foregroundStyle(.regularMaterial)
-                        .frame(width: geometry.size.width * 0.9, height: (geometry.size.width * 0.9) * (3.0/2.0))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.secondary, lineWidth: 0.5)
+                    } else {
+                        // Portrait layout
+                        VStack(alignment: .center) {
+                            Text(guide.description)
+                                .multilineTextAlignment(.leading)
+                                .padding()
+                            
+                            videoView(width: safeWidth, height: safeHeight, isLandscape: isLandscape)
                         }
-                        .padding()
+                    }
                 }
+                .navigationTitle(guide.title)
+                .navigationBarTitleDisplayMode(.inline)
             }
+            .id(reloadID) // Force view reload to properly play new video on colorScheme change
         }
         .onAppear {
             setupVideo()
         }
         .onChange(of: colorScheme) {
-            setupVideo()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                reloadID = UUID()
+                setupVideo()
+            }
         }
     }
-
-    /// Set up the video player
+    
+    /// Returns the video player view
+    private func videoView(width: CGFloat, height: CGFloat, isLandscape: Bool) -> some View {
+        // 1:2 aspect ratio => width: height = 1:2
+        // Decide an appropriate fraction of screen width for landscape vs. portrait
+        let videoWidth = isLandscape ? width * 0.28 : width - 32
+        // Clamp to avoid negative or zero sizes
+        let safeVideoWidth = max(videoWidth, 1)
+        let safeVideoHeight = max(safeVideoWidth * 2, 1)
+        
+        return Group {
+            if let player = queuePlayer {
+                CustomVideoPlayer(player: player)
+                    .frame(width: safeVideoWidth, height: safeVideoHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.secondary, lineWidth: 0.5)
+                    }
+                    .padding()
+            } else {
+                // Placeholder
+                RoundedRectangle(cornerRadius: 16)
+                    .foregroundStyle(.regularMaterial)
+                    .frame(width: safeVideoWidth, height: safeVideoHeight)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.secondary, lineWidth: 0.5)
+                    }
+                    .padding()
+            }
+        }
+    }
+    
+    /// Sets up the video player
     private func setupVideo() {
         // Stop and clean up existing player
         queuePlayer?.pause()
@@ -58,32 +106,42 @@ struct GuideFileView: View {
         playerLooper = nil
         queuePlayer = nil
         
-        // Create new player with delay to ensure proper cleanup
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let videoName = "\(guide.videoFilename)\(colorScheme == .light ? "Light" : "Dark")"
-            if let videoPath = Bundle.main.path(forResource: videoName, ofType: "mov") {
-                let url = URL(fileURLWithPath: videoPath)
-                let playerItem = AVPlayerItem(url: url)
-                let player = AVQueuePlayer()
-                queuePlayer = player
-                playerLooper = AVPlayerLooper(player: player, templateItem: playerItem)
-                player.play()
-            }
+        // Load correct file name for Dark Mode
+        let fileSuffix = colorScheme == .dark ? "Dark" : "Light"
+        let videoName = "\(guide.videoFilename)\(fileSuffix)"
+        guard let bundleURL = Bundle.main.url(forResource: videoName, withExtension: "mp4") else {
+            print("Could not find video: \(videoName).mp4")
+            return
         }
+        
+        let playerItem = AVPlayerItem(url: bundleURL)
+        let player = AVQueuePlayer(playerItem: playerItem)
+        queuePlayer = player
+        playerLooper = AVPlayerLooper(player: player, templateItem: playerItem)
+        
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to set up audio session: \(error)")
+        }
+        
+        player.play()
     }
-}
-
-/// Custom video player to remove the controls
-struct CustomVideoPlayer: UIViewControllerRepresentable {
-    let player: AVPlayer
     
-    func makeUIViewController(context: Context) -> AVPlayerViewController {
-        let controller = AVPlayerViewController()
-        controller.player = player
-        controller.showsPlaybackControls = false
-        controller.videoGravity = .resizeAspectFill // Fill the frame while maintaining aspect ratio
-        return controller
+    /// A custom video player that hides the system controls
+    struct CustomVideoPlayer: UIViewControllerRepresentable {
+        let player: AVPlayer
+        
+        func makeUIViewController(context: Context) -> AVPlayerViewController {
+            let controller = AVPlayerViewController()
+            controller.player = player
+            controller.showsPlaybackControls = false
+            // Use .resizeAspect to fit within frame or .resizeAspectFill to fill
+            controller.videoGravity = .resizeAspect
+            return controller
+        }
+        
+        func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {}
     }
-    
-    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {}
 }

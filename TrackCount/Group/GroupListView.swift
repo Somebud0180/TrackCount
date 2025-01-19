@@ -41,7 +41,6 @@ struct GroupListView: View {
             .hueRotation(.degrees(animateGradient ? 30 : 0))
             .task {
                 if isGradientAnimated {
-                    print("Group List View Animated")
                     withAnimation(.easeInOut(duration: 2).repeatForever()) {
                         animateGradient.toggle()
                     }

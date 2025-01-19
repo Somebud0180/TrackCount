@@ -49,7 +49,6 @@ struct HomeView: View {
                         .hueRotation(.degrees(animateGradient ? 30 : 0))
                         .task {
                             if isGradientAnimated {
-                                print("Home Gradient Animated")
                                 withAnimation(.easeInOut(duration: 2).repeatForever()) {
                                     animateGradient.toggle()
                                 }

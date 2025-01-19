@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct Guide: Codable, Identifiable {
+    let category: String
     let id: Int
     let title: String
     let videoFilename: String
@@ -15,19 +16,33 @@ struct Guide: Codable, Identifiable {
 }
 
 struct GuideListView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var guides: [Guide] = []
 
     var body: some View {
-        NavigationView {
-            List(guides) { guide in
-                NavigationLink(destination: GuideFileView(guide: guide)) {
-                    Text(guide.title)
+        NavigationStack {
+            List {
+                ForEach(groupedGuides.keys.sorted(), id: \.self) { category in
+                    Section(header: Text(category)) {
+                        ForEach(groupedGuides[category] ?? []) { guide in
+                            NavigationLink(destination: GuideFileView(guide: guide)) {
+                                Text(guide.title)
+                            }
+                        }
+                    }
                 }
             }
             .onAppear {
                 loadGuides()
             }
+            .navigationTitle("Guides")
+            .navigationBarTitleDisplayMode(.inline)
         }
+        .accentColor(colorScheme == .light ? .black : .primary)
+    }
+    
+    private var groupedGuides: [String: [Guide]] {
+        Dictionary(grouping: guides, by: { $0.category })
     }
     
     private func loadGuides() {
