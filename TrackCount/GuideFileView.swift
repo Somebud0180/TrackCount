@@ -120,7 +120,8 @@ struct GuideFileView: View {
         playerLooper = AVPlayerLooper(player: player, templateItem: playerItem)
         
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback)
+            try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category.playback,
+                                                            options: [.mixWithOthers])
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
             print("Failed to set up audio session: \(error)")
@@ -137,6 +138,7 @@ struct GuideFileView: View {
             let controller = AVPlayerViewController()
             controller.player = player
             controller.showsPlaybackControls = false
+            controller.updatesNowPlayingInfoCenter = false
             // Use .resizeAspect to fit within frame or .resizeAspectFill to fill
             controller.videoGravity = .resizeAspect
             return controller

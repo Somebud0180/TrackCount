@@ -123,6 +123,7 @@ struct GroupListView: View {
                             .presentationDetents([.fraction(0.5)])
                             .onDisappear {
                                 viewModel.validationError.removeAll()
+                                viewModel.selectedGroup = nil
                             }
                     }
                     .sheet(isPresented: $isPresentingGroupOrder) {
@@ -173,7 +174,7 @@ struct GroupListView: View {
                     }
                 }
             } message: {
-                if let group = importManager.previewGroup {
+                if let group = importManager.previewGroup, #available(iOS 18, *) {
                     Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
                 } else {
                     Text("Do you want to import this group?")

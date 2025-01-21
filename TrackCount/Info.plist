@@ -10,7 +10,7 @@
 			<key>CFBundleURLIconFile</key>
 			<string></string>
 			<key>CFBundleURLName</key>
-			<string>com.ethanjohn.TrackCount</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>trackcount</string>
@@ -30,7 +30,7 @@
 			<key>UTTypeDescription</key>
 			<string>TrackCount Group</string>
 			<key>UTTypeIdentifier</key>
-			<string>com.ethanjohn.TrackCount</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>

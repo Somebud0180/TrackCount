@@ -41,7 +41,6 @@ final class DMCardGroup: Identifiable {
     }
     
     /// Checks if the card contains at least either one of two variables (groupTitle and groupSymbol).
-    /// Checks if the card contains atlease either one of two variables (groupTitle and groupSymbol).
     private func validateCardGroup() {
         let titleIsEmpty = groupTitle.isEmpty
         let symbolIsEmpty = groupSymbol.isEmpty
@@ -67,6 +66,7 @@ final class DMCardGroup: Identifiable {
                     buttonText: card.buttonText?.map { $0.buttonText },
                     symbol: card.symbol,
                     timer: card.timer?.map { $0.timerValue },
+                    timerRingtone: card.timerRingtone,
                     primaryColor: card.primaryColor,
                     secondaryColor: card.secondaryColor
                 )
@@ -124,6 +124,7 @@ final class DMCardGroup: Identifiable {
                     count: cardData.count,
                     state: Array(repeating: false, count: 1),
                     timer: cardData.timer,
+                    timerRingtone: cardData.timerRingtone,
                     primaryColor: cardData.primaryColor.color,
                     secondaryColor: cardData.secondaryColor.color
                 )
@@ -330,6 +331,7 @@ struct ShareableCard: Codable {
     let buttonText: [String]?
     let symbol: String?
     let timer: [Int]?
+    let timerRingtone: String?
     let primaryColor: CodableColor
     let secondaryColor: CodableColor
 }
