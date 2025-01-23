@@ -9,6 +9,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import Combine
 
 class CardViewModel: ObservableObject {
     // Set variable defaults
@@ -24,10 +25,7 @@ class CardViewModel: ObservableObject {
     @Published var newCardModifier: [Int] = [1]
     @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
-    @Published var newCardTimer1: [Int] = [0, 0, 0]
-    @Published var newCardTimer2: [Int] = [0, 0, 0]
-    @Published var newCardTimer3: [Int] = [0, 0, 0]
-    @Published var newCardTimer4: [Int] = [0, 0, 0]
+    @Published var newTimerValues: [Int : [Int]] = [0 : [0, 0 ,0]]
     @Published var newCardTimer: [Int] = [0]
     @Published var newCardRingtone: String = ""
     @Published var newCardSymbol: String = ""
@@ -80,6 +78,18 @@ class CardViewModel: ObservableObject {
         self.newCardRingtone = card.timerRingtone ?? ""
         self.newCardPrimary = card.primaryColor.color
         self.newCardSecondary = card.secondaryColor.color
+        
+        if card.type == .timer || card.type == .timer_custom {
+            // Convert timer values back to [h,m,s] format for each timer
+            for i in 0..<(card.timer?.count ?? 0) {
+                if let seconds = card.timer?[i].timerValue {
+                    let h = seconds / 3600
+                    let m = (seconds % 3600) / 60
+                    let s = seconds % 60
+                    newTimerValues[i] = [h, m, s]
+                }
+            }
+        }
     }
     
     /// A function that calls the corresponding initializers dynamically based on the type
@@ -150,12 +160,9 @@ class CardViewModel: ObservableObject {
         newCardCount = min(max(newCardCount, minTimerAmount), maxTimerAmount)
         
         // Convert time arrays to total seconds
-        let timerTotals = [
-            convertToTotalSeconds(newCardTimer1),
-            convertToTotalSeconds(newCardTimer2),
-            convertToTotalSeconds(newCardTimer3),
-            convertToTotalSeconds(newCardTimer4)
-        ]
+        let timerTotals = Array(0..<4).map { index in
+            convertToTotalSeconds(newTimerValues[index] ?? [0, 0, 0])
+        }
         
         // Adjust newCardTimer array size and populate with total seconds
         newCardTimer = Array(timerTotals.prefix(newCardCount))
@@ -176,18 +183,7 @@ class CardViewModel: ObservableObject {
         let validatedMinutes = max(0, min(minutes, 59))
         let validatedSeconds = max(0, min(seconds, 59))
         
-        switch index {
-        case 0:
-            newCardTimer1 = [validatedHours, validatedMinutes, validatedSeconds]
-        case 1:
-            newCardTimer2 = [validatedHours, validatedMinutes, validatedSeconds]
-        case 2:
-            newCardTimer3 = [validatedHours, validatedMinutes, validatedSeconds]
-        case 3:
-            newCardTimer4 = [validatedHours, validatedMinutes, validatedSeconds]
-        default:
-            break
-        }
+        newTimerValues[index] = [validatedHours, validatedMinutes, validatedSeconds]
         initTimer() // Recalculate timer values
     }
     

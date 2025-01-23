@@ -172,21 +172,12 @@ struct CardFormView: View {
                         }
                         .listRowSeparator(.hidden)
                         
-                        
-                        ForEach(Array(viewModel.newCardTimer.enumerated()), id: \.offset) { index, timer in
+                        ForEach(0..<viewModel.newCardCount, id: \.self) { index in
                             HStack {
                                 Text("Timer \(index + 1): ")
                                 TimeWheelPickerView(
                                     timerArray: Binding(
-                                        get: {
-                                            switch index {
-                                            case 0: return viewModel.newCardTimer1
-                                            case 1: return viewModel.newCardTimer2
-                                            case 2: return viewModel.newCardTimer3
-                                            case 3: return viewModel.newCardTimer4
-                                            default: return [0, 0, 0]
-                                            }
-                                        },
+                                        get: { viewModel.newTimerValues[index] ?? [0, 0, 0] },
                                         set: { newValue in
                                             viewModel.updateTimerValue(
                                                 index: index,

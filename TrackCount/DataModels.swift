@@ -1,8 +1,8 @@
 //
-//  DMModels.swift
+//  DataModels.swift
 //  TrackCount
 //
-//  Represents a store for the card groups and the tracking cards.
+//  Contains the data models for groups and cards.
 //
 
 import Foundation
@@ -280,7 +280,7 @@ final class DMStoredCard: Identifiable {
 // Wrap types to conform to Codable, supresses CoreData faults
 // via https://stackoverflow.com/a/79060754
 
-struct CardState: Codable {
+struct CardState: Codable, Equatable {
     var state: Bool
 }
 

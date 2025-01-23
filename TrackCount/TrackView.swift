@@ -53,6 +53,9 @@ struct TrackView: View {
                 Text(selectedGroup.groupTitle)
             }
         }
+        .onAppear {
+            viewModel.timerCleanup(for: context, group: selectedGroup)
+        }
         .onDisappear {
             viewModel.timerCleanup(for: context, group: selectedGroup)
         }
@@ -282,7 +285,39 @@ struct TrackView: View {
             
             if card.type == .timer_custom {
                 if card.state?[0].state == false {
-                    viewModel.setupTimerView(card)
+                    VStack {
+                        Text("Set Timer")
+                            .font(.headline)
+                        
+                        TimeWheelPickerView(
+                            timerArray: Binding(
+                                get: {
+                                    let seconds = card.timer?[0].timerValue ?? 0
+                                    let h = seconds / 3600
+                                    let m = (seconds % 3600) / 60
+                                    let s = seconds % 60
+                                    return [h, m, s]
+                                },
+                                set: { timerArray in
+                                    let totalSeconds = timerArray[0] * 3600 + timerArray[1] * 60 + timerArray[2]
+                                    card.timer?[0] = TimerValue(timerValue: totalSeconds)
+                                }
+                            )
+                        )
+                        .frame(height: 150)
+                        
+                        Button(action: {
+                            card.state?[0] = CardState(state: true)
+                            viewModel.startTimer(card)
+                        }) {
+                            Text("Start")
+                                .foregroundStyle(card.secondaryColor.color)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(card.primaryColor.color)
+                    }
                 } else {
                     viewModel.activeTimerView(card)
                 }
@@ -291,7 +326,7 @@ struct TrackView: View {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                         ForEach(0..<card.count, id: \.self) { index in
                             Button(action: {
-                                viewModel.selectedTimerIndex = index
+                                viewModel.selectedTimerIndex[card.uuid] = index
                                 card.state?[0] = CardState(state: true)
                                 viewModel.startTimer(card)
                             }) {
@@ -318,23 +353,6 @@ struct TrackView: View {
             }
         }
         .padding()
-    }
-}
-
-/// Extends the Int type to format time in hours, minutes and seconds.
-extension Int {
-    func formatTime() -> String {
-        let hours = self / 3600
-        let minutes = (self % 3600) / 60
-        let seconds = self % 60
-        
-        if hours > 0 {
-            return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
-        } else if minutes > 0 {
-            return String(format: "%02i:%02i", minutes, seconds)
-        } else {
-            return String(format: "00:%02i", seconds)
-        }
     }
 }
 

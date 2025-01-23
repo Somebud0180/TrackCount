@@ -9,7 +9,20 @@
 import SwiftUI
 
 struct TimeWheelPickerView: View {
-    @Binding var timerArray: [Int]
+    @Binding var timerArray: [Int] // Assumes array has 3 elements
+    
+    // Add array validation
+    init(timerArray: Binding<[Int]>) {
+        self._timerArray = timerArray
+        // Validate array has 3 elements
+        guard timerArray.wrappedValue.count == 3 else {
+            fatalError("TimeWheelPickerView requires timerArray with exactly 3 elements")
+        }
+        // Initialize state from array
+        _hours = State(initialValue: timerArray.wrappedValue[0])
+        _minutes = State(initialValue: timerArray.wrappedValue[1])
+        _seconds = State(initialValue: timerArray.wrappedValue[2])
+    }
     
     @State private var hours: Int = 0
     @State private var minutes: Int = 0
@@ -101,6 +114,10 @@ struct TimeWheelPickerView: View {
         }
         .onAppear {
             initializeFromTimerArray()
+        }
+        .onDisappear {
+            debounceTimer?.invalidate()
+            debounceTimer = nil
         }
     }
     
