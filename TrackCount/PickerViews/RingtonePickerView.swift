@@ -20,6 +20,7 @@ struct RingtonePickerView: View {
     
     @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
     
+    @StateObject private var audioManager = AudioPlayerManager()
     @Binding var setVariable: String
     @State private var player: AVAudioPlayer?
     var isFromSettings: Bool
@@ -43,92 +44,73 @@ struct RingtonePickerView: View {
     }
     
     var body: some View {
-        /// Variable that stores black in light mode and white in dark mode.
-        /// Used for items with non-white primary light mode colors (i.e. buttons).
-        let primaryColor: Color = colorScheme == .light ? Color.black : Color.white
-        
-        NavigationStack {
-            List {
-                if !isFromSettings {
-                    Button(action: {
-                        // Set variable with selected ringtone
-                        setVariable = ""
-                        playAudio(audio: setVariable)
-                    }) {
-                        HStack {
-                            Text("Default")
-                                .foregroundStyle(primaryColor)
-                            Spacer()
-                            if setVariable == "" {
-                                Image(systemName: "checkmark")
+        VStack {
+            /// Variable that stores black in light mode and white in dark mode.
+            /// Used for items with non-white primary light mode colors (i.e. buttons).
+            let primaryColor: Color = colorScheme == .light ? Color.black : Color.white
+            
+            NavigationStack {
+                List {
+                    if !isFromSettings {
+                        Button(action: {
+                            // Set variable with selected ringtone
+                            setVariable = ""
+                            audioManager.playAudio(audio: setVariable)
+                        }) {
+                            HStack {
+                                Text("Default")
+                                    .foregroundStyle(primaryColor)
+                                Spacer()
+                                if setVariable == "" {
+                                    Image(systemName: "checkmark")
+                                }
                             }
                         }
                     }
-                }
-                
-                let categories = Array(Set(ringtones.map { $0.category })).sorted()
-                
-                ForEach(categories, id: \.self) { category in
-                    Section(header: Text(category)) {
-                        ForEach(ringtones.filter { $0.category == category }) { ringtone in
-                            Button(action: {
-                                // Set variable with selected ringtone
-                                setVariable = ringtone.name
-                                playAudio(audio: setVariable)
-                            }) {
-                                HStack {
-                                    Text(ringtone.name)
-                                        .foregroundStyle(primaryColor)
-                                    Spacer()
-                                    if setVariable == ringtone.name {
-                                        Image(systemName: "checkmark")
+                    
+                    let categories = Array(Set(ringtones.map { $0.category })).sorted()
+                    
+                    ForEach(categories, id: \.self) { category in
+                        Section(header: Text(category)) {
+                            ForEach(ringtones.filter { $0.category == category }) { ringtone in
+                                Button(action: {
+                                    // Set variable with selected ringtone
+                                    setVariable = ringtone.name
+                                    audioManager.playAudio(audio: setVariable)
+                                }) {
+                                    HStack {
+                                        Text(ringtone.name)
+                                            .foregroundStyle(primaryColor)
+                                        Spacer()
+                                        if setVariable == ringtone.name {
+                                            Image(systemName: "checkmark")
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-            .navigationBarTitle("Select a ringtone", displayMode: .inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Dismiss") {
-                        dismiss()
+                .navigationBarTitle("Select a ringtone", displayMode: .inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Dismiss") {
+                            dismiss()
+                        }
                     }
                 }
-            }
-            .onDisappear {
-                player?.stop()
-                try? AVAudioSession.sharedInstance().setActive(false)
+                .onDisappear {
+                    audioManager.stopAudio()
+                }
             }
         }
-    }
-    
-    /// Plays the selected audio from asset.
-    /// - Parameter audio: The audio to be played, accepts the names of the audio.
-    private func playAudio(audio: String) {
-        do {
-            // Handle default audio
-            var ringtonePlaying = audio
-            if audio.isEmpty {
-                ringtonePlaying = timerDefaultRingtone
+        .onDisappear {
+            audioManager.player?.stop()
+            do {
+                try AVAudioSession.sharedInstance().setActive(false)
+            } catch {
+                print("Failed to deactivate AVAudioSession: \(error)")
             }
-            
-            // Grab audio
-            guard let dataAsset = NSDataAsset(name: ringtonePlaying) else {
-                print("Data asset not found for: \(ringtonePlaying)")
-                return
-            }
-            
-            // Stop existing audio if any then try playing the audio
-            player?.stop()
-            
-            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .duckOthers)
-            try? AVAudioSession.sharedInstance().setActive(true)
-            player = try AVAudioPlayer(data: dataAsset.data)
-            player?.play()
-        } catch {
-            print("Failed to play: \(error.localizedDescription)")
         }
     }
 }

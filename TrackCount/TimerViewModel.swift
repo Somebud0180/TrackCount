@@ -237,7 +237,6 @@ class TimerViewModel: ObservableObject {
                 player.play()
             }
         } else if mode == .stop {
-            // Clean up
             if let looper = audioLoopers[card.uuid] {
                 looper.disableLooping()
             }
@@ -252,8 +251,10 @@ class TimerViewModel: ObservableObject {
                 audioLoopers.removeValue(forKey: card.uuid)
             }
             
-            if audioPlayers.isEmpty {
-                try? AVAudioSession.sharedInstance().setActive(false)
+            do {
+                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            } catch {
+                print("Error deactivating audio session: \(error)")
             }
         }
     }
