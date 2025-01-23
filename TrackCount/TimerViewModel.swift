@@ -146,7 +146,7 @@ class TimerViewModel: ObservableObject {
         }
     }
     
-    /// Starts the timer countdown
+    /// Updates all of the timer countdowns
     private func updateAllTimers() {
         let currentTime = Date()
         

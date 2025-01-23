@@ -99,6 +99,7 @@ struct RingtonePickerView: View {
             }
             .onDisappear {
                 player?.stop()
+                try? AVAudioSession.sharedInstance().setActive(false)
             }
         }
     }
@@ -121,6 +122,9 @@ struct RingtonePickerView: View {
             
             // Stop existing audio if any then try playing the audio
             player?.stop()
+            
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .duckOthers)
+            try? AVAudioSession.sharedInstance().setActive(true)
             player = try AVAudioPlayer(data: dataAsset.data)
             player?.play()
         } catch {

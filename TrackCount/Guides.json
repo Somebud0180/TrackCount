@@ -40,7 +40,7 @@
             "id": 6,
             "title": "Import A Group",
             "videoFilename": "ImportGroup",
-            "description": "To import a group, navigate to \"Track It\", press the button on the top-right, and click \"Import Group\". Find the file you want to import from your the document browser and click it. Confirm the import and you are set."
+            "description": "To import a group, navigate to \"Track It\", press the button on the top-right, and click \"Import Group\".\n\nFind the file you want to import from the document browser and click it. Confirm the import and you are set."
         },
     ]
 }

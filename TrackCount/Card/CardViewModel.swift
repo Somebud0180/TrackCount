@@ -290,6 +290,7 @@ class CardViewModel: ObservableObject {
         newButtonText = Array(repeating: "", count: 1)
         newCardState = Array(repeating: true, count: 1)
         newCardSymbol = ""
+        newTimerValues = [0 : [0, 0 ,0]]
         newCardTimer = Array(repeating: 0, count: 1)
         newCardRingtone = ""
         newCardPrimary = .blue
