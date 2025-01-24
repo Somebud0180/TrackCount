@@ -244,17 +244,16 @@ class TimerViewModel: ObservableObject {
                 player.pause()
                 player.removeAllItems()
             }
-            if audioPlayers.contains(where: { $0.key != card.uuid }) {
-                audioPlayers.removeValue(forKey: card.uuid)
-            }
-            if audioLoopers.contains(where: { $0.key != card.uuid}) {
-                audioLoopers.removeValue(forKey: card.uuid)
-            }
+
+            audioPlayers.removeValue(forKey: card.uuid)
+            audioLoopers.removeValue(forKey: card.uuid)
             
-            do {
-                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-            } catch {
-                print("Error deactivating audio session: \(error)")
+            if audioPlayers.isEmpty && audioLoopers.isEmpty {
+                do {
+                    try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+                } catch {
+                    print("Failed to deactivate AVAudioSession: \(error)")
+                }
             }
         }
     }
@@ -287,7 +286,7 @@ class TimerViewModel: ObservableObject {
         audioLoopers.removeAll()
         
         do {
-            try AVAudioSession.sharedInstance().setActive(false)
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         } catch {
             print("Failed to deactivate AVAudioSession: \(error)")
         }
