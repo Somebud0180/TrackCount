@@ -1,6 +1,6 @@
 //
-//  CtrlPanelApp.swift
-//  CtrlPanel
+//  TrackCountApp.swift
+//  TrackCount
 //
 //  Starts the app
 //

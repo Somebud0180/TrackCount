@@ -1,31 +1,33 @@
 # TrackCount
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Static Badge](https://img.shields.io/badge/Made_with-Swift-%23F05138?style=flat)](https://github.com/swiftlang/swift)
-![Static Badge](https://img.shields.io/badge/iOS-%3E%3D18-green?style=flat)
+![Static Badge](https://img.shields.io/badge/iOS-%3E%3D17-green?style=flat)
 [![Static Badge](https://img.shields.io/badge/Available_on-TestFlight-blue?style=flat)](https://testflight.apple.com/join/P8fadwdF)
 
 
 ### A tracker of some sort
-![Home](https://github.com/user-attachments/assets/71c2b38d-cb76-4d74-88bf-5b615b7a27f7)
+![Main](https://github.com/user-attachments/assets/21433065-f69d-42e2-b63a-56585dcff6d7)
+
 A simple app to keep a track of things, something I originaly made for a school project. This app aims to help you keep atop of multiple things easier. With the goal of adding more features over time.
 
 ### Features:
 - **Tracking**
-  - Features 2 trackers, a counter and a toggle.
+  - Features 3 trackers, a counter, a toggle and a timer (2 variations).
   
-![Trackers](https://github.com/user-attachments/assets/831ffe42-7eff-4a32-9678-7e104e6bb162)
+![Trackers](https://github.com/user-attachments/assets/ad3a13aa-6430-457b-aa16-549fba94f876)
+
 
 - **Customizations**
-  - Features customizable button colors, symbols and text for your tracking needs.
+  - Features customizable colors, text, symbols, and many more all for your tracking needs.
     
-![Customization](https://github.com/user-attachments/assets/1e027458-b534-43b5-850c-7d68fad500e7)
+![Customization](https://github.com/user-attachments/assets/4debf0a2-8c9b-4178-aeb3-f877847e35ec)
 
 
 - **Sharing**
   - Features an export feature allowing you to save and share your cards.
 
+![Sharing](https://github.com/user-attachments/assets/449468c2-2653-46bc-9219-4247900916e5)
 
-![Sharing](https://github.com/user-attachments/assets/60f751bc-0702-4728-be73-af49bb56fa10)
 
 ### Built With:
 - Swift

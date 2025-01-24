@@ -27,7 +27,6 @@
 		AA4A52D62CEDF57D00C79994 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA4A52E62CEDF57E00C79994 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA4A52F02CEDF57E00C79994 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA6B7C932D1B27B400520D57 /* TrackCount.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TrackCount.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -47,16 +46,6 @@
 				AA8CD27B2CF392060066518E /* Exceptions for "TrackCount" folder in "TrackCount" target */,
 			);
 			path = TrackCount;
-			sourceTree = "<group>";
-		};
-		AA4A52E92CEDF57E00C79994 /* TrackCountTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TrackCountTests;
-			sourceTree = "<group>";
-		};
-		AA4A52F32CEDF57E00C79994 /* TrackCountUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TrackCountUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -89,10 +78,7 @@
 		AA4A52CD2CEDF57D00C79994 = {
 			isa = PBXGroup;
 			children = (
-				AA6B7C932D1B27B400520D57 /* TrackCount.xctestplan */,
 				AA4A52D82CEDF57D00C79994 /* TrackCount */,
-				AA4A52E92CEDF57E00C79994 /* TrackCountTests */,
-				AA4A52F32CEDF57E00C79994 /* TrackCountUITests */,
 				AA4A52D72CEDF57D00C79994 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -145,9 +131,6 @@
 			dependencies = (
 				AA4A52E82CEDF57E00C79994 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				AA4A52E92CEDF57E00C79994 /* TrackCountTests */,
-			);
 			name = TrackCountTests;
 			packageProductDependencies = (
 			);
@@ -167,9 +150,6 @@
 			);
 			dependencies = (
 				AA4A52F22CEDF57E00C79994 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				AA4A52F32CEDF57E00C79994 /* TrackCountUITests */,
 			);
 			name = TrackCountUITests;
 			packageProductDependencies = (
@@ -410,7 +390,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"TrackCount/Preview Content\"";
 				DEVELOPMENT_TEAM = P6PV2R9443;
 				ENABLE_PREVIEWS = YES;
@@ -421,14 +401,15 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hackclub.TrackCount;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -445,7 +426,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"TrackCount/Preview Content\"";
 				DEVELOPMENT_TEAM = P6PV2R9443;
 				ENABLE_PREVIEWS = YES;
@@ -456,14 +437,15 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hackclub.TrackCount;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
