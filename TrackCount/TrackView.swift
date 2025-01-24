@@ -136,31 +136,34 @@ struct TrackView: View {
                 HStack {
                     if let modifiers = card.modifier?.map({ $0.modifier }) {
                         ForEach(0..<modifiers.count, id: \.self) { index in
-                            Button(action: {
-                                withAnimation(.spring) {
-                                    card.count += modifiers[index]
-                                }
-                            }) {
-                                HStack(spacing: 2) {
-                                    Image(systemName: "plus")
-                                        .font(.body)
-                                        .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                                        .minimumScaleFactor(0.5)
-                                        .frame(height: 25)
-                                    if modifiers[index] != 1 {
-                                        Text("\(modifiers[index])")
-                                            .font(.title3)
-                                            .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                                            .lineLimit(1)
+                            if !(modifiers[index] <= 0) {
+                                Button(action: {
+                                    withAnimation(.spring) {
+                                        card.count += modifiers[index]
                                     }
+                                }) {
+                                    HStack(spacing: 2) {
+                                        Image(systemName: "plus")
+                                            .font(.body)
+                                            .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
+                                            .minimumScaleFactor(0.5)
+                                            .frame(height: 25)
+                                        if modifiers[index] != 1 {
+                                            Text("\(modifiers[index])")
+                                                .font(.title3)
+                                                .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                    .foregroundStyle(card.secondaryColor.color)
+                                    .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
+                                    .contentShape(Rectangle())
                                 }
-                                .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
-                                .contentShape(Rectangle())
+                                .buttonStyle(.borderedProminent)
+                                .tint(card.primaryColor.color)
+                                .accessibilityLabel("Increase counter")
+                                .accessibilityHint("Increase \(card.title) by \(modifiers[index])")
                             }
-                            .buttonStyle(.borderedProminent)
-                            .tint(card.primaryColor.color)
-                            .accessibilityLabel("Increase counter")
-                            .accessibilityHint("Increase \(card.title) by \(modifiers[index])")
                         }
                     }
                 }
@@ -177,31 +180,34 @@ struct TrackView: View {
                 HStack {
                     if let modifiers = card.modifier?.map({ $0.modifier }) {
                         ForEach(0..<modifiers.count, id: \.self) { index in
-                            Button(action: {
-                                withAnimation(.spring) {
-                                    card.count -= modifiers[index]
-                                }
-                            }) {
-                                HStack(spacing: 2) {
-                                    Image(systemName: "minus")
-                                        .font(.body)
-                                        .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                                        .minimumScaleFactor(0.5)
-                                        .frame(height: 25)
-                                    if modifiers[index] != 1 {
-                                        Text("\(modifiers[index])")
-                                            .font(.title3)
-                                            .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                                            .lineLimit(1)
+                            if !(modifiers[index] <= 0) {
+                                Button(action: {
+                                    withAnimation(.spring) {
+                                        card.count -= modifiers[index]
                                     }
+                                }) {
+                                    HStack(spacing: 2) {
+                                        Image(systemName: "minus")
+                                            .font(.body)
+                                            .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
+                                            .minimumScaleFactor(0.5)
+                                            .frame(height: 25)
+                                        if modifiers[index] != 1 {
+                                            Text("\(modifiers[index])")
+                                                .font(.title3)
+                                                .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                    .foregroundStyle(card.secondaryColor.color)
+                                    .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
+                                    .contentShape(Rectangle())
                                 }
-                                .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
-                                .contentShape(Rectangle())
+                                .buttonStyle(.borderedProminent)
+                                .tint(card.primaryColor.color)
+                                .accessibilityLabel("Reduce counter")
+                                .accessibilityHint("Reduce \(card.title) by \(modifiers[index])")
                             }
-                            .buttonStyle(.borderedProminent)
-                            .tint(card.primaryColor.color)
-                            .accessibilityLabel("Reduce counter")
-                            .accessibilityHint("Reduce \(card.title) by \(modifiers[index])")
                         }
                     }
                 }
@@ -253,20 +259,18 @@ struct TrackView: View {
                         .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.accessibility1)
                         .minimumScaleFactor(0.3)
                         .lineLimit(2)
-                        .foregroundStyle(isActive ? card.secondaryColor.color : .black)
                     
                     Image(systemName: card.symbol ?? "")
                         .font(.footnote)
                         .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
                         .minimumScaleFactor(0.2)
-                        .foregroundStyle(isActive ? card.secondaryColor.color : .black)
                 } else {
                     Image(systemName: card.symbol ?? "")
                         .font(.body)
                         .minimumScaleFactor(0.2)
-                        .foregroundStyle(isActive ? card.secondaryColor.color : .black)
                 }
             }
+            .foregroundStyle(isActive ? card.secondaryColor.color : .black)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(0.5)
         }

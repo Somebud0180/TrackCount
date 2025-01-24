@@ -19,10 +19,7 @@ class CardViewModel: ObservableObject {
     @Published var newCardType: DMStoredCard.Types = .counter
     @Published var newCardTitle: String = ""
     @Published var newCardCount: Int = 1
-    @Published var newCardModifier1: Int = 1
-    @Published var newCardModifier2: Int = 0
-    @Published var newCardModifier3: Int = 0
-    @Published var newCardModifier: [Int] = [1]
+    @Published var newCardModifier: [Int] = [1, 0, 0]
     @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
     @Published var newTimerValues: [Int : [Int]] = [0 : [0, 0 ,0]]
@@ -99,22 +96,11 @@ class CardViewModel: ObservableObject {
             newCardCount = 1
         }
         
-        if newCardType == .counter {
-            initModifier()
-        } else if newCardType == .toggle {
+        if newCardType == .toggle {
             initButton()
         } else if newCardType == .timer || newCardType == .timer_custom {
             initTimer()
         }
-    }
-    
-    /// A function that consolidates the modifiers into one
-    func initModifier() {
-        var modifiers = [Int]()
-        if newCardModifier1 != 0 { modifiers.append(newCardModifier1) }
-        if newCardModifier2 != 0 { modifiers.append(newCardModifier2) }
-        if newCardModifier3 != 0 { modifiers.append(newCardModifier3) }
-        newCardModifier = modifiers
     }
     
     /// A function that adjusts variables related to buttons.
@@ -283,10 +269,7 @@ class CardViewModel: ObservableObject {
         newCardType = .counter
         newCardTitle = ""
         newCardCount = 1
-        newCardModifier1 = 1
-        newCardModifier2 = 0
-        newCardModifier3 = 0
-        newCardModifier = [1]
+        newCardModifier = [1, 0, 0]
         newButtonText = Array(repeating: "", count: 1)
         newCardState = Array(repeating: true, count: 1)
         newCardSymbol = ""

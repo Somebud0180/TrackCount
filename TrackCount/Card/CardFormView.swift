@@ -70,17 +70,11 @@ struct CardFormView: View {
                     }
                     .listRowSeparator(.hidden)
                     
-                    TextField("Modifier 1", value: $viewModel.newCardModifier1, formatter: positiveIntFormatter)
-                        .customRoundedStyle()
-                        .listRowSeparator(.hidden)
-                    
-                    TextField("Modifier 2", value: $viewModel.newCardModifier2, formatter: positiveIntFormatter)
-                        .customRoundedStyle()
-                        .listRowSeparator(.hidden)
-                    
-                    TextField("Modifier 3", value: $viewModel.newCardModifier3, formatter: positiveIntFormatter)
-                        .customRoundedStyle()
-                        .listRowSeparator(.hidden)
+                    ForEach(0..<3, id: \.self) { index in
+                        TextField("Modifier \(index + 1)", value: $viewModel.newCardModifier[index], formatter: positiveIntFormatter)
+                            .customRoundedStyle()
+                            .listRowSeparator(.hidden)
+                    }
                 } else if viewModel.newCardType == .toggle {
                     // A stepper with an editable text field
                     HStack {
@@ -107,10 +101,10 @@ struct CardFormView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 24, height: 24)
                         }
+                        .customRoundedStyle()
                     }
-                    .listRowSeparator(.hidden)
-                    .customRoundedStyle()
                     .buttonStyle(PlainButtonStyle())
+                    .listRowSeparator(.hidden)
                     .sheet(isPresented: $isSymbolPickerPresented) {
                         SymbolPickerView(viewBehaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
                             .presentationDetents([.fraction(0.99)])
