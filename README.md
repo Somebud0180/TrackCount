@@ -7,8 +7,11 @@
 
 ### A tracker of some sort
 ![Main](https://github.com/user-attachments/assets/21433065-f69d-42e2-b63a-56585dcff6d7)
+<h4 align="center">A simple app to keep a track of things, something I originaly made for a school project.</h4>
 
-A simple app to keep a track of things, something I originaly made for a school project. This app aims to help you keep atop of multiple things easier. With the goal of adding more features over time.
+<p align="center">
+Keep track of your slideshow ice breakers with toggle buttons to keep track of which questions have been selected and maybe a counter for keeping track of points of teams or individuals. Or keep your games organized with the same counter for points and a timer for a fair time-based round. And with different card groups, you can keep a history of these cards and take a look back easily. This app aims to help you keep atop of multiple things easier, all in one place, with a pleasing interface.
+</p>
 
 ### Features:
 - **Tracking**
