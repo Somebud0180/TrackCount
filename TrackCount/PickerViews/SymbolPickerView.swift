@@ -113,6 +113,7 @@ struct SymbolPickerView: View {
                     .onTapGesture {
                         handleSymbolSelection(symbol)
                     }
+                    .accessibilityIdentifier(symbol)
             }
         }
         .padding(.horizontal)

@@ -13,11 +13,15 @@ import Combine
 struct TrackView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
-    @StateObject var viewModel: TimerViewModel
+    @StateObject private var timerViewModel: TimerViewModel
+    @StateObject private var cardViewModel: CardViewModel
+    @State var isPresentingCardFormView: Bool = false
+    @State var isPresentingCardListView: Bool = false
     var selectedGroup: DMCardGroup
     
     init(selectedGroup: DMCardGroup) {
-        _viewModel = StateObject(wrappedValue: TimerViewModel())
+        _timerViewModel = StateObject(wrappedValue: TimerViewModel())
+        _cardViewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
         self.selectedGroup = selectedGroup
     }
     
@@ -44,20 +48,48 @@ struct TrackView: View {
                 }
                 .padding(.vertical)
             }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationTitleViewBuilder {
-            if selectedGroup.groupTitle.isEmpty {
-                Image(systemName: selectedGroup.groupSymbol)
-            } else {
-                Text(selectedGroup.groupTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitleViewBuilder {
+                if selectedGroup.groupTitle.isEmpty {
+                    Image(systemName: selectedGroup.groupSymbol)
+                } else {
+                    Text(selectedGroup.groupTitle)
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button(action: {
+                            isPresentingCardFormView.toggle()
+                        }) {
+                            Text("Add Card")
+                            Image(systemName: "plus")
+                        }
+                        NavigationLink(destination: CardListView(selectedGroup: selectedGroup)) {
+                            Text("Edit Cards")
+                            Image(systemName: "folder")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityIdentifier("Ellipsis Button")
+                }
             }
         }
+        .sheet(isPresented: $isPresentingCardFormView, onDismiss: {
+            cardViewModel.resetFields()
+        }) {
+            CardFormView(viewModel: cardViewModel)
+                .presentationDetents([.fraction(0.6), .fraction(0.99)])
+                .onDisappear {
+                    cardViewModel.validationError.removeAll()
+                }
+        }
         .onAppear {
-            viewModel.timerCleanup(for: context, group: selectedGroup)
+            timerViewModel.timerCleanup(for: context, group: selectedGroup)
         }
         .onDisappear {
-            viewModel.timerCleanup(for: context, group: selectedGroup)
+            timerViewModel.timerCleanup(for: context, group: selectedGroup)
         }
     }
     
@@ -312,7 +344,7 @@ struct TrackView: View {
                         
                         Button(action: {
                             card.state?[0] = CardState(state: true)
-                            viewModel.startTimer(card)
+                            timerViewModel.startTimer(card)
                         }) {
                             Text("Start")
                                 .foregroundStyle(card.secondaryColor.color)
@@ -323,16 +355,16 @@ struct TrackView: View {
                         .tint(card.primaryColor.color)
                     }
                 } else {
-                    viewModel.activeTimerView(card)
+                    timerViewModel.activeTimerView(card)
                 }
             } else if card.type == .timer {
                 if card.state?[0].state == false {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                         ForEach(0..<card.count, id: \.self) { index in
                             Button(action: {
-                                viewModel.selectedTimerIndex[card.uuid] = index
+                                timerViewModel.selectedTimerIndex[card.uuid] = index
                                 card.state?[0] = CardState(state: true)
-                                viewModel.startTimer(card)
+                                timerViewModel.startTimer(card)
                             }) {
                                 Circle()
                                     .stroke(lineWidth: 10)
@@ -352,7 +384,7 @@ struct TrackView: View {
                         }
                     }
                 } else {
-                    viewModel.activeTimerView(card)
+                    timerViewModel.activeTimerView(card)
                 }
             }
         }

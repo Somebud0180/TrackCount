@@ -29,6 +29,7 @@ class CardViewModel: ObservableObject {
     @Published var newCardPrimary: Color = .blue
     @Published var newCardSecondary: Color = .white
     @Published var validationError: [String] = []
+    @Published var warnError: [String] = []
     
     enum resetFor {
         case viewModel
@@ -91,11 +92,11 @@ class CardViewModel: ObservableObject {
     
     /// A function that calls the corresponding initializers dynamically based on the type
     func initTypes(for behaviour: initFor) {
-        // When switching cards, reset shared values
+        // When switching cards, reset errors and shared values
+        validationError.removeAll()
         if behaviour == .switchType {
             newCardCount = 1
         }
-        
         if newCardType == .toggle {
             initButton()
         } else if newCardType == .timer || newCardType == .timer_custom {
@@ -109,7 +110,7 @@ class CardViewModel: ObservableObject {
     func initButton() {
         // Validate newCardCount
         guard newCardCount >= minButtonLimit && newCardCount <= maxButtonLimit else {
-            validationError.append("newCardCount must be between \(minButtonLimit) and \(maxButtonLimit)")
+            validateForm()
             return
         }
         // Clamp newCardCount within valid limits
@@ -126,20 +127,12 @@ class CardViewModel: ObservableObject {
         newCardState = Array(repeating: true, count: newCardCount)
     }
     
-    /// A function that converts the timer values [hour, minute, second] into total seconds.
-    /// - Parameter timeArray: Timer array to turn into total seconds
-    /// - Returns: Returns an integer containing the total seconds
-    private func convertToTotalSeconds(_ timeArray: [Int]) -> Int {
-        guard timeArray.count >= 3 else { return 0 }
-        return timeArray[0] * 3600 + timeArray[1] * 60 + timeArray[2]
-    }
-    
     /// Used to adjust the array `newCardTimer` to match the `newCardCount` and prep `newCardState`.
     /// Also clamps `newCardCount` to stay within limits
     func initTimer() {
         // Validate newCardCount
         guard newCardCount >= minTimerAmount && newCardCount <= maxTimerAmount else {
-            validationError.append("newCardCount must be between \(minTimerAmount) and \(maxTimerAmount)")
+            validateForm()
             return
         }
         // Clamp newCardCount within valid limits
@@ -162,6 +155,14 @@ class CardViewModel: ObservableObject {
         }
     }
     
+    /// A function that converts the timer values [hour, minute, second] into total seconds.
+    /// - Parameter timeArray: Timer array to turn into total seconds
+    /// - Returns: Returns an integer containing the total seconds
+    private func convertToTotalSeconds(_ timeArray: [Int]) -> Int {
+        guard timeArray.count >= 3 else { return 0 }
+        return timeArray[0] * 3600 + timeArray[1] * 60 + timeArray[2]
+    }
+    
     /// A function that updates the timer values based on the index.
     func updateTimerValue(index: Int, hours: Int, minutes: Int, seconds: Int) {
         // Input validation
@@ -171,29 +172,6 @@ class CardViewModel: ObservableObject {
         
         newTimerValues[index] = [validatedHours, validatedMinutes, validatedSeconds]
         initTimer() // Recalculate timer values
-    }
-    
-    /// A function that removes the card from the data model entity.
-    /// Used to delete the card gracefully, adjusting existing card's indexes to take over a free index if applicable.
-    func removeCard(_ card: DMStoredCard, with context: ModelContext) {
-        do {
-            // Remove the card from the context
-            context.delete(card)
-            
-            // Remove the card from the group`s cards array
-            selectedGroup.cards.removeAll { $0.uuid == card.uuid }
-            
-            // Update indices of remaining cards
-            let sortedCards = selectedGroup.cards.sorted(by: { $0.index < $1.index })
-            for (index, card) in sortedCards.enumerated() {
-                card.index = index
-            }
-            
-            // Save the context
-            try context.save()
-        } catch {
-            validationError.append("Failed to remove card: \(error.localizedDescription)")
-        }
     }
     
     /// A function that stores the temporary variables to a card and saves it to the data model entity.
@@ -219,7 +197,7 @@ class CardViewModel: ObservableObject {
         
         do {
             if let card = selectedCard {
-                // Update existing card
+                // Update the existing card
                 card.title = newCardTitle
                 card.type = newCardType
                 card.count = newCardType == .counter ? 0 : newCardCount
@@ -232,7 +210,7 @@ class CardViewModel: ObservableObject {
                 card.primaryColor = CodableColor(color: newCardPrimary)
                 card.secondaryColor = CodableColor(color: newCardSecondary)
             } else {
-                // Create new card with guaranteed unique UUID
+                // Create a new card
                 let newCard = DMStoredCard(
                     uuid: UUID(),
                     index: newCardIndex,
@@ -256,7 +234,76 @@ class CardViewModel: ObservableObject {
             try context.save()
             resetFields(.viewModel)
         } catch {
-            validationError.append("Failed to save the card: \(error.localizedDescription)")
+            warnError.removeAll()
+            warnError.append("Failed to save the card: \(error.localizedDescription)")
+        }
+    }
+    
+    /// A function that removes the card from the data model entity.
+    /// Used to delete the card gracefully, adjusting existing card's indexes to take over a free index if applicable.
+    func removeCard(_ card: DMStoredCard, with context: ModelContext) {
+        do {
+            // Remove the card from the context
+            context.delete(card)
+            
+            // Remove the card from the group`s cards array
+            selectedGroup.cards.removeAll { $0.uuid == card.uuid }
+            
+            // Update indices of remaining cards
+            let sortedCards = selectedGroup.cards.sorted(by: { $0.index < $1.index })
+            for (index, card) in sortedCards.enumerated() {
+                card.index = index
+            }
+            
+            // Save the context
+            try context.save()
+        } catch {
+            warnError.removeAll()
+            warnError.append("Failed to remove card: \(error.localizedDescription)")
+        }
+    }
+    
+    /// A function that checks the card's contents for any issues.
+    /// Prevents empty titles for all card types and empty symbols for toggle cards.
+    /// Appends errors to `validationError`.
+    func validateForm() {
+        withAnimation(.easeInOut(duration: 1.0)) {
+            validationError.removeAll()
+            
+            if newCardTitle.trimmingCharacters(in: .whitespaces).isEmpty {
+                validationError.append("CardTitleEmpty")
+            }
+            
+            if newCardType == .counter {
+                for (index, modifierValue) in newCardModifier.enumerated() {
+                    if modifierValue < 0 {
+                        validationError.append("Modifier\(index)Negative")
+                    }
+                }                
+                if !newCardModifier.contains(where: { $0 > 0 }) {
+                    validationError.append("ModifierLessThanOne")
+                }
+            } else if newCardType == .toggle {
+                if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {
+                    validationError.append("SymbolEmpty")
+                }
+                if newCardCount < minButtonLimit {
+                    validationError.append("ButtonLessThanMin")
+                } else if newCardCount > maxButtonLimit {
+                    validationError.append("ButtonMoreThanMax")
+                }
+            } else if newCardType == .timer {
+                if newCardCount < minTimerAmount || newCardCount > maxTimerAmount {
+                    validationError.append("TimerExceedsLimits")
+                }
+                for (index, timerValue) in newCardTimer.enumerated() {
+                    if timerValue < minTimerLimit {
+                        validationError.append("Timer\(index)LessThanMin")
+                    } else if timerValue > maxTimerLimit {
+                        validationError.append("Timer\(index)MoreThanMax")
+                    }
+                }
+            }
         }
     }
     
@@ -278,38 +325,5 @@ class CardViewModel: ObservableObject {
         newCardRingtone = ""
         newCardPrimary = .blue
         newCardSecondary = .white
-    }
-    
-    /// A function that checks the card's contents for any issues.
-    /// Prevents empty titles for all card types and empty symbols for toggle cards.
-    /// Appends errors to `validationError`.
-    private func validateForm() {
-        validationError.removeAll()
-        
-        if newCardTitle.trimmingCharacters(in: .whitespaces).isEmpty {
-            validationError.append("Card title cannot be empty")
-        }
-        
-        if newCardType == .counter {
-            if newCardModifier.contains(where: { $0 < 0 }) {
-                validationError.append("Modifiers cannot be negative")
-            }
-            
-            if newCardModifier.isEmpty {
-                validationError.append("There can't be less than one modifier")
-            }
-        } else if newCardType == .toggle {
-            if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {
-                validationError.append("Symbol cannot be empty for toggle type")
-            }
-        } else if newCardType == .timer {
-            for (index, timerValue) in newCardTimer.enumerated() {
-                if timerValue <= 0 {
-                    validationError.append("Timer \(index + 1) cannot be less than one")
-                } else if timerValue >= 86400 {
-                    validationError.append("Timer \(index + 1) cannot exceed limits")
-                }
-            }
-        }
     }
 }

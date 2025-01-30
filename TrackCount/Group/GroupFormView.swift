@@ -16,15 +16,28 @@ struct GroupFormView: View {
     // Set variable defaults
     @State private var isPickerPresented: Bool = false
     
+    struct ValidationVariables: Equatable {
+        let groupTitle: String
+        let groupSymbol: String
+    }
+    
     var body: some View {
         let characterLimit = viewModel.titleCharacterLimit
+        
+        // Create an array containing all variables for the onChange form validation
+        var validateVariables: ValidationVariables {
+            ValidationVariables(
+                groupTitle: viewModel.newGroupTitle,
+                groupSymbol: viewModel.newGroupSymbol
+            )
+        }
         
         NavigationStack {
             List {
                 ZStack(alignment: .bottomTrailing) {
                     TextField("Set group title", text: $viewModel.newGroupTitle)
                         .customRoundedStyle()
-                        .padding(EdgeInsets(top: 3, leading: 0, bottom: 16, trailing: 0))
+                        .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                         .onChange(of: viewModel.newGroupTitle) {
                             if viewModel.newGroupTitle.count > characterLimit {
                                 viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
@@ -36,33 +49,43 @@ struct GroupFormView: View {
                         }
                     
                     Text("\(viewModel.newGroupTitle.count)/\(characterLimit)")
-                        .padding([.trailing], 3)
+                        .padding(.trailing, 3)
                         .foregroundStyle(.gray)
                         .font(.footnote)
                 }
                 .listRowSeparator(.hidden)
                 
                 // A symbol preview/picker
-                Button(action: {
-                    isPickerPresented.toggle()
-                }) {
-                    HStack {
-                        Text("Group Symbol:")
-                        Spacer()
-                        Image(systemName: viewModel.newGroupSymbol)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 24, height: 24)
+                VStack(alignment: .leading, spacing: 4) {
+                    Button(action: {
+                        isPickerPresented.toggle()
+                    }) {
+                        HStack {
+                            Text("Group Symbol:")
+                            Spacer()
+                            Image(systemName: viewModel.newGroupSymbol)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 24, height: 24)
+                        }
+                        .customRoundedStyle()
+                        .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                     }
-                    .customRoundedStyle()
+                    .buttonStyle(PlainButtonStyle())
+                    .accessibilityIdentifier("Group Smybol Picker")
+                    .sheet(isPresented: $isPickerPresented) {
+                        SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
+                            .presentationDetents([.fraction(0.99)])
+                    }
+                    
+                    errorMessageView("TitleSymbolEmpty", with: viewModel.validationError, message: "A title or symbol is required")
                 }
-                .buttonStyle(PlainButtonStyle())
                 .listRowSeparator(.hidden)
-                .sheet(isPresented: $isPickerPresented) {
-                    SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
-                        .presentationDetents([.fraction(0.99)])
+            }
+            .onChange(of: validateVariables) {
+                if !viewModel.validationError.isEmpty {
+                    viewModel.validateForm()
                 }
-                .listRowSeparator(.hidden)
             }
             .listStyle(PlainListStyle())
             .navigationBarTitle(viewModel.selectedGroup == nil ? "Create Group" : "Edit Group", displayMode: .inline)
@@ -74,23 +97,23 @@ struct GroupFormView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        viewModel.addGroup(with: context)
-                        if viewModel.validationError.isEmpty {
+                        viewModel.saveGroup(with: context)
+                        if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
                             dismiss()
                         }
                     }
                 }
             }
             
-            if !viewModel.validationError.isEmpty {
-                Text(viewModel.validationError.joined(separator: ", "))
+            if !viewModel.warnError.isEmpty {
+                Text(viewModel.warnError.joined(separator: ", "))
                     .foregroundStyle(.red)
                     .padding(.horizontal)
             }
             
             Button(action : {
-                viewModel.addGroup(with: context)
-                if viewModel.validationError.isEmpty {
+                viewModel.saveGroup(with: context)
+                if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
                     dismiss()
                 }
             }) {

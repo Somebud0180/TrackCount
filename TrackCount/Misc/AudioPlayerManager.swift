@@ -13,7 +13,7 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
     var player: AVAudioPlayer?
 
-    /// Plays the audio with the given name
+    /// Plays the audio with the given name.
     func playAudio(audio audioName: String) {
         var ringtonePlaying = audioName
         if audioName.isEmpty {
@@ -40,14 +40,14 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
-    /// Stops the audio player and deactivates the audio session
+    /// Stops the audio player and deactivates the audio session.
     func stopAudio() {
         player?.stop()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
     
-    /// Called when the audio player finishes playing
-    /// Unducks the audio session
+    /// Called when the audio player finishes playing.
+    /// Unducks the audio session.
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)

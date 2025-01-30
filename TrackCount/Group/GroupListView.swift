@@ -58,8 +58,8 @@ struct GroupListView: View {
                 
                 ScrollView {
                     // Display logic error if any
-                    if !viewModel.logicError.isEmpty {
-                        Text(viewModel.logicError.joined(separator: ", "))
+                    if !viewModel.warnError.isEmpty {
+                        Text(viewModel.warnError.joined(separator: ", "))
                             .foregroundStyle(.red)
                             .padding()
                     }
@@ -91,6 +91,7 @@ struct GroupListView: View {
                                         .frame(height: 200)
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                .accessibilityIdentifier(group.groupTitle.isEmpty ? group.groupSymbol : group.groupTitle)
                                 .contextMenu {
                                     contextMenu(for: group)
                                 }
@@ -103,19 +104,19 @@ struct GroupListView: View {
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Menu {
-                                Button(action: { isPresentingGroupOrder.toggle() }) {
-                                    Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
-                                }
                                 Button(action: { isPresentingGroupForm.toggle() }) {
-                                    Label("New Group", systemImage: "plus.square")
+                                    Label("Add Group", systemImage: "plus.square")
                                 }
-                                
                                 Button(action: { isPresentingFilePicker = true }) {
                                     Label("Import Group", systemImage: "square.and.arrow.down")
+                                }
+                                Button(action: { isPresentingGroupOrder.toggle() }) {
+                                    Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
                                 }
                             } label: {
                                 Image(systemName: "ellipsis.circle")
                             }
+                            .accessibilityIdentifier("Ellipsis Button")
                         }
                     }
                     .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
@@ -158,7 +159,7 @@ struct GroupListView: View {
                                     importManager.handleImport(url, with: context)
                                 }
                             case .failure(let error):
-                                viewModel.logicError.append("File import failed: \(error.localizedDescription)")
+                                viewModel.warnError.append("File import failed: \(error.localizedDescription)")
                             }
                         }
                     }
@@ -215,7 +216,7 @@ struct GroupListView: View {
                 rootVC.present(activityVC, animated: true)
             }
         } catch {
-            viewModel.logicError.append(error.localizedDescription)
+            viewModel.warnError.append(error.localizedDescription)
         }
     }
     
