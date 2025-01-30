@@ -11,9 +11,9 @@ import SwiftData
 class GroupViewModel: ObservableObject {
     // Set variable defaults
     @Published var importManager = ImportManager()
-    @Published var selectedGroup: DMCardGroup? = nil
+    @Published var selectedGroup: DMCardGroup?
     @Published var validationError: [String] = []
-    @Published var logicError: [String] = []
+    @Published var warnError: [String] = []
     @Published var newGroupIndex: Int = 0
     @Published var newGroupSymbol: String = ""
     @Published var newGroupTitle: String = ""
@@ -34,46 +34,25 @@ class GroupViewModel: ObservableObject {
         self.newGroupSymbol = selectedGroup.groupSymbol
     }
     
-    /// A function that resets all temporary variables back to default values.
-    func resetFields() {
-        selectedGroup = nil
-        newGroupTitle = ""
-        newGroupSymbol = ""
-    }
-    
-    /// A function that checks the group's contents for any issues.
-    /// Ensures atleast either one of the two variables (`newGroupTitle` and `newGroupSymbol`) is filled.
-    /// Appends errors to `validationError`.
-    func validateGroup() {
-        validationError.removeAll()
-        let trimmedTitle = newGroupTitle.trimmingCharacters(in: .whitespaces)
-        
-        let titleIsEmpty = trimmedTitle.isEmpty
-        let symbolIsEmpty = newGroupSymbol.isEmpty
-        
-        if titleIsEmpty && symbolIsEmpty {
-            validationError.append("Group title cannot be empty without a symbol or vice versa")
-        }
-    }
-    
     /// A function that stores the temporary variables to a group and saves it to the data model entity.
     /// Used to save the set variables into the group.
     /// Also checks the card contents and throws errors, if any, to `validationError`.
-    /// Also provides the group's index and uuid on save.
-    func addGroup(with context: ModelContext) {
+    /// - Parameter context: The ModelContext to perform the save in.
+    func saveGroup(with context: ModelContext) {
         // Validate entry
-        validateGroup()
+        validateForm()
+        guard validationError.isEmpty else {
+            return
+        }
         
+        // Fetch saved groups and get existing index
         var savedGroups: [DMCardGroup] = []
         
         do {
             savedGroups = try context.fetch(FetchDescriptor<DMCardGroup>())
         } catch {
-            validationError.append("Failed to fetch DMCardGroup: \(error)")
-        }
-        
-        guard validationError.isEmpty else {
-            return
+            warnError.removeAll()
+            warnError.append("Failed to fetch DMCardGroup: \(error)")
         }
         
         if savedGroups.count == 0 {
@@ -82,33 +61,35 @@ class GroupViewModel: ObservableObject {
             newGroupIndex = savedGroups.count + 1
         }
         
-        if selectedGroup != nil {
-            // Update the existing group
-            selectedGroup?.groupTitle = newGroupTitle
-            selectedGroup?.groupSymbol = newGroupSymbol
-        } else {
-            // Create a new group
-            let newGroup = DMCardGroup(uuid: UUID(),
-                                       index: newGroupIndex,
-                                       groupTitle: newGroupTitle,
-                                       groupSymbol: newGroupSymbol)
-            
-            context.insert(newGroup)
-        }
         
-        // Save the context
         do {
+            if selectedGroup != nil {
+                // Update the existing group
+                selectedGroup?.groupTitle = newGroupTitle
+                selectedGroup?.groupSymbol = newGroupSymbol
+            } else {
+                // Create a new group
+                let newGroup = DMCardGroup(uuid: UUID(),
+                                           index: newGroupIndex,
+                                           groupTitle: newGroupTitle,
+                                           groupSymbol: newGroupSymbol)
+                
+                context.insert(newGroup)
+            }
+            
+            // Save the context
             try context.save()
+            resetFields()
         } catch {
-            validationError.append("Failed to save the group: \(error.localizedDescription)")
+            warnError.removeAll()
+            warnError.append("Failed to save the group: \(error.localizedDescription)")
         }
         
-        resetFields()
     }
     
     /// Removes the selected group and updates the indices of remaining groups.
     /// - Parameters:
-    ///   - context: The ModelContext to perform operations in.
+    ///   - context: The ModelContext to perform the removal in.
     ///   - group: The `DMCardGroup` to be removed.
     func removeGroup(_ group: DMCardGroup, with context: ModelContext) {
         do {
@@ -126,8 +107,31 @@ class GroupViewModel: ObservableObject {
             
             try context.save()
         } catch {
-            logicError.append("Failed to remove group and update IDs: \(error.localizedDescription)")
+            warnError.removeAll()
+            warnError.append("Failed to remove group and update IDs: \(error.localizedDescription)")
         }
+    }
+    
+    /// A function that checks the group's contents for any issues.
+    /// Ensures atleast either one of the two variables (`newGroupTitle` and `newGroupSymbol`) is filled.
+    /// Appends errors to `validationError`.
+    func validateForm() {
+        validationError.removeAll()
+        let trimmedTitle = newGroupTitle.trimmingCharacters(in: .whitespaces)
+        
+        let titleIsEmpty = trimmedTitle.isEmpty
+        let symbolIsEmpty = newGroupSymbol.isEmpty
+        
+        if titleIsEmpty && symbolIsEmpty {
+            validationError.append("TitleSymbolEmpty")
+        }
+    }
+    
+    /// A function that resets all temporary variables back to default values.
+    func resetFields() {
+        selectedGroup = nil
+        newGroupTitle = ""
+        newGroupSymbol = ""
     }
     
     /// Processes the group and packages it for export.

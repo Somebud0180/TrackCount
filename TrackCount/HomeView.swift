@@ -9,11 +9,11 @@ import SwiftUI
 import SwiftData
 
 struct DefaultSettings {
-    static let timerDefaultRingtone = "Kalimba"
+    static let timerDefaultRingtone = "Code"
     static let timerAlertEnabled = true
     static let gradientAnimated = true
-    static let gradientInDarkHome = false
-    static let gradientInDarkGroup = false
+    static let gradientInDarkHome = true
+    static let gradientInDarkGroup = true
     static let primaryThemeColor = RawColor(color: Color.blue.light)
 }
 
