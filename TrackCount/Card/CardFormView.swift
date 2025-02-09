@@ -29,14 +29,7 @@ struct CardFormView: View {
     }
     
     var body: some View {
-        // Initialize number formatters
-        let positiveIntFormatter: NumberFormatter = {
-            let formatter = NumberFormatter()
-            formatter.allowsFloats = false
-            formatter.minimum = 0
-            return formatter
-        }()
-        
+        // Initialize number formatters        
         let buttonCountFormatter: NumberFormatter = {
             let formatter = NumberFormatter()
             formatter.allowsFloats = false
@@ -118,10 +111,13 @@ struct CardFormView: View {
                             
                             ForEach(0..<3, id: \.self) { index in
                                 VStack(alignment: .leading) {
-                                    TextField("Modifier \(index + 1)", value: $viewModel.newCardModifier[index], formatter: positiveIntFormatter)
+                                    TextField("Modifier \(index + 1)", text: $viewModel.newCardModifierText[index])
                                         .customRoundedStyle()
                                         .errorOverlay("ModifierLessThanOne", with: viewModel.validationError)
                                         .keyboardType(.numberPad)
+                                        .onSubmit {                     
+                                            viewModel.initCounter()
+                                        }
                                 }
                             }
                             .listRowSeparator(.hidden)
