@@ -27,9 +27,9 @@ struct GroupListView: View {
     @State private var selectedGroup: DMCardGroup?
     @State private var animateGradient: Bool = false
     
-    let columnLayout: [GridItem] = [
-        GridItem(.adaptive(minimum: 110, maximum: 200), spacing: 16)
-    ]
+    private var columnLayout: [GridItem] {
+        return [GridItem(.adaptive(minimum: 110, maximum: 400), spacing: 16)]
+    }
     
     var backgroundGradient: some View {
         TimelineView(.animation(minimumInterval: 0.1)) { _ in
@@ -50,141 +50,153 @@ struct GroupListView: View {
             .edgesIgnoringSafeArea(.all)
         }
     }
-
+    
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
                 backgroundGradient
                 
-                ScrollView {
-                    // Display logic error if any
-                    if !viewModel.warnError.isEmpty {
-                        Text(viewModel.warnError.joined(separator: ", "))
-                            .foregroundStyle(.red)
+                GeometryReader { geometry in
+                    ScrollView {
+                        // Display logic error if any
+                        if !viewModel.warnError.isEmpty {
+                            Text(viewModel.warnError.joined(separator: ", "))
+                                .foregroundStyle(.red)
+                                .padding()
+                        }
+                        
+                        if savedGroups.isEmpty {
+                            (
+                                Text("Create a new group by tapping the ")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                +
+                                Text(Image(systemName: "ellipsis.circle"))
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                +
+                                Text(" in the top-right corner")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            )
                             .padding()
-                    }
-                    
-                    if savedGroups.isEmpty {
-                        (
-                            Text("Create a new group by tapping the ")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                            +
-                            Text(Image(systemName: "ellipsis.circle"))
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                            +
-                            Text(" in the top-right corner")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        )
+                        }
+                        
+                        LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                            ForEach(savedGroups) { group in
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
+                                    NavigationLink(destination: TrackView(selectedGroup: group)) {
+                                        GroupCardView(group: group)
+                                            .frame(height: 200)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .accessibilityIdentifier(group.groupTitle.isEmpty ? group.groupSymbol : group.groupTitle)
+                                    .contextMenu {
+                                        contextMenu(for: group)
+                                    }
+                                }
+                            }
+                        }
+                        
                         .padding()
-                    }
-                    
-                    LazyVGrid(columns: columnLayout, spacing: 16) {
-                        ForEach(savedGroups) { group in
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
-                                NavigationLink(destination: TrackView(selectedGroup: group)) {
-                                    GroupCardView(group: group)
-                                        .frame(height: 200)
+                        .navigationBarTitleDisplayMode(.large)
+                        .navigationTitle("Your Groups")
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Menu {
+                                    Button(action: { isPresentingGroupForm.toggle() }) {
+                                        Label("Add Group", systemImage: "plus.square")
+                                    }
+                                    Button(action: { isPresentingFilePicker = true }) {
+                                        Label("Import Group", systemImage: "square.and.arrow.down")
+                                    }
+                                    Button(action: { isPresentingGroupOrder.toggle() }) {
+                                        Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
+                                    }
+                                } label: {
+                                    Image(systemName: "ellipsis.circle")
                                 }
-                                .buttonStyle(PlainButtonStyle())
-                                .accessibilityIdentifier(group.groupTitle.isEmpty ? group.groupSymbol : group.groupTitle)
-                                .contextMenu {
-                                    contextMenu(for: group)
-                                }
+                                .accessibilityIdentifier("Ellipsis Button")
                             }
                         }
-                    }
-                    .padding()
-                    .navigationBarTitleDisplayMode(.large)
-                    .navigationTitle("Your Groups")
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Menu {
-                                Button(action: { isPresentingGroupForm.toggle() }) {
-                                    Label("Add Group", systemImage: "plus.square")
+                        .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
+                            GroupFormView(viewModel: viewModel)
+                                .presentationDetents([.fraction(0.5)])
+                                .onDisappear {
+                                    viewModel.validationError.removeAll()
+                                    viewModel.selectedGroup = nil
                                 }
-                                Button(action: { isPresentingFilePicker = true }) {
-                                    Label("Import Group", systemImage: "square.and.arrow.down")
-                                }
-                                Button(action: { isPresentingGroupOrder.toggle() }) {
-                                    Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
-                                }
-                            } label: {
-                                Image(systemName: "ellipsis.circle")
-                            }
-                            .accessibilityIdentifier("Ellipsis Button")
                         }
-                    }
-                    .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
-                        GroupFormView(viewModel: viewModel)
-                            .presentationDetents([.fraction(0.5)])
-                            .onDisappear {
-                                viewModel.validationError.removeAll()
-                                viewModel.selectedGroup = nil
-                            }
-                    }
-                    .sheet(isPresented: $isPresentingGroupOrder) {
-                        GroupOrderView()
-                            .environmentObject(viewModel)
-                    }
-                    .alert(isPresented: $isPresentingDeleteDialog) {
-                        Alert(
-                            title: alertTitle,
-                            message: Text("Are you sure you want to delete this group? This cannot be undone."),
-                            primaryButton: .destructive(Text("Confirm")) {
-                                if let group = selectedGroup {
-                                    viewModel.removeGroup(group, with: context)
+                        .sheet(isPresented: $isPresentingGroupOrder) {
+                            GroupOrderView()
+                                .environmentObject(viewModel)
+                        }
+                        .alert(isPresented: $isPresentingDeleteDialog) {
+                            Alert(
+                                title: alertTitle,
+                                message: Text("Are you sure you want to delete this group? This cannot be undone."),
+                                primaryButton: .destructive(Text("Confirm")) {
+                                    if let group = selectedGroup {
+                                        viewModel.removeGroup(group, with: context)
+                                        selectedGroup = nil
+                                    }
+                                },
+                                secondaryButton: .cancel {
                                     selectedGroup = nil
+                                    isPresentingDeleteDialog = false
                                 }
-                            },
-                            secondaryButton: .cancel {
-                                selectedGroup = nil
-                                isPresentingDeleteDialog = false
-                            }
-                        )
-                    }
-                    .fileImporter(
-                        isPresented: $isPresentingFilePicker,
-                        allowedContentTypes: [.trackCountGroup],
-                        allowsMultipleSelection: false
-                    ) { result in
-                        DispatchQueue.main.async {
-                            switch result {
-                            case .success(let urls):
-                                if let url = urls.first {
-                                    importManager.handleImport(url, with: context)
+                            )
+                        }
+                        .fileImporter(
+                            isPresented: $isPresentingFilePicker,
+                            allowedContentTypes: [.trackCountGroup],
+                            allowsMultipleSelection: false
+                        ) { result in
+                            DispatchQueue.main.async {
+                                switch result {
+                                case .success(let urls):
+                                    if let url = urls.first {
+                                        importManager.handleImport(url, with: context)
+                                    }
+                                case .failure(let error):
+                                    viewModel.warnError.append("File import failed: \(error.localizedDescription)")
                                 }
-                            case .failure(let error):
-                                viewModel.warnError.append("File import failed: \(error.localizedDescription)")
                             }
                         }
                     }
                 }
-            }
-            .alert(importManager.previewGroup?.groupTitle.isEmpty ?? true ? "Import Group?" : "Import Group \"\(importManager.previewGroup!.groupTitle)\"?", isPresented: $importManager.showImportAlert) {
-                VStack {
-                    Button("Cancel", role: .cancel) {
-                        importManager.reset()
+                .alert(importManager.previewGroup?.groupTitle.isEmpty ?? true ? "Import Group?" : "Import Group \"\(importManager.previewGroup!.groupTitle)\"?", isPresented: $importManager.showImportAlert) {
+                    VStack {
+                        Button("Cancel", role: .cancel) {
+                            importManager.reset()
+                        }
+                        Button("Import") {
+                            importManager.confirmImport(with: context)
+                        }
                     }
-                    Button("Import") {
-                        importManager.confirmImport(with: context)
+                } message: {
+                    if let group = importManager.previewGroup, #available(iOS 18, *) {
+                        Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
+                    } else {
+                        Text("Do you want to import this group?")
                     }
                 }
-            } message: {
-                if let group = importManager.previewGroup, #available(iOS 18, *) {
-                    Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
-                } else {
-                    Text("Do you want to import this group?")
-                }
             }
+            .accentColor(colorScheme == .light ? .black : .primary)
         }
-        .accentColor(colorScheme == .light ? .black : .primary)
     }
-
+    
+    private func columns(for totalWidth: CGFloat) -> [GridItem] {
+        let minWidth: CGFloat = 110
+        let spacing: CGFloat = 16
+        let maxColumns: Int = 8
+        // Compute how many columns fit, but never exceed maxColumns
+        let count = max(1, min(maxColumns, Int(totalWidth / (minWidth + spacing))))
+        return Array(repeating: GridItem(.flexible()), count: count)
+    }
+    
     /// Computed property for alert title.
     private var alertTitle: Text {
         if let group = selectedGroup {
@@ -196,7 +208,7 @@ struct GroupListView: View {
         }
         return Text("Delete Group?")
     }
-
+    
     
     /// A function that handles the preparation of the groups for sharing.
     /// - Parameter group: The group to be shared, accepts type DMCardGroup.

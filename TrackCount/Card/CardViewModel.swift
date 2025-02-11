@@ -20,6 +20,7 @@ class CardViewModel: ObservableObject {
     @Published var newCardTitle: String = ""
     @Published var newCardCount: Int = 1
     @Published var newCardModifier: [Int] = [1, 0, 0]
+    @Published var newCardModifierText: [String] = ["1", "0", "0"]
     @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
     @Published var newTimerValues: [Int : [Int]] = [0 : [0, 0 ,0]]
@@ -40,6 +41,9 @@ class CardViewModel: ObservableObject {
         case switchType
         case validation
     }
+    
+    // Counter limit
+    let minModifierLimit = 0
     
     // Button limit
     let buttonTextLimit = 20
@@ -70,6 +74,7 @@ class CardViewModel: ObservableObject {
         self.newCardCount = card.count
         self.newCardState = card.state?.isEmpty == false ? card.state!.map { $0.state } : Array(repeating: true, count: 1)
         self.newCardModifier = card.modifier?.isEmpty == false ? card.modifier!.map { $0.modifier } : [1]
+        self.newCardModifierText = card.modifier?.isEmpty == false ? card.modifier!.map { String($0.modifier) } : ["1", "0", "0"]
         self.newButtonText = card.buttonText?.isEmpty == false ? card.buttonText!.map { $0.buttonText } : Array(repeating: "", count: 1)
         self.newCardSymbol = card.symbol ?? ""
         self.newCardTimer = card.timer?.isEmpty == false ? card.timer!.map { $0.timerValue } : Array(repeating: 0, count: 1)
@@ -97,10 +102,26 @@ class CardViewModel: ObservableObject {
         if behaviour == .switchType {
             newCardCount = 1
         }
-        if newCardType == .toggle {
+        if newCardType == .counter {
+            initCounter()
+        }
+        else if newCardType == .toggle {
             initButton()
         } else if newCardType == .timer || newCardType == .timer_custom {
             initTimer()
+        }
+    }
+    
+    func initCounter() {
+        for i in 0..<newCardModifier.count {
+            // Convert the string to an integer and then validate
+            if let value = Int(newCardModifierText[i]) {
+                newCardModifier[i] = max(value, 0)
+            } else {
+                // Reset to a default value 1 if conversion fails
+                newCardModifier[i] = 0
+                newCardModifierText[i] = "0"
+            }
         }
     }
     
