@@ -105,10 +105,13 @@ struct GroupListView: View {
                         .navigationTitle("Your Groups")
                         .toolbar {
                             ToolbarItem(placement: .navigationBarTrailing) {
+                                Button(action: { isPresentingGroupForm.toggle() }) {
+                                    Label("Add Group", systemImage: "plus.circle")
+                                }
+                            }
+                            
+                            ToolbarItem(placement: .navigationBarTrailing) {
                                 Menu {
-                                    Button(action: { isPresentingGroupForm.toggle() }) {
-                                        Label("Add Group", systemImage: "plus.square")
-                                    }
                                     Button(action: { isPresentingFilePicker = true }) {
                                         Label("Import Group", systemImage: "square.and.arrow.down")
                                     }
