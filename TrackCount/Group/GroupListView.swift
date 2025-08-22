@@ -92,7 +92,7 @@ struct GroupListView: View {
                                             .frame(height: 200)
                                     }
                                     .buttonStyle(PlainButtonStyle())
-                                    .accessibilityIdentifier(group.groupTitle.isEmpty ? group.groupSymbol : group.groupTitle)
+                                    .accessibilityIdentifier(((group.groupTitle?.isEmpty != nil) ? group.groupSymbol : group.groupTitle) ?? "")
                                     .contextMenu {
                                         contextMenu(for: group)
                                     }
@@ -170,7 +170,7 @@ struct GroupListView: View {
                         }
                     }
                 }
-                .alert(importManager.previewGroup?.groupTitle.isEmpty ?? true ? "Import Group?" : "Import Group \"\(importManager.previewGroup!.groupTitle)\"?", isPresented: $importManager.showImportAlert) {
+                .alert(importManager.previewGroup?.groupTitle?.isEmpty ?? true ? "Import Group?" : "Import Group \(importManager.previewGroup!.groupTitle ?? "")?", isPresented: $importManager.showImportAlert) {
                     VStack {
                         Button("Cancel", role: .cancel) {
                             importManager.reset()
@@ -181,7 +181,7 @@ struct GroupListView: View {
                     }
                 } message: {
                     if let group = importManager.previewGroup, #available(iOS 18, *) {
-                        Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
+                        Text("This group contains \(group.cards?.count ?? 1) \(group.cards?.count == 1 ? "card" : "cards").")
                     } else {
                         Text("Do you want to import this group?")
                     }
@@ -203,10 +203,10 @@ struct GroupListView: View {
     /// Computed property for alert title.
     private var alertTitle: Text {
         if let group = selectedGroup {
-            if group.groupTitle.isEmpty {
+            if (group.groupTitle?.isEmpty != nil) {
                 return Text("Delete Group?")
             } else {
-                return Text("Delete \(group.groupTitle)?")
+                return Text("Delete \(group.groupTitle ?? "This Group")?")
             }
         }
         return Text("Delete Group?")

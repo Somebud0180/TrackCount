@@ -15,8 +15,8 @@ struct TrackCountApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
-                .modelContainer(for: DMCardGroup.self)
                 .environmentObject(importManager)
         }
+        .modelContainer(for: DMCardGroup.self)
     }
 }

@@ -25,8 +25,6 @@ struct HomeView: View {
     @AppStorage("gradientInDarkHome") var isGradientInDarkHome: Bool = DefaultSettings.gradientInDarkHome
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
-    @Query private var savedGroups: [DMCardGroup]
-    
     var body: some View {
         TabView {
             // Home Tab
@@ -42,7 +40,6 @@ struct HomeView: View {
                     Label("Settings", systemImage: "gearshape")
                 }
         }
-        .accentColor(colorScheme == .light ? .black : .primary)
     }
 }
 

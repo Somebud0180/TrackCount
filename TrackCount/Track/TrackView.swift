@@ -33,7 +33,7 @@ struct TrackView: View {
                 
                 // Define the grid layout
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: columns), spacing: 2) {
-                    if selectedGroup.cards.isEmpty {
+                    if (selectedGroup.cards?.isEmpty != nil) {
                         // Display a message when there are no cards
                         Text("You have no cards yet")
                             .font(.title)
@@ -41,7 +41,7 @@ struct TrackView: View {
                             .multilineTextAlignment(.center)
                     } else {
                         // Iterate through the sorted cards and display each card
-                        ForEach(selectedGroup.cards.sorted(by: { $0.index < $1.index }), id: \.uuid) { card in
+                        ForEach((selectedGroup.cards?.sorted(by: { $0.index! < $1.index! }))!, id: \.uuid) { card in
                             gridCard(card)
                         }
                     }
@@ -50,10 +50,10 @@ struct TrackView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitleViewBuilder {
-                if selectedGroup.groupTitle.isEmpty {
-                    Image(systemName: selectedGroup.groupSymbol)
+                if (selectedGroup.groupTitle?.isEmpty != nil) {
+                    Image(systemName: selectedGroup.groupSymbol ?? "")
                 } else {
-                    Text(selectedGroup.groupTitle)
+                    Text(selectedGroup.groupTitle ?? "")
                 }
             }
             .toolbar {
@@ -104,25 +104,25 @@ struct TrackView: View {
             return 1
         case (.phone, false):
             // Landscape iPhone
-            if selectedGroup.cards.count < 2 {
+            if selectedGroup.cards?.count ?? 1 < 2 {
                 // Display all cards if total card count is below default
-                return selectedGroup.cards.count
+                return selectedGroup.cards?.count ?? 1
             } else {
                 return 2
             }
         case (.pad, true):
             // Portrait iPad
-            if selectedGroup.cards.count < 2 {
+            if selectedGroup.cards?.count ?? 1 < 2 {
                 // Display all cards if total card count is below default
-                return selectedGroup.cards.count
+                return selectedGroup.cards?.count ?? 1
             } else {
                 return 2
             }
         case (.pad, false):
             // Landscape iPad (Theoretially never the case)
-            if selectedGroup.cards.count < 2 {
+            if selectedGroup.cards?.count ?? 1 < 2 {
                 // Display all cards if total card count is below default
-                return selectedGroup.cards.count
+                return selectedGroup.cards?.count ?? 1
             } else {
                 return 2
             }
@@ -187,12 +187,12 @@ struct TrackView: View {
                                                 .lineLimit(1)
                                         }
                                     }
-                                    .foregroundStyle(card.secondaryColor.color)
+                                    .foregroundStyle(card.secondaryColor?.color ?? .white)
                                     .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .tint(card.primaryColor.color)
+                                .tint(card.primaryColor?.color ?? .blue)
                                 .accessibilityLabel("Increase counter")
                                 .accessibilityHint("Increase \(card.title) by \(modifiers[index])")
                             }
@@ -231,12 +231,12 @@ struct TrackView: View {
                                                 .lineLimit(1)
                                         }
                                     }
-                                    .foregroundStyle(card.secondaryColor.color)
+                                    .foregroundStyle(card.secondaryColor?.color ?? .white)
                                     .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .tint(card.primaryColor.color)
+                                .tint(card.primaryColor?.color ?? .blue)
                                 .accessibilityLabel("Reduce counter")
                                 .accessibilityHint("Reduce \(card.title) by \(modifiers[index])")
                             }
@@ -246,12 +246,10 @@ struct TrackView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 3)
             }
-            
-            Spacer()
+            .padding()
         }
-        .padding()
     }
-    
+        
     /// Creates the toggle card contents from the inputted card.
     private func toggleCard(_ card: DMStoredCard) -> some View {
         VStack(alignment: .center, spacing: 10) {
@@ -276,38 +274,39 @@ struct TrackView: View {
     /// Creates buttons with data from the inputted card and index.
     private func toggleButton(_ card: DMStoredCard, id: Int) -> some View {
         // Safely access state array
-        let isActive = card.state?.indices.contains(id) == true ? card.state![id].state : false
+        let isActive = card.state?.indices.contains(id) == true ? card.state?[id].state : false
+        let buttonText = card.buttonText?[id].buttonText
         
         return Button(action: {
             // Safely toggle state
             if card.state?.indices.contains(id) == true {
-                card.state![id].state.toggle()
+                card.state?[id].state.toggle()
             }
         }) {
             HStack {
-                if let buttonText = card.buttonText?[id].buttonText, !buttonText.isEmpty {
-                    Text(buttonText)
+                if (buttonText?.isEmpty != nil) {
+                    Text(buttonText ?? "")
                         .font(.body)
                         .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.accessibility1)
                         .minimumScaleFactor(0.3)
                         .lineLimit(2)
                     
-                    Image(systemName: card.symbol ?? "")
+                    Image(systemName: card.symbol ?? "questionmark.circle")
                         .font(.footnote)
                         .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
                         .minimumScaleFactor(0.2)
                 } else {
-                    Image(systemName: card.symbol ?? "")
+                    Image(systemName: card.symbol ?? "questionmark.circle")
                         .font(.body)
                         .minimumScaleFactor(0.2)
                 }
             }
-            .foregroundStyle(isActive ? card.secondaryColor.color : .black)
+            .foregroundStyle(isActive ?? false ? card.secondaryColor?.color ?? .white : .black)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(0.5)
         }
         .buttonStyle(.borderedProminent)
-        .tint(isActive ? card.primaryColor.color : .secondary)
+        .tint(isActive ?? false ? card.primaryColor?.color ?? .blue : .secondary)
     }
     
     /// Creates the timer card contents from the inputted card.
@@ -347,12 +346,12 @@ struct TrackView: View {
                             timerViewModel.startTimer(card)
                         }) {
                             Text("Start")
-                                .foregroundStyle(card.secondaryColor.color)
+                                .foregroundStyle(card.secondaryColor?.color ?? .white)
                                 .frame(maxWidth: .infinity)
                                 .padding()
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(card.primaryColor.color)
+                        .tint(card.primaryColor?.color ?? .blue)
                     }
                 } else {
                     timerViewModel.activeTimerView(card)
@@ -369,7 +368,7 @@ struct TrackView: View {
                                 Circle()
                                     .stroke(lineWidth: 10)
                                     .opacity(0.3)
-                                    .foregroundColor(card.primaryColor.color)
+                                    .foregroundColor(card.primaryColor?.color ?? .blue)
                                     .overlay(
                                         Text((card.timer?[index].timerValue ?? 0).formatTime())
                                             .font(.system(.title2, weight: .bold))

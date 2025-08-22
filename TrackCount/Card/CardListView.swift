@@ -32,7 +32,7 @@ struct CardListView: View {
             // List to preview, rearrange and delete created cards
             List {
                 // Check if selectedGroup.cards. is empty and display a message if so
-                if selectedGroup.cards.isEmpty {
+                if (selectedGroup.cards?.isEmpty != nil) {
                     Text("Create a new card to get started")
                         .frame(maxWidth: .infinity, alignment: .center)
                         .listRowSeparator(.hidden)
@@ -47,7 +47,7 @@ struct CardListView: View {
                     }
                     
                     // Display each card sorted by their id
-                    ForEach(selectedGroup.cards.sorted(by: { $0.index < $1.index }), id: \.uuid) { card in
+                    ForEach(selectedGroup.cards!.sorted(by: { $0.index! < $1.index! }), id: \.uuid) { card in
                         Button(action: {
                             viewModel.selectedCard = card
                             viewModel.fetchCard()
@@ -73,7 +73,7 @@ struct CardListView: View {
                     .transition(.slide)
                 }
                 
-                if !selectedGroup.cards.isEmpty {
+                if (selectedGroup.cards?.isEmpty != nil) {
                     Text("Tap on a card to edit, drag to reorder, and swipe to delete")
                         .font(.footnote)
                         .minimumScaleFactor(0.5)
@@ -100,10 +100,10 @@ struct CardListView: View {
             .padding()
         }
         .navigationTitleViewBuilder {
-            if selectedGroup.groupTitle.isEmpty {
-                Image(systemName: selectedGroup.groupSymbol)
+            if (selectedGroup.groupTitle?.isEmpty != nil) {
+                Image(systemName: selectedGroup.groupSymbol ?? "")
             } else {
-                Text(selectedGroup.groupTitle)
+                Text(selectedGroup.groupTitle ?? "")
             }
         }
         .sheet(isPresented: $isPresentingCardFormView, onDismiss: {
@@ -122,21 +122,25 @@ struct CardListView: View {
     /// Updates the card's index to reflect the new order.
     private func moveCard(from source: IndexSet, to destination: Int) {
         // Extract the cards in a mutable array
-        var mutableCards = selectedGroup.cards.sorted(by: { $0.index < $1.index })
+        var mutableCards = selectedGroup.cards?.sorted(by: { $0.index! < $1.index! })
         
         // Perform the move in the mutable array
-        mutableCards.move(fromOffsets: source, toOffset: destination)
+        mutableCards?.move(fromOffsets: source, toOffset: destination)
         
         // Update the index of the card to reflect the new order
-        for index in mutableCards.indices {
-            mutableCards[index].index = index
+        if let mutableCards {
+            for index in mutableCards.indices {
+                mutableCards[index].index = index
+            }
         }
         
         // Save the changes back to the context
         do {
-            for card in mutableCards {
-                if let selectedCard = selectedGroup.cards.first(where: { $0.uuid == card.uuid }) {
-                    selectedCard.index = card.index // Update the ID in the context
+            if let mutableCards {
+                for card in mutableCards {
+                    if let selectedCard = selectedGroup.cards?.first(where: { $0.uuid == card.uuid }) {
+                        selectedCard.index = card.index // Update the ID in the context
+                    }
                 }
             }
             try context.save() // Persist the changes

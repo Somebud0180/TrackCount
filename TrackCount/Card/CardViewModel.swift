@@ -69,7 +69,7 @@ class CardViewModel: ObservableObject {
     /// Used to populate the temporary variables within `CardViewModel` with the variables from the selected card.
     func fetchCard() {
         guard let card = selectedCard else { return }
-        self.newCardType = card.type
+        self.newCardType = card.type ?? .counter
         self.newCardTitle = card.title
         self.newCardCount = card.count
         self.newCardState = card.state?.isEmpty == false ? card.state!.map { $0.state } : Array(repeating: true, count: 1)
@@ -79,8 +79,8 @@ class CardViewModel: ObservableObject {
         self.newCardSymbol = card.symbol ?? ""
         self.newCardTimer = card.timer?.isEmpty == false ? card.timer!.map { $0.timerValue } : Array(repeating: 0, count: 1)
         self.newCardRingtone = card.timerRingtone ?? ""
-        self.newCardPrimary = card.primaryColor.color
-        self.newCardSecondary = card.secondaryColor.color
+        self.newCardPrimary = card.primaryColor?.color ?? .blue
+        self.newCardSecondary = card.secondaryColor?.color ?? .white
         
         if card.type == .timer || card.type == .timer_custom {
             // Convert timer values back to [h,m,s] format for each timer
@@ -210,10 +210,10 @@ class CardViewModel: ObservableObject {
         }
         
         // Check if there are any existing cards
-        if selectedGroup.cards.count == 0 {
+        if selectedGroup.cards?.count == 0 {
             newCardIndex = 0 // Set new index to 0 if there are no cards
         } else {
-            newCardIndex = selectedGroup.cards.count // Set new index to the next highest number
+            newCardIndex = selectedGroup.cards?.count ?? 0 // Set new index to the next highest number
         }
         
         do {
@@ -248,7 +248,7 @@ class CardViewModel: ObservableObject {
                     primaryColor: newCardPrimary,
                     secondaryColor: newCardSecondary
                 )
-                selectedGroup.cards.append(newCard)
+                selectedGroup.cards?.append(newCard)
             }
             
             // Save the context
@@ -268,10 +268,10 @@ class CardViewModel: ObservableObject {
             context.delete(card)
             
             // Remove the card from the group`s cards array
-            selectedGroup.cards.removeAll { $0.uuid == card.uuid }
+            selectedGroup.cards?.removeAll { $0.uuid == card.uuid }
             
             // Update indices of remaining cards
-            let sortedCards = selectedGroup.cards.sorted(by: { $0.index < $1.index })
+            let sortedCards = selectedGroup.cards!.sorted(by: { $0.index! < $1.index! })
             for (index, card) in sortedCards.enumerated() {
                 card.index = index
             }

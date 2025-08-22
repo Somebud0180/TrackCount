@@ -30,8 +30,8 @@ class GroupViewModel: ObservableObject {
     /// A function that fetches the existing group details for editing.
     func fetchGroup() {
         guard let selectedGroup else { return }
-        self.newGroupTitle = selectedGroup.groupTitle
-        self.newGroupSymbol = selectedGroup.groupSymbol
+        self.newGroupTitle = selectedGroup.groupTitle ?? ""
+        self.newGroupSymbol = selectedGroup.groupSymbol ?? ""
     }
     
     /// A function that stores the temporary variables to a group and saves it to the data model entity.
@@ -139,7 +139,7 @@ class GroupViewModel: ObservableObject {
     /// - Returns: Returns the packaged group in a temporary URL.
     func shareGroup(_ group: DMCardGroup) throws -> URL {
         // Sanitize filename
-        let sanitizedTitle = group.groupTitle
+        let sanitizedTitle = group.groupTitle ?? ""
             .components(separatedBy: .init(charactersIn: "/\\?%*|\"<>"))
             .joined()
             .trimmingCharacters(in: .whitespaces)

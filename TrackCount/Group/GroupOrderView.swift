@@ -37,11 +37,11 @@ struct GroupOrderView: View {
                         HStack {
                             Image(systemName: "line.horizontal.3")
                                 .foregroundStyle(.gray)
-                            if !group.groupSymbol.isEmpty {
-                                Image(systemName: group.groupSymbol)
+                            if (group.groupSymbol?.isEmpty != nil) {
+                                Image(systemName: group.groupSymbol ?? "")
                             }
-                            if !group.groupTitle.isEmpty {
-                                Text(group.groupTitle)
+                            if (group.groupTitle?.isEmpty != nil) {
+                                Text(group.groupTitle ?? "")
                                     .foregroundStyle(Color(.label))
                             }
                         }
@@ -90,7 +90,7 @@ struct GroupOrderView: View {
     /// Updates the groups' index to reflect the new order.
     private func moveGroup(from source: IndexSet, to destination: Int) {
         // Extract the cards in a mutable array
-        var mutableGroups = savedGroups.sorted(by: { $0.index < $1.index })
+        var mutableGroups = savedGroups.sorted(by: { $0.index! < $1.index! })
         
         // Perform the move in the mutable array
         mutableGroups.move(fromOffsets: source, toOffset: destination)

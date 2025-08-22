@@ -56,12 +56,12 @@ class TimerViewModel: ObservableObject {
                 Circle()
                     .stroke(lineWidth: 16)
                     .opacity(0.3)
-                    .foregroundColor(card.primaryColor.color)
+                    .foregroundColor(card.primaryColor?.color ?? .white)
                 
                 Circle()
                     .trim(from: 0.0, to: CGFloat(progress))
                     .stroke(style: StrokeStyle(lineWidth: 16, lineCap: .round))
-                    .foregroundColor(card.primaryColor.color)
+                    .foregroundColor(card.primaryColor?.color ?? .blue)
                     .rotationEffect(.degrees(-90))
                     .animation(.linear(duration: 1/30), value: progress)
                 
@@ -108,7 +108,7 @@ class TimerViewModel: ObservableObject {
                         card.state?[0] = CardState(state: false)
                     }) {
                         Text("Cancel")
-                            .foregroundStyle(card.secondaryColor.color)
+                            .foregroundStyle(card.secondaryColor?.color ?? .gray)
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.secondary)
@@ -124,10 +124,10 @@ class TimerViewModel: ObservableObject {
                         }
                     }) {
                         Text(isPaused ? "Resume" : "Pause")
-                            .foregroundStyle(card.secondaryColor.color)
+                            .foregroundStyle(card.secondaryColor?.color ?? .gray)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(card.primaryColor.color)
+                    .tint(card.primaryColor?.color ?? .blue)
                 } else {
                     Spacer()
                     
@@ -136,10 +136,10 @@ class TimerViewModel: ObservableObject {
                         self.timerSound(card, mode: .stop)
                     }) {
                         Text("End")
-                            .foregroundStyle(card.secondaryColor.color)
+                            .foregroundStyle(card.secondaryColor?.color ?? .gray)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(card.primaryColor.color)
+                    .tint(card.primaryColor?.color ?? .blue)
                 }
             }
             .padding(.horizontal)
@@ -265,9 +265,11 @@ class TimerViewModel: ObservableObject {
         pausedTimerValues.removeAll()
         activeTimerValues.removeAll()
         
-        for card in group.cards {
-            if card.type == .timer || card.type == .timer_custom {
-                card.state?[0] = CardState(state: false)
+        if let cards = group.cards {
+            for card in cards {
+                if card.type == .timer || card.type == .timer_custom {
+                    card.state?[0] = CardState(state: false)
+                }
             }
         }
         
