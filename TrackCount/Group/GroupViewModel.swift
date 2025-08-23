@@ -69,8 +69,7 @@ class GroupViewModel: ObservableObject {
                 selectedGroup?.groupSymbol = newGroupSymbol
             } else {
                 // Create a new group
-                let newGroup = DMCardGroup(uuid: UUID(),
-                                           index: newGroupIndex,
+                let newGroup = DMCardGroup(index: newGroupIndex,
                                            groupTitle: newGroupTitle,
                                            groupSymbol: newGroupSymbol)
                 

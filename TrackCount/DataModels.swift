@@ -26,10 +26,10 @@ class DMCardGroup: Identifiable {
     var groupSymbol: String? = ""
     
     /// The list of cards associated with the group.
-    @Relationship(deleteRule: .cascade, inverse: \DMStoredCard.group) var cards: [DMStoredCard]?
+    @Relationship(deleteRule: .cascade, inverse: \DMStoredCard.group) var cards: [DMStoredCard]? = []
     
     /// Initializes a new instance of DMCardGroup.
-    init(uuid: UUID, index: Int, groupTitle: String, groupSymbol: String, cards: [DMStoredCard] = []) {
+    init(uuid: UUID = UUID(), index: Int, groupTitle: String = "", groupSymbol: String = "", cards: [DMStoredCard] = []) {
         self.uuid = uuid
         self.index = index
         self.groupTitle = groupTitle
@@ -96,11 +96,11 @@ class DMStoredCard: Identifiable {
     /// The color used for the button contents (text and symbols) and timer text.
     var secondaryColor: CodableColor?
     
-    /// The group this card belongs to (inverse relationship for SwiftData/CloudKit).
+    /// The group this card belongs to.
     var group: DMCardGroup?
     
     /// Initializes a new instance of DMStoredCard.
-    init(uuid: UUID,
+    init(uuid: UUID = UUID(),
          index: Int,
          type: Types,
          title: String,
@@ -113,7 +113,7 @@ class DMStoredCard: Identifiable {
          timerRingtone: String? = "",
          primaryColor: Color,
          secondaryColor: Color,
-         group: DMCardGroup? = nil)
+         group: DMCardGroup)
     {
         self.uuid = uuid
         self.index = index

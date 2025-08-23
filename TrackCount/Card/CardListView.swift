@@ -15,6 +15,7 @@ struct CardListView: View {
     
     // Set variable defaults
     var selectedGroup: DMCardGroup
+    @Query var storedCards: [DMStoredCard]
     @State private var isPresentingCardFormView: Bool = false
     @State private var validationError: [String] = []
     
@@ -25,14 +26,16 @@ struct CardListView: View {
     init(selectedGroup: DMCardGroup) {
         _viewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
         self.selectedGroup = selectedGroup
+        let groupID = selectedGroup.uuid
+        _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
     }
     
     var body: some View {
         NavigationStack {
             // List to preview, rearrange and delete created cards
             List {
-                // Check if selectedGroup.cards. is empty and display a message if so
-                if (selectedGroup.cards?.isEmpty != nil) {
+                // Check if storedCards is empty and display a message if so
+                if storedCards.isEmpty {
                     Text("Create a new card to get started")
                         .frame(maxWidth: .infinity, alignment: .center)
                         .listRowSeparator(.hidden)
@@ -47,7 +50,7 @@ struct CardListView: View {
                     }
                     
                     // Display each card sorted by their id
-                    ForEach(selectedGroup.cards!.sorted(by: { $0.index! < $1.index! }), id: \.uuid) { card in
+                    ForEach(storedCards, id: \.uuid) { card in
                         Button(action: {
                             viewModel.selectedCard = card
                             viewModel.fetchCard()
@@ -73,7 +76,7 @@ struct CardListView: View {
                     .transition(.slide)
                 }
                 
-                if (selectedGroup.cards?.isEmpty != nil) {
+                if storedCards.isEmpty {
                     Text("Tap on a card to edit, drag to reorder, and swipe to delete")
                         .font(.footnote)
                         .minimumScaleFactor(0.5)
@@ -84,7 +87,7 @@ struct CardListView: View {
                         .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 1), value: selectedGroup.cards)
+            .animation(.easeInOut(duration: 1), value: storedCards)
             
             Button(action: {
                 isPresentingCardFormView.toggle()
@@ -100,10 +103,10 @@ struct CardListView: View {
             .padding()
         }
         .navigationTitleViewBuilder {
-            if (selectedGroup.groupTitle?.isEmpty != nil) {
-                Image(systemName: selectedGroup.groupSymbol ?? "")
+            if let title = selectedGroup.groupTitle, !title.isEmpty {
+                Text(title)
             } else {
-                Text(selectedGroup.groupTitle ?? "")
+                Image(systemName: selectedGroup.groupSymbol ?? "")
             }
         }
         .sheet(isPresented: $isPresentingCardFormView, onDismiss: {
@@ -122,25 +125,21 @@ struct CardListView: View {
     /// Updates the card's index to reflect the new order.
     private func moveCard(from source: IndexSet, to destination: Int) {
         // Extract the cards in a mutable array
-        var mutableCards = selectedGroup.cards?.sorted(by: { $0.index! < $1.index! })
+        var mutableCards = storedCards
         
         // Perform the move in the mutable array
-        mutableCards?.move(fromOffsets: source, toOffset: destination)
+        mutableCards.move(fromOffsets: source, toOffset: destination)
         
         // Update the index of the card to reflect the new order
-        if let mutableCards {
-            for index in mutableCards.indices {
-                mutableCards[index].index = index
-            }
+        for index in mutableCards.indices {
+            mutableCards[index].index = index
         }
         
         // Save the changes back to the context
         do {
-            if let mutableCards {
-                for card in mutableCards {
-                    if let selectedCard = selectedGroup.cards?.first(where: { $0.uuid == card.uuid }) {
-                        selectedCard.index = card.index // Update the ID in the context
-                    }
+            for card in mutableCards {
+                if let selectedCard = storedCards.first(where: { $0.uuid == card.uuid }) {
+                    selectedCard.index = card.index // Update the ID in the context
                 }
             }
             try context.save() // Persist the changes

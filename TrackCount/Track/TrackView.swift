@@ -15,14 +15,18 @@ struct TrackView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @StateObject private var timerViewModel: TimerViewModel
     @StateObject private var cardViewModel: CardViewModel
+    
+    var selectedGroup: DMCardGroup
+    @Query var storedCards: [DMStoredCard]
     @State var isPresentingCardFormView: Bool = false
     @State var isPresentingCardListView: Bool = false
-    var selectedGroup: DMCardGroup
     
     init(selectedGroup: DMCardGroup) {
         _timerViewModel = StateObject(wrappedValue: TimerViewModel())
         _cardViewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
         self.selectedGroup = selectedGroup
+        let groupID = selectedGroup.uuid
+        _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
     }
     
     var body: some View {
@@ -33,7 +37,7 @@ struct TrackView: View {
                 
                 // Define the grid layout
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: columns), spacing: 2) {
-                    if (selectedGroup.cards?.isEmpty != nil) {
+                    if storedCards.isEmpty {
                         // Display a message when there are no cards
                         Text("You have no cards yet")
                             .font(.title)
@@ -41,7 +45,7 @@ struct TrackView: View {
                             .multilineTextAlignment(.center)
                     } else {
                         // Iterate through the sorted cards and display each card
-                        ForEach((selectedGroup.cards?.sorted(by: { $0.index! < $1.index! }))!, id: \.uuid) { card in
+                        ForEach(storedCards, id: \.uuid) { card in
                             gridCard(card)
                         }
                     }
@@ -104,25 +108,25 @@ struct TrackView: View {
             return 1
         case (.phone, false):
             // Landscape iPhone
-            if selectedGroup.cards?.count ?? 1 < 2 {
+            if storedCards.count < 2 {
                 // Display all cards if total card count is below default
-                return selectedGroup.cards?.count ?? 1
+                return storedCards.count
             } else {
                 return 2
             }
         case (.pad, true):
             // Portrait iPad
-            if selectedGroup.cards?.count ?? 1 < 2 {
+            if storedCards.count < 2 {
                 // Display all cards if total card count is below default
-                return selectedGroup.cards?.count ?? 1
+                return storedCards.count
             } else {
                 return 2
             }
         case (.pad, false):
             // Landscape iPad (Theoretially never the case)
-            if selectedGroup.cards?.count ?? 1 < 2 {
+            if storedCards.count < 2 {
                 // Display all cards if total card count is below default
-                return selectedGroup.cards?.count ?? 1
+                return storedCards.count
             } else {
                 return 2
             }
@@ -392,20 +396,15 @@ struct TrackView: View {
 }
 
 #Preview {
-    // An example set of cards
-    // Contains 1 of each type of card
+    var exampleGroup = DMCardGroup(index: 0, groupTitle: "Test", groupSymbol: "", cards: [])
     let exampleCards: [DMStoredCard] = [
-        DMStoredCard(uuid: UUID(), index: 0, type: .counter, title: "Test Counter", count: 0, modifier: [1, 5, 10], primaryColor: .red, secondaryColor: .white),
-        DMStoredCard(uuid: UUID(), index: 1, type: .toggle, title: "Test Toggle", count: 5, state: Array(repeating: true, count: 5), buttonText: Array(repeating: "Test", count: 5), symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow),
-        DMStoredCard(uuid: UUID(), index: 2, type: .timer, title: "Test Timer", count: 4, state: [false], timer: [5, 15, 60, 3600], primaryColor: .blue, secondaryColor: .white),
-        DMStoredCard(uuid: UUID(), index: 3, type: .timer_custom, title: "Test Timer (Custom)", count: 1, state: [false], timer: [0], primaryColor: .blue, secondaryColor: .white),
+        DMStoredCard(index: 0, type: .counter, title: "Test Counter", count: 0, modifier: [1, 5, 10], primaryColor: .red, secondaryColor: .white, group: exampleGroup),
+        DMStoredCard(index: 1, type: .toggle, title: "Test Toggle", count: 5, state: Array(repeating: true, count: 5), buttonText: Array(repeating: "Test", count: 5), symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow, group: exampleGroup),
+        DMStoredCard(index: 2, type: .timer, title: "Test Timer", count: 4, state: [false], timer: [5, 15, 60, 3600], primaryColor: .blue, secondaryColor: .white, group: exampleGroup),
+        DMStoredCard(index: 3, type: .timer_custom, title: "Test Timer (Custom)", count: 1, state: [false], timer: [0], primaryColor: .blue, secondaryColor: .white, group: exampleGroup),
     ]
     
-    // An example group
-    // Contains an example set of cards
-    var exampleGroup: DMCardGroup {
-        DMCardGroup(uuid: UUID(), index: 0, groupTitle: "Test", groupSymbol: "", cards: exampleCards)
-    }
+    exampleGroup.cards = exampleCards
     
-    TrackView(selectedGroup: exampleGroup)
+    return TrackView(selectedGroup: exampleGroup)
 }
