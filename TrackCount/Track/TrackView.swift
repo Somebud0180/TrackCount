@@ -21,6 +21,9 @@ struct TrackView: View {
     @State var isPresentingCardFormView: Bool = false
     @State var isPresentingCardListView: Bool = false
     
+    let gridColumns = [GridItem(.adaptive(minimum: 450), spacing: 8)]
+    let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
+    
     init(selectedGroup: DMCardGroup) {
         _timerViewModel = StateObject(wrappedValue: TimerViewModel())
         _cardViewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
@@ -32,11 +35,8 @@ struct TrackView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                // Determine the number of columns based on device and orientation
-                let columns = determineColumns()
-                
                 // Define the grid layout
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: columns), spacing: 2) {
+                LazyVGrid(columns: gridColumns) {
                     if storedCards.isEmpty {
                         // Display a message when there are no cards
                         Text("You have no cards yet")
@@ -97,48 +97,9 @@ struct TrackView: View {
         }
     }
     
-    /// Determines the number of columns based on device type and orientation.
-    private func determineColumns() -> Int {
-        let deviceIdiom = UIDevice.current.userInterfaceIdiom
-        let isPortrait = verticalSizeClass == .regular
-        
-        switch (deviceIdiom, isPortrait) {
-        case (.phone, true):
-            // Portrait iPhone
-            return 1
-        case (.phone, false):
-            // Landscape iPhone
-            if storedCards.count < 2 {
-                // Display all cards if total card count is below default
-                return storedCards.count
-            } else {
-                return 2
-            }
-        case (.pad, true):
-            // Portrait iPad
-            if storedCards.count < 2 {
-                // Display all cards if total card count is below default
-                return storedCards.count
-            } else {
-                return 2
-            }
-        case (.pad, false):
-            // Landscape iPad (Theoretially never the case)
-            if storedCards.count < 2 {
-                // Display all cards if total card count is below default
-                return storedCards.count
-            } else {
-                return 2
-            }
-        default:
-            // Fallback to 2 columns
-            return 2
-        }
-    }
-    
     /// Builds the inputted card into a visible card according to it's type.
     private func gridCard(_ card: DMStoredCard) -> some View {
-        return AnyView(
+        Group {
             ZStack {
                 RoundedRectangle(cornerRadius: 25)
                     .foregroundStyle(.thickMaterial)
@@ -152,9 +113,8 @@ struct TrackView: View {
                         .transition(.scale.combined(with: .opacity))
                 }
             }
-                .padding()
-                .animation(.spring(duration: 0.3), value: card.state?[0].state)
-        )
+            .padding()
+        }
     }
     
     /// Creates the counter card contents from the inputted card.
@@ -203,7 +163,6 @@ struct TrackView: View {
                         }
                     }
                 }
-                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 3)
                 
                 // Current Count
@@ -247,11 +206,10 @@ struct TrackView: View {
                         }
                     }
                 }
-                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 3)
             }
-            .padding()
         }
+        .padding()
     }
         
     /// Creates the toggle card contents from the inputted card.
@@ -265,7 +223,7 @@ struct TrackView: View {
             
             Spacer()
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 10) {
+            LazyVGrid(columns: buttonColumns) {
                 ForEach(0..<card.count, id: \.self) { index in
                     toggleButton(card, id: index)
                 }
@@ -322,73 +280,71 @@ struct TrackView: View {
                 .multilineTextAlignment(.center)
                 .accessibilityHint("Timer Card")
             
-            if card.type == .timer_custom {
-                if card.state?[0].state == false {
-                    VStack {
-                        Text("Set Timer")
-                            .font(.headline)
-                        
-                        TimeWheelPickerView(
-                            timerArray: Binding(
-                                get: {
-                                    let seconds = card.timer?[0].timerValue ?? 0
-                                    let h = seconds / 3600
-                                    let m = (seconds % 3600) / 60
-                                    let s = seconds % 60
-                                    return [h, m, s]
-                                },
-                                set: { timerArray in
-                                    let totalSeconds = timerArray[0] * 3600 + timerArray[1] * 60 + timerArray[2]
-                                    card.timer?[0] = TimerValue(timerValue: totalSeconds)
-                                }
-                            )
+            if card.type == .timer_custom && card.state?[0].state == false  {
+                VStack {
+                    Text("Set Timer")
+                        .font(.headline)
+                    
+                    TimeWheelPickerView(
+                        timerArray: Binding(
+                            get: {
+                                let seconds = card.timer?[0].timerValue ?? 0
+                                let h = seconds / 3600
+                                let m = (seconds % 3600) / 60
+                                let s = seconds % 60
+                                return [h, m, s]
+                            },
+                            set: { timerArray in
+                                let totalSeconds = timerArray[0] * 3600 + timerArray[1] * 60 + timerArray[2]
+                                card.timer?[0] = TimerValue(timerValue: totalSeconds)
+                            }
                         )
-                        .frame(height: 150)
-                        
+                    )
+                    .frame(height: 150)
+                    
+                    Button(action: {
+                        card.state?[0] = CardState(state: true)
+                        timerViewModel.startTimer(card)
+                    }) {
+                        Text("Start")
+                            .foregroundStyle(card.secondaryColor?.color ?? .white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(card.primaryColor?.color ?? .blue)
+                }
+            } else if card.type == .timer && card.state?[0].state == false {
+                Spacer()
+                
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
+                    ForEach(0..<card.count, id: \.self) { index in
                         Button(action: {
+                            timerViewModel.selectedTimerIndex[card.uuid] = index
                             card.state?[0] = CardState(state: true)
                             timerViewModel.startTimer(card)
                         }) {
-                            Text("Start")
-                                .foregroundStyle(card.secondaryColor?.color ?? .white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(card.primaryColor?.color ?? .blue)
-                    }
-                } else {
-                    timerViewModel.activeTimerView(card)
-                }
-            } else if card.type == .timer {
-                if card.state?[0].state == false {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
-                        ForEach(0..<card.count, id: \.self) { index in
-                            Button(action: {
-                                timerViewModel.selectedTimerIndex[card.uuid] = index
-                                card.state?[0] = CardState(state: true)
-                                timerViewModel.startTimer(card)
-                            }) {
-                                Circle()
-                                    .stroke(lineWidth: 10)
-                                    .opacity(0.3)
-                                    .foregroundColor(card.primaryColor?.color ?? .blue)
-                                    .overlay(
-                                        Text((card.timer?[index].timerValue ?? 0).formatTime())
-                                            .font(.system(.title2, weight: .bold))
-                                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                                            .lineLimit(1)
-                                            .minimumScaleFactor(0.3)
-                                            .padding(.horizontal)
-                                    )
-                                    .frame(height: 100)
-                                    .padding(10)
-                            }
+                            Circle()
+                                .stroke(lineWidth: 10)
+                                .opacity(0.3)
+                                .foregroundColor(card.primaryColor?.color ?? .blue)
+                                .overlay(
+                                    Text((card.timer?[index].timerValue ?? 0).formatTime())
+                                        .font(.system(.title2, weight: .bold))
+                                        .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.3)
+                                        .padding(.horizontal)
+                                )
+                                .frame(height: 100)
+                                .padding(10)
                         }
                     }
-                } else {
-                    timerViewModel.activeTimerView(card)
                 }
+                
+                Spacer()
+            } else {
+                timerViewModel.activeTimerView(card)
             }
         }
         .padding()
