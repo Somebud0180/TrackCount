@@ -65,7 +65,7 @@ struct TrackView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { isPresentingCardFormView = true }) {
-                        Label("Add Card", systemImage: "plus")
+                        Label("Add Card", systemImage: "plus.circle")
                             .labelStyle(.iconOnly)
                     }
                 }

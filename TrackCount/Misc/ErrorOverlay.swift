@@ -14,14 +14,17 @@ import SwiftUI
 ///   - message: The message to display when the error appears.
 /// - Returns: A HStack containing an error symbol and message.
 func errorMessageView(_ conditionValue: String, with condition: [String], message: String) -> some View {
-    HStack {
-        Image(systemName: "exclamationmark.triangle")
-        Text(message)
+    Group {
+        if condition.contains(conditionValue) {
+            HStack {
+                Image(systemName: "exclamationmark.triangle")
+                Text(message)
+            }
+            .font(.footnote)
+            .foregroundColor(.red)
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
     }
-    .font(.footnote)
-    .foregroundColor(.red)
-    .opacity(condition.contains(conditionValue) ? 1 : 0)
-    .offset(y: condition.contains(conditionValue) ? 0 : -5)
     .animation(.easeInOut(duration: 0.3), value: condition)
 }
 
@@ -31,21 +34,19 @@ extension View {
     ///   - condition: The variable which the function will be conditioned with.
     ///   - conditionValue: The variable which contains the condition value.
     /// - Returns: A red outline to the shape of CustomRoundedStyle.
-    func errorOverlay(_ conditionValue: String, with condition: [String]) -> some View {
-        if #available(iOS 26.0, *) {
-            return self.overlay(
-                condition.contains(conditionValue)
-                ? Capsule()
-                    .stroke(Color.red, lineWidth: 0.5)
-                : nil
-            )
-        } else {
-            return self.overlay(
-                condition.contains(conditionValue)
-                ? RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.red, lineWidth: 0.5)
-                : nil
-            )
-        }
+    func errorOverlay(_ conditionValue: String, with condition: [String], isRectangle: Bool = false) -> some View {
+        self.overlay(
+            Group {
+                if condition.contains(conditionValue) {
+                    if !isRectangle, #available(iOS 26.0, *) {
+                        Capsule()
+                            .stroke(Color.red, lineWidth: 0.5)
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.red, lineWidth: 0.5)
+                    }
+                }
+            }
+        )
     }
 }

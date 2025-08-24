@@ -72,7 +72,7 @@ struct GroupFormView: View {
         return Group {
             ZStack(alignment: .bottomTrailing) {
                 TextField("Set group title", text: $viewModel.newGroupTitle)
-                    .customRoundedStyle(interactive: true, tint: colorScheme == .dark ? .gray.opacity(0.4) : .white.opacity(0.8))
+                    .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
                     .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                     .onChange(of: viewModel.newGroupTitle) {
                         if viewModel.newGroupTitle.count > characterLimit {
@@ -106,7 +106,7 @@ struct GroupFormView: View {
                     .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 }
                 .foregroundStyle(.foreground)
-                .customRoundedStyle(interactive: true, tint: colorScheme == .dark ? .gray.opacity(0.4) : .white.opacity(0.8))
+                .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
                 .accessibilityIdentifier("Group Smybol Picker")
                 .sheet(isPresented: $isPickerPresented) {
                     SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
@@ -144,7 +144,7 @@ struct GroupFormView: View {
                         .foregroundStyle(.white)
                         .cornerRadius(8)
                 }
-            }.padding()
+            }.padding(.bottom)
         }
     }
 }
