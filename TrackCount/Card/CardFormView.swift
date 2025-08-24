@@ -240,25 +240,17 @@ struct CardFormView: View {
                     if index < viewModel.newButtonText.count {
                         let characterLimit = viewModel.buttonTextLimit
                         
-                        ZStack(alignment: .bottomTrailing) {
-                            TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
-                                .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
-                                .onChange(of: viewModel.newButtonText[index]) {
-                                    if viewModel.newButtonText[index].count > characterLimit {
-                                        viewModel.newButtonText[index] = String(viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces))
-                                        viewModel.newButtonText[index] = String(viewModel.newButtonText[index].prefix(characterLimit))
-                                    }
+                        TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
+                            .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                            .onChange(of: viewModel.newButtonText[index]) {
+                                if viewModel.newButtonText[index].count > characterLimit {
+                                    viewModel.newButtonText[index] = String(viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces))
+                                    viewModel.newButtonText[index] = String(viewModel.newButtonText[index].prefix(characterLimit))
                                 }
-                                .onSubmit {
-                                    viewModel.newButtonText[index] = viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces)
-                                }
-                            
-                            Text("\(viewModel.newButtonText[index].count)/\(characterLimit)")
-                                .padding(.trailing, 3)
-                                .foregroundStyle(.gray)
-                                .font(.footnote)
-                        }
-                        
+                            }
+                            .onSubmit {
+                                viewModel.newButtonText[index] = viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces)
+                            }
                     }
                 }
             } else if viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom {

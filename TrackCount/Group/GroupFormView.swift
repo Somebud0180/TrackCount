@@ -70,25 +70,18 @@ struct GroupFormView: View {
         let characterLimit = viewModel.titleCharacterLimit
         
         return Group {
-            ZStack(alignment: .bottomTrailing) {
-                TextField("Set group title", text: $viewModel.newGroupTitle)
-                    .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
-                    .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
-                    .onChange(of: viewModel.newGroupTitle) {
-                        if viewModel.newGroupTitle.count > characterLimit {
-                            viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
-                            viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
-                        }
-                    }
-                    .onSubmit {
+            TextField("Set group title", text: $viewModel.newGroupTitle)
+                .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
+                .onChange(of: viewModel.newGroupTitle) {
+                    if viewModel.newGroupTitle.count > characterLimit {
                         viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
+                        viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
                     }
-                
-                Text("\(viewModel.newGroupTitle.count)/\(characterLimit)")
-                    .padding(.trailing, 3)
-                    .foregroundStyle(.gray)
-                    .font(.footnote)
-            }
+                }
+                .onSubmit {
+                    viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
+                }
             
             // A symbol preview/picker
             VStack(alignment: .leading, spacing: 4) {
