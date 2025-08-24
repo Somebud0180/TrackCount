@@ -72,8 +72,6 @@ class TimerViewModel: ObservableObject {
                             .lineLimit(1)
                             .minimumScaleFactor(0.3)
                             .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                            .contentTransition(.numericText())
-                            .animation(.snappy, value: displayValue)
                             .minimumScaleFactor(0.3)
                             .frame(width: 130, alignment: .leading)
                     } else {
@@ -82,8 +80,6 @@ class TimerViewModel: ObservableObject {
                             .lineLimit(1)
                             .minimumScaleFactor(0.3)
                             .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                            .contentTransition(.numericText())
-                            .animation(.snappy, value: displayValue)
                             .minimumScaleFactor(0.3)
                             .frame(width: 100, alignment: .leading)
                     }
@@ -93,8 +89,6 @@ class TimerViewModel: ObservableObject {
                         .lineLimit(1)
                         .minimumScaleFactor(0.3)
                         .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                        .contentTransition(.numericText())
-                        .animation(.snappy, value: displayValue)
                         .minimumScaleFactor(0.3)
                 }
             }

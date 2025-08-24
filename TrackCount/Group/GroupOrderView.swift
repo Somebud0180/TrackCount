@@ -69,7 +69,6 @@ struct GroupOrderView: View {
                     }
                 }
             }
-            .animation(.easeInOut(duration: 1), value: savedGroups)
             .navigationTitle("Group Order")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -35,18 +35,20 @@ struct TrackView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                // Define the grid layout
-                LazyVGrid(columns: gridColumns) {
+                Group {
                     if storedCards.isEmpty {
-                        // Display a message when there are no cards
                         Text("You have no cards yet")
                             .font(.title)
                             .foregroundStyle(.gray)
                             .multilineTextAlignment(.center)
                     } else {
-                        // Iterate through the sorted cards and display each card
-                        ForEach(storedCards, id: \.uuid) { card in
-                            gridCard(card)
+                        // Define the grid layout
+                        LazyVGrid(columns: gridColumns) {
+                            // Display a message when there are no cards
+                            // Iterate through the sorted cards and display each card
+                            ForEach(storedCards, id: \.uuid) { card in
+                                gridCard(card)
+                            }
                         }
                     }
                 }
@@ -62,21 +64,16 @@ struct TrackView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button(action: {
-                            isPresentingCardFormView.toggle()
-                        }) {
-                            Text("Add Card")
-                            Image(systemName: "plus")
-                        }
-                        NavigationLink(destination: CardListView(selectedGroup: selectedGroup)) {
-                            Text("Edit Cards")
-                            Image(systemName: "folder")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
+                    Button(action: { isPresentingCardFormView = true }) {
+                        Label("Add Card", systemImage: "plus")
+                            .labelStyle(.iconOnly)
                     }
-                    .accessibilityIdentifier("Ellipsis Button")
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { isPresentingCardListView = true }) {
+                        Label("Manage Cards", systemImage: "tablecells.badge.ellipsis")
+                            .labelStyle(.iconOnly)
+                    }
                 }
             }
         }
@@ -88,6 +85,9 @@ struct TrackView: View {
                 .onDisappear {
                     cardViewModel.validationError.removeAll()
                 }
+        }
+        .sheet(isPresented: $isPresentingCardListView) {
+            CardListView(selectedGroup: selectedGroup)
         }
         .onAppear {
             timerViewModel.timerCleanup(for: context, group: selectedGroup)

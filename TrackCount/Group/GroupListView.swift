@@ -239,9 +239,8 @@ struct GroupListView: View {
     private func contextMenu(for group: DMCardGroup) -> some View {
         Group {
             NavigationLink(destination: CardListView(selectedGroup: group)) {
-                Text("Edit Cards")
-                Spacer()
-                Image(systemName: "folder")
+                Label("Manage Cards", systemImage: "tablecells.badge.ellipsis")
+                    .labelStyle(.titleAndIcon)
             }
             Button("Edit Group", systemImage: "pencil") {
                 viewModel.selectedGroup = group

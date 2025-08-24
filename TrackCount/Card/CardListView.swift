@@ -87,7 +87,6 @@ struct CardListView: View {
                         .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 1), value: storedCards)
             
             Button(action: {
                 isPresentingCardFormView.toggle()
@@ -95,19 +94,17 @@ struct CardListView: View {
                 Text("Create a new card")
                     .font(.title2)
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
                     .foregroundStyle(.white)
-                    .cornerRadius(8)
+                    .customRoundedStyle(interactive: true, tint: .blue)
+            }
+            .navigationTitleViewBuilder {
+                if let title = selectedGroup.groupTitle, !title.isEmpty {
+                    Text(title)
+                } else {
+                    Image(systemName: selectedGroup.groupSymbol ?? "")
+                }
             }
             .padding()
-        }
-        .navigationTitleViewBuilder {
-            if let title = selectedGroup.groupTitle, !title.isEmpty {
-                Text(title)
-            } else {
-                Image(systemName: selectedGroup.groupSymbol ?? "")
-            }
         }
         .sheet(isPresented: $isPresentingCardFormView, onDismiss: {
             viewModel.resetFields()
@@ -139,7 +136,9 @@ struct CardListView: View {
         do {
             for card in mutableCards {
                 if let selectedCard = storedCards.first(where: { $0.uuid == card.uuid }) {
-                    selectedCard.index = card.index // Update the ID in the context
+                    withAnimation {
+                        selectedCard.index = card.index // Update the ID in the context
+                    }
                 }
             }
             try context.save() // Persist the changes
