@@ -47,7 +47,7 @@ struct GroupListView: View {
                 }
             }
             .frame(height: 250)
-            .edgesIgnoringSafeArea(.all)
+            .ignoresSafeArea()
         }
     }
     
