@@ -97,7 +97,7 @@ struct GroupListView: View {
                                 }
                             }
                         }
-                        
+                        .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         .padding()
                         .navigationBarTitleDisplayMode(.large)
                         .navigationTitle("Your Groups")

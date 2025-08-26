@@ -94,16 +94,15 @@ struct GroupOrderView: View {
         // Perform the move in the mutable array
         mutableGroups.move(fromOffsets: source, toOffset: destination)
         
-        // Update the index of the card to reflect the new order
-        for index in mutableGroups.indices {
-            mutableGroups[index].index = index
+        for (newIndex, group) in mutableGroups.enumerated() {
+            group.index = newIndex
         }
         
         // Save the changes back to the context
         do {
-            for groups in mutableGroups {
-                if let selectedGroup = savedGroups.first(where: { $0.uuid == groups.uuid }) {
-                    selectedGroup.index = groups.index // Update the ID in the context
+            for group in mutableGroups {
+                if let selectedGroup = savedGroups.first(where: { $0.uuid == group.uuid }) {
+                    selectedGroup.index = group.index // Update the ID in the context
                 }
             }
             try context.save() // Persist the changes
