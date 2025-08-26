@@ -90,7 +90,7 @@ struct GroupListView: View {
                                             .frame(height: 200)
                                     }
                                     .buttonStyle(PlainButtonStyle())
-                                    .accessibilityIdentifier(((group.groupTitle?.isEmpty != nil) ? group.groupSymbol : group.groupTitle) ?? "")
+                                    .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
                                     .contextMenu {
                                         contextMenu(for: group)
                                     }
@@ -201,7 +201,7 @@ struct GroupListView: View {
     /// Computed property for alert title.
     private var alertTitle: Text {
         if let group = selectedGroup {
-            if (group.groupTitle?.isEmpty != nil) {
+            if (group.groupTitle?.isEmpty ?? true) {
                 return Text("Delete Group?")
             } else {
                 return Text("Delete \(group.groupTitle ?? "This Group")?")
