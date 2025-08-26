@@ -302,7 +302,7 @@ struct TrackView: View {
             }
         }) {
             HStack {
-                if (buttonText?.isEmpty != nil) {
+                if (buttonText?.isEmpty == false) {
                     Text(buttonText ?? "")
                         .font(.body)
                         .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.accessibility1)
@@ -406,7 +406,7 @@ struct TrackView: View {
     
     /// Computed property for alert title.
     private var alertTitle: Text {
-        if (selectedGroup.groupTitle?.isEmpty != nil) {
+        if (selectedGroup.groupTitle?.isEmpty == false) {
             return Text("Delete Group?")
         } else {
             return Text("Delete \(selectedGroup.groupTitle ?? "This Group")?")

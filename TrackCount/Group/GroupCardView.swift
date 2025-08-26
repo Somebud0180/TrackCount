@@ -56,14 +56,14 @@ struct GroupCardView: View {
                 
             // Content
             VStack {
-                if (group.groupSymbol?.isEmpty != nil) {
+                if (group.groupSymbol?.isEmpty == false) {
                     Image(systemName: group.groupSymbol ?? "")
                         .font(.largeTitle)
                         .minimumScaleFactor(0.5)
                         .foregroundStyle(primaryColor.opacity(0.8))
                 }
                 
-                if (group.groupTitle?.isEmpty != nil) {
+                if (group.groupTitle?.isEmpty == false) {
                     Text(group.groupTitle ?? "")
                         .font(.system(.title3, weight: .bold))
                         .multilineTextAlignment(.center)

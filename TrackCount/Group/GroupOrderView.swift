@@ -37,10 +37,10 @@ struct GroupOrderView: View {
                         HStack {
                             Image(systemName: "line.horizontal.3")
                                 .foregroundStyle(.gray)
-                            if (group.groupSymbol?.isEmpty != nil) {
+                            if (group.groupSymbol?.isEmpty == false) {
                                 Image(systemName: group.groupSymbol ?? "")
                             }
-                            if (group.groupTitle?.isEmpty != nil) {
+                            if (group.groupTitle?.isEmpty == false) {
                                 Text(group.groupTitle ?? "")
                                     .foregroundStyle(Color(.label))
                             }
