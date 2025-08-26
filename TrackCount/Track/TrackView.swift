@@ -101,16 +101,30 @@ struct TrackView: View {
     private func gridCard(_ card: DMStoredCard) -> some View {
         Group {
             ZStack {
-                RoundedRectangle(cornerRadius: 25)
-                    .foregroundStyle(.thickMaterial)
-                    .shadow(radius: 5)
-                if card.type == .counter {
-                    counterCard(card)
-                } else if card.type == .toggle {
-                    toggleCard(card)
-                } else if card.type == .timer || card.type == .timer_custom {
-                    timerCard(card)
-                        .transition(.scale.combined(with: .opacity))
+                if #available(iOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: 25)
+                        .foregroundStyle(.thickMaterial)
+                        .shadow(radius: 5)
+                    if card.type == .counter {
+                        counterCard(card)
+                    } else if card.type == .toggle {
+                        toggleCard(card)
+                    } else if card.type == .timer || card.type == .timer_custom {
+                        timerCard(card)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                } else {
+                    RoundedRectangle(cornerRadius: 25)
+                        .foregroundStyle(.thickMaterial)
+                        .shadow(radius: 5)
+                    if card.type == .counter {
+                        counterCard(card)
+                    } else if card.type == .toggle {
+                        toggleCard(card)
+                    } else if card.type == .timer || card.type == .timer_custom {
+                        timerCard(card)
+                            .transition(.scale.combined(with: .opacity))
+                    }
                 }
             }
             .padding()
@@ -151,12 +165,11 @@ struct TrackView: View {
                                                 .lineLimit(1)
                                         }
                                     }
-                                    .foregroundStyle(card.secondaryColor?.color ?? .white)
                                     .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
-                                    .contentShape(Rectangle())
+                                    .padding(6)
                                 }
-                                .buttonStyle(.borderedProminent)
-                                .tint(card.primaryColor?.color ?? .blue)
+                                .foregroundStyle(card.secondaryColor?.color ?? .white)
+                                .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
                                 .accessibilityLabel("Increase counter")
                                 .accessibilityHint("Increase \(card.title) by \(modifiers[index])")
                             }
@@ -194,12 +207,11 @@ struct TrackView: View {
                                                 .lineLimit(1)
                                         }
                                     }
-                                    .foregroundStyle(card.secondaryColor?.color ?? .white)
                                     .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
-                                    .contentShape(Rectangle())
+                                    .padding(6)
                                 }
-                                .buttonStyle(.borderedProminent)
-                                .tint(card.primaryColor?.color ?? .blue)
+                                .foregroundStyle(card.secondaryColor?.color ?? .white)
+                                .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
                                 .accessibilityLabel("Reduce counter")
                                 .accessibilityHint("Reduce \(card.title) by \(modifiers[index])")
                             }
@@ -242,7 +254,9 @@ struct TrackView: View {
         return Button(action: {
             // Safely toggle state
             if card.state?.indices.contains(id) == true {
-                card.state?[id].state.toggle()
+                withAnimation {
+                    card.state?[id].state.toggle()
+                }
             }
         }) {
             HStack {
@@ -264,11 +278,10 @@ struct TrackView: View {
                 }
             }
             .foregroundStyle(isActive ?? false ? card.secondaryColor?.color ?? .white : .black)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(0.5)
+            .frame(maxWidth: .infinity, minHeight: 20, maxHeight: .infinity)
+            .padding(4)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(isActive ?? false ? card.primaryColor?.color ?? .blue : .secondary)
+        .adaptiveGlassConditionalButton(condition: isActive ?? false, tint: card.primaryColor?.color ?? .blue, shape: RoundedRectangle(cornerRadius: 12))
     }
     
     /// Creates the timer card contents from the inputted card.
@@ -311,8 +324,7 @@ struct TrackView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(card.primaryColor?.color ?? .blue)
+                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
                 }
             } else if card.type == .timer && card.state?[0].state == false {
                 Spacer()

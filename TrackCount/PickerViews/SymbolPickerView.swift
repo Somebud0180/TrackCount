@@ -85,7 +85,7 @@ struct SymbolPickerView: View {
             ? categorySymbols
             : categorySymbols.filter {
                 // Lowercase the input to make it case-insensetive
-                preprocess($0).contains(searchText.lowercased())}
+                preprocess($0).localizedStandardContains(searchText.lowercased())}
         }
         .filter { !$0.value.isEmpty } // Remove empty categories
     }

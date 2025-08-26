@@ -102,10 +102,10 @@ class TimerViewModel: ObservableObject {
                         card.state?[0] = CardState(state: false)
                     }) {
                         Text("Cancel")
-                            .foregroundStyle(card.secondaryColor?.color ?? .gray)
+                            .foregroundStyle(card.secondaryColor?.color ?? .white)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.secondary)
+                    .padding()
+                    .adaptiveGlassButton(tintColor: .secondary)
                     
                     Spacer()
                     
@@ -118,10 +118,10 @@ class TimerViewModel: ObservableObject {
                         }
                     }) {
                         Text(isPaused ? "Resume" : "Pause")
-                            .foregroundStyle(card.secondaryColor?.color ?? .gray)
+                            .foregroundStyle(card.secondaryColor?.color ?? .white)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(card.primaryColor?.color ?? .blue)
+                    .padding()
+                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
                 } else {
                     Spacer()
                     
@@ -130,10 +130,10 @@ class TimerViewModel: ObservableObject {
                         self.timerSound(card, mode: .stop)
                     }) {
                         Text("End")
-                            .foregroundStyle(card.secondaryColor?.color ?? .gray)
+                            .foregroundStyle(card.secondaryColor?.color ?? .white)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(card.primaryColor?.color ?? .blue)
+                    .padding()
+                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
                 }
             }
             .padding(.horizontal)

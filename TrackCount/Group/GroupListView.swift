@@ -32,23 +32,21 @@ struct GroupListView: View {
     }
     
     var backgroundGradient: some View {
-        TimelineView(.animation(minimumInterval: 0.1)) { _ in
-            LinearGradient(
-                gradient: Gradient(colors: [primaryThemeColor.color.opacity(0.8), Color.clear]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .hueRotation(.degrees(animateGradient ? 30 : 0))
-            .task {
-                if isGradientAnimated {
-                    withAnimation(.easeInOut(duration: 2).repeatForever()) {
-                        animateGradient.toggle()
-                    }
+        LinearGradient(
+            gradient: Gradient(colors: [primaryThemeColor.color.opacity(0.8), Color.clear]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .hueRotation(.degrees(animateGradient ? 30 : 0))
+        .task {
+            if isGradientAnimated {
+                withAnimation(.easeInOut(duration: 2).repeatForever()) {
+                    animateGradient.toggle()
                 }
             }
-            .frame(height: 250)
-            .ignoresSafeArea()
         }
+        .frame(height: 250)
+        .ignoresSafeArea()
     }
     
     var body: some View {

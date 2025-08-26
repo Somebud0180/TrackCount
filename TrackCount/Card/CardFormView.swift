@@ -83,10 +83,10 @@ struct CardFormView: View {
                         startPoint: .bottom,
                         endPoint: .top
                     )
-                    .edgesIgnoringSafeArea(.bottom)
+                    .ignoresSafeArea()
                 )
             }
-            .ignoresSafeArea(edges: .bottom)
+            .ignoresSafeArea()
             
             .navigationBarTitle(viewModel.selectedCard == nil ? "Create Card" : "Edit Card", displayMode: .inline)
             .onChange(of: viewModel.newCardType) {

@@ -50,7 +50,7 @@ struct SettingsView: View {
                 
                 Section(header: Text("Theme")) {
                     Toggle("Animate Gradient", isOn: $isGradientAnimated)
-                    ColorPicker("Gradient Color", selection: $primaryThemeSwiftColor) 
+                    ColorPicker("Gradient Color", selection: $primaryThemeSwiftColor)
                         .onChange(of: primaryThemeSwiftColor) {
                             saveColor(primaryThemeSwiftColor, to: &primaryThemeColor)
                         }
@@ -80,16 +80,21 @@ struct SettingsView: View {
                     }
                 }
                 
-                Section(header: Text("About")) {
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        Text("\(version) (\(build))")
-                            .foregroundStyle(.secondary)
-                    }
-                    .accessibilityLabel("Version")
-                    .accessibilityValue(Text("\(version) (\(build))"))
+                Section(footer:
+                    VStack {
+                        Link("Made with ❤️ Hack Club", destination: URL(string: "https://hackclub.com/")!)
+                        Link("Source Code on GitHub", destination: URL(string: "https://github.com/Somebud0180/TrackCount")!)
+                        HStack {
+                            Text("Version \(version) (\(build))")
+                        }
+                        .accessibilityLabel("Version")
+                        .accessibilityValue(Text("\(version) (\(build))"))
                 }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .foregroundStyle(.secondary)
+                ) {
+                }
+                .padding(.bottom)
             }
             .navigationBarTitle("Settings", displayMode: .inline)
             .sheet(isPresented: $isPresentingRingtonePickerView) {
