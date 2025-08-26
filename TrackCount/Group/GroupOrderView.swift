@@ -91,23 +91,25 @@ struct GroupOrderView: View {
         // Extract the cards in a mutable array
         var mutableGroups = savedGroups.sorted(by: { $0.index! < $1.index! })
         
-        // Perform the move in the mutable array
-        mutableGroups.move(fromOffsets: source, toOffset: destination)
-        
-        for (newIndex, group) in mutableGroups.enumerated() {
-            group.index = newIndex
-        }
-        
-        // Save the changes back to the context
-        do {
-            for group in mutableGroups {
-                if let selectedGroup = savedGroups.first(where: { $0.uuid == group.uuid }) {
-                    selectedGroup.index = group.index // Update the ID in the context
-                }
+        withAnimation {
+            // Perform the move in the mutable array
+            mutableGroups.move(fromOffsets: source, toOffset: destination)
+            
+            for (newIndex, group) in mutableGroups.enumerated() {
+                group.index = newIndex
             }
-            try context.save() // Persist the changes
-        } catch {
-            validationError.append("Failed to save updated order: \(error.localizedDescription)")
+            
+            // Save the changes back to the context
+            do {
+                for group in mutableGroups {
+                    if let selectedGroup = savedGroups.first(where: { $0.uuid == group.uuid }) {
+                        selectedGroup.index = group.index // Update the ID in the context
+                    }
+                }
+                try context.save() // Persist the changes
+            } catch {
+                validationError.append("Failed to save updated order: \(error.localizedDescription)")
+            }
         }
     }
 }
