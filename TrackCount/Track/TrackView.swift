@@ -11,20 +11,25 @@ import AVFoundation
 import Combine
 
 struct TrackView: View {
+    @Environment(\.dismiss) var dismiss
     @Environment(\.modelContext) private var context
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @StateObject private var groupViewModel: GroupViewModel
     @StateObject private var timerViewModel: TimerViewModel
     @StateObject private var cardViewModel: CardViewModel
     
     var selectedGroup: DMCardGroup
-    @Query var storedCards: [DMStoredCard]
-    @State var isPresentingCardFormView: Bool = false
-    @State var isPresentingCardListView: Bool = false
+    @Query private var storedCards: [DMStoredCard]
+    @State private var isPresentingGroupForm: Bool = false
+    @State private var isPresentingCardFormView: Bool = false
+    @State private var isPresentingCardListView: Bool = false
+    @State private var isPresentingDeleteDialog: Bool = false
     
     let gridColumns = [GridItem(.adaptive(minimum: 450), spacing: 8)]
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
     init(selectedGroup: DMCardGroup) {
+        _groupViewModel = StateObject(wrappedValue: GroupViewModel(selectedGroup: selectedGroup))
         _timerViewModel = StateObject(wrappedValue: TimerViewModel())
         _cardViewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
         self.selectedGroup = selectedGroup
@@ -75,7 +80,31 @@ struct TrackView: View {
                             .labelStyle(.iconOnly)
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("Edit Group", systemImage: "pencil") {
+                            groupViewModel.fetchGroup()
+                            isPresentingGroupForm.toggle()
+                        }
+                        Button("Share Group", systemImage: "square.and.arrow.up") {
+                            shareGroup(selectedGroup)
+                        }
+                        Button("Delete Group", systemImage: "trash", role: .destructive) {
+                            isPresentingDeleteDialog = true
+                        }
+                    } label: {
+                        Label("Group Options", systemImage: "ellipsis.circle")
+                    }
+                }
             }
+        }
+        .sheet(isPresented: $isPresentingGroupForm) {
+            GroupFormView(viewModel: groupViewModel)
+                .presentationDetents([.fraction(0.5)])
+                .onDisappear {
+                    groupViewModel.validationError.removeAll()
+                    groupViewModel.selectedGroup = nil
+                }
         }
         .sheet(isPresented: $isPresentingCardFormView, onDismiss: {
             cardViewModel.resetFields()
@@ -88,6 +117,19 @@ struct TrackView: View {
         }
         .sheet(isPresented: $isPresentingCardListView) {
             CardListView(selectedGroup: selectedGroup)
+        }
+        .alert(isPresented: $isPresentingDeleteDialog) {
+            Alert(
+                title: alertTitle,
+                message: Text("Are you sure you want to delete this group? This cannot be undone."),
+                primaryButton: .destructive(Text("Confirm")) {
+                    groupViewModel.removeGroup(selectedGroup, with: context)
+                    dismiss()
+                },
+                secondaryButton: .cancel {
+                    isPresentingDeleteDialog = false
+                }
+            )
         }
         .onAppear {
             timerViewModel.timerCleanup(for: context, group: selectedGroup)
@@ -360,6 +402,37 @@ struct TrackView: View {
             }
         }
         .padding()
+    }
+    
+    /// Computed property for alert title.
+    private var alertTitle: Text {
+        if (selectedGroup.groupTitle?.isEmpty != nil) {
+            return Text("Delete Group?")
+        } else {
+            return Text("Delete \(selectedGroup.groupTitle ?? "This Group")?")
+        }
+    }
+    
+    /// A function that handles the preparation of the groups for sharing.
+    /// - Parameter group: The group to be shared, accepts type DMCardGroup.
+    private func shareGroup(_ group: DMCardGroup) {
+        do {
+            let tempURL = try groupViewModel.shareGroup(group)
+            let activityVC = UIActivityViewController(
+                activityItems: [tempURL],
+                applicationActivities: nil
+            )
+            
+            // Present sharing UI
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first,
+               let rootVC = window.rootViewController {
+                activityVC.popoverPresentationController?.sourceView = rootVC.view
+                rootVC.present(activityVC, animated: true)
+            }
+        } catch {
+            groupViewModel.warnError.append(error.localizedDescription)
+        }
     }
 }
 
