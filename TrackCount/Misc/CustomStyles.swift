@@ -8,6 +8,14 @@
 
 import SwiftUI
 
+func defaultShape() -> some Shape {
+    if #available(iOS 26.0, *) {
+        return Capsule()
+    } else {
+        return RoundedRectangle(cornerRadius: 8, style: .continuous)
+    }
+}
+
 /// A rounded style with a thin material background and padding.
 struct CustomRoundedStyle: ViewModifier {
     var isInteractive: Bool = false
@@ -113,12 +121,12 @@ extension View {
     }
     
     /// A button style with a liquid glass / tinted background that changes based on a condition.
-    func adaptiveGlassConditionalButton<S: Shape>(condition: Bool, tint: Color, shape: S = Capsule()) -> some View {
+    func adaptiveGlassConditionalButton<S: Shape>(condition: Bool, tint: Color, shape: S = defaultShape()) -> some View {
         self.modifier(AdaptiveGlassConditionalButtonModifier(condition: condition, tint: tint, shape: shape))
     }
     
     /// A button style with a liquid glass / tinted background.
-    func adaptiveGlassButton<S: Shape>(tintStrength: CGFloat = 0.8, tintColor: Color = Color.white, shape: S = Capsule()) -> some View {
+    func adaptiveGlassButton<S: Shape>(tintStrength: CGFloat = 0.8, tintColor: Color = Color.white, shape: S = defaultShape()) -> some View {
         self.modifier(AdaptiveGlassButtonModifier(tintStrength: tintStrength, tint: tintColor, shape: shape))
     }
     
@@ -127,3 +135,4 @@ extension View {
         self.modifier(LegacyDarkTint())
     }
 }
+

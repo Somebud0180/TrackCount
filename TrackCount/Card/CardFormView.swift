@@ -49,6 +49,15 @@ struct CardFormView: View {
                         formView()
                     }
                 }
+                .mask(LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: .white, location: 0.0),
+                        .init(color: .white, location: 0.8),
+                        .init(color: .clear, location: 1.0)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                ).blur(radius: 10))
                 
                 .onChange(of: validateVariables) {
                     if !viewModel.validationError.isEmpty {
@@ -67,11 +76,11 @@ struct CardFormView: View {
                         saveCard()
                     }) {
                         Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
+                            .font(.title2)
                             .frame(maxWidth: .infinity)
-                            .padding()
+                            .foregroundStyle(.white)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+                    .customRoundedStyle(interactive: true, tint: .blue)
                 }
                 .padding()
             }

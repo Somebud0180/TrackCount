@@ -223,8 +223,8 @@ class CardViewModel: ObservableObject {
             if let card = selectedCard {
                 // Update the existing card
                 card.title = newCardTitle
+                card.count = (newCardType == .counter && card.type != .counter) ? 0 : newCardCount // Check card count first due to type check, to avoid reseting an existing counter card
                 card.type = newCardType
-                card.count = newCardType == .counter ? 0 : newCardCount
                 card.state = newCardType == .toggle ? newCardState.prefix(newCardCount).map { CardState(state: $0) } : (newCardType == .timer || newCardType == .timer_custom) ? [CardState(state: false)] : nil
                 card.modifier = newCardType == .counter ? newCardModifier.map { CounterModifier(modifier: $0) } : nil
                 card.buttonText = newCardType == .toggle ? newButtonText.prefix(newCardCount).map { ButtonText(buttonText: $0) } : nil

@@ -95,8 +95,8 @@ struct CardListView: View {
                     .font(.title2)
                     .frame(maxWidth: .infinity)
                     .foregroundStyle(.white)
-                    .customRoundedStyle(interactive: true, tint: .blue)
             }
+            .customRoundedStyle(interactive: true, tint: .blue)
             .navigationTitleViewBuilder {
                 if let title = selectedGroup.groupTitle, !title.isEmpty {
                     Text(title)
