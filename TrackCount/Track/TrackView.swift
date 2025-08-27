@@ -213,7 +213,7 @@ struct TrackView: View {
                                                 .lineLimit(1)
                                         }
                                     }
-                                    .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
+                                    .frame(maxWidth: .infinity, minHeight: 20, maxHeight: 60)
                                     .padding(6)
                                 }
                                 .foregroundStyle(card.secondaryColor?.color ?? .white)
@@ -255,7 +255,7 @@ struct TrackView: View {
                                                 .lineLimit(1)
                                         }
                                     }
-                                    .frame(maxWidth: 120, minHeight: 20, maxHeight: 60)
+                                    .frame(maxWidth: .infinity, minHeight: 20, maxHeight: 60)
                                     .padding(6)
                                 }
                                 .foregroundStyle(card.secondaryColor?.color ?? .white)
