@@ -35,10 +35,17 @@ struct CustomRoundedStyle: ViewModifier {
                     .glassEffect(.regular.tint(tint), in: Capsule())    // Apply a glass background
             }
         } else {
-            content
-                .padding(padding)           // Apply padding
-                .background(.thickMaterial) // Apply a material background
-                .cornerRadius(cornerRadius) // Set corner radius
+            if tint == .gray {
+                content
+                    .padding(padding)           // Apply padding
+                    .background(.thickMaterial) // Apply a tinted background
+                    .cornerRadius(cornerRadius) // Set corner radius
+            } else {
+                content
+                    .padding(padding)           // Apply padding
+                    .background(tint)           // Apply a tinted background
+                    .cornerRadius(cornerRadius) // Set corner radius
+            }
         }
     }
 }
