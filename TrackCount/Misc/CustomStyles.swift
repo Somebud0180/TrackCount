@@ -1,9 +1,8 @@
 //
-//  CustomRoundedStyle.swift
+//  CustomStyles.swift
 //  TrackCount
 //
-//  The custom rounded style used across the interface
-//  Features a thin material for its background and a rounded corner, padded to fit its content in a compact space
+//  The custom styles used across the interface
 //
 
 
