@@ -106,6 +106,7 @@ struct GroupListView: View {
                                 Button(action: { isPresentingGroupForm.toggle() }) {
                                     Label("Add Group", systemImage: "plus.circle")
                                 }
+                                .legacyDarkTint()
                             }
                             
                             ToolbarItem(placement: .navigationBarTrailing) {
@@ -119,6 +120,7 @@ struct GroupListView: View {
                                 } label: {
                                     Image(systemName: "ellipsis.circle")
                                 }
+                                .legacyDarkTint()
                                 .accessibilityIdentifier("Ellipsis Button")
                             }
                         }

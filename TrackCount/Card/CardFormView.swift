@@ -9,6 +9,7 @@ import SwiftUI
 
 /// A view containing the form for creating or editing a card.
 struct CardFormView: View {
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) var dismiss
@@ -73,20 +74,7 @@ struct CardFormView: View {
                     .tint(.blue)
                 }
                 .padding()
-                .frame(maxWidth: .infinity)
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: colorScheme == .light ? Color.secondary : Color.black, location: 0.0),
-                            .init(color: Color.clear, location: 1.0)
-                        ]),
-                        startPoint: .bottom,
-                        endPoint: .top
-                    )
-                    .ignoresSafeArea()
-                )
             }
-            .ignoresSafeArea()
             
             .navigationBarTitle(viewModel.selectedCard == nil ? "Create Card" : "Edit Card", displayMode: .inline)
             .onChange(of: viewModel.newCardType) {
@@ -126,21 +114,33 @@ struct CardFormView: View {
         }()
         
         return VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 4) {
                 // Picker for card type
-                Picker(selection: $viewModel.newCardType) {
-                    ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                        Text(type.formattedName).tag(type)
+                if horizontalSizeClass == .regular {
+                    Picker(selection: $viewModel.newCardType) {
+                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                            Text(type.formattedName).tag(type)
+                                .padding(.vertical)
+                        }
+                    } label: {
+                        Text("Type")
                     }
-                } label: {
-                    Text("Type")
+                    .pickerStyle(.segmented)
+                } else {
+                    Picker(selection: $viewModel.newCardType) {
+                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                            Text(type.formattedName).tag(type)
+                        }
+                    } label: {
+                        Text("Type")
+                    }
+                    .pickerStyle(.menu)
                 }
                 
                 // Definition for selected card type
                 Text(viewModel.newCardType.typeDescription)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .padding(.leading, 10)
             }
             
             // Text field for card title
@@ -370,3 +370,4 @@ extension DMStoredCard.Types {
     CardFormView(viewModel: testViewModel)
         .modelContainer(for: DMCardGroup.self)
 }
+

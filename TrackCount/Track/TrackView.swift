@@ -73,12 +73,14 @@ struct TrackView: View {
                         Label("Add Card", systemImage: "plus.circle")
                             .labelStyle(.iconOnly)
                     }
+                    .legacyDarkTint()
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { isPresentingCardListView = true }) {
                         Label("Manage Cards", systemImage: "tablecells.badge.ellipsis")
                             .labelStyle(.iconOnly)
                     }
+                    .legacyDarkTint()
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
@@ -95,6 +97,7 @@ struct TrackView: View {
                     } label: {
                         Label("Group Options", systemImage: "ellipsis.circle")
                     }
+                    .legacyDarkTint()
                 }
             }
         }
@@ -437,7 +440,7 @@ struct TrackView: View {
 }
 
 #Preview {
-    var exampleGroup = DMCardGroup(index: 0, groupTitle: "Test", groupSymbol: "", cards: [])
+    let exampleGroup = DMCardGroup(index: 0, groupTitle: "Test", groupSymbol: "", cards: [])
     let exampleCards: [DMStoredCard] = [
         DMStoredCard(index: 0, type: .counter, title: "Test Counter", count: 0, modifier: [1, 5, 10], primaryColor: .red, secondaryColor: .white, group: exampleGroup),
         DMStoredCard(index: 1, type: .toggle, title: "Test Toggle", count: 5, state: Array(repeating: true, count: 5), buttonText: Array(repeating: "Test", count: 5), symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow, group: exampleGroup),

@@ -91,6 +91,20 @@ struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
     }
 }
 
+/// Legacy Dark Foreground Modifier for iOS versions below 26
+struct LegacyDarkTint: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+        } else {
+            content
+                .tint(colorScheme == .dark ? .white : .primary)
+        }
+    }
+}
+
 // Extend View for easier usage
 extension View {
     /// A rounded style with a thin material background and padding.
@@ -106,5 +120,10 @@ extension View {
     /// A button style with a liquid glass / tinted background.
     func adaptiveGlassButton<S: Shape>(tintStrength: CGFloat = 0.8, tintColor: Color = Color.white, shape: S = Capsule()) -> some View {
         self.modifier(AdaptiveGlassButtonModifier(tintStrength: tintStrength, tint: tintColor, shape: shape))
+    }
+    
+    /// A foreground style that ensures readability for iOS versions below 26.
+    func legacyDarkTint() -> some View {
+        self.modifier(LegacyDarkTint())
     }
 }
