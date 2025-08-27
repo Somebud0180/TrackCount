@@ -212,32 +212,12 @@ struct GroupListView: View {
         return Text("Delete Group?")
     }
     
-    
-    /// A function that handles the preparation of the groups for sharing.
-    /// - Parameter group: The group to be shared, accepts type DMCardGroup.
-    private func shareGroup(_ group: DMCardGroup) {
-        do {
-            let tempURL = try viewModel.shareGroup(group)
-            let activityVC = UIActivityViewController(
-                activityItems: [tempURL],
-                applicationActivities: nil
-            )
-            
-            // Present sharing UI
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first,
-               let rootVC = window.rootViewController {
-                activityVC.popoverPresentationController?.sourceView = rootVC.view
-                rootVC.present(activityVC, animated: true)
-            }
-        } catch {
-            viewModel.warnError.append(error.localizedDescription)
-        }
-    }
-    
     /// A function that contains the buttons used in the context menu for the cards.
     private func contextMenu(for group: DMCardGroup) -> some View {
-        Group {
+        // Safely get a share URL, disabling if unavailable
+        let shareURL = try? viewModel.shareGroup(group)
+        
+        return Group {
             NavigationLink(destination: CardListView(selectedGroup: group)) {
                 Label("Manage Cards", systemImage: "tablecells.badge.ellipsis")
                     .labelStyle(.titleAndIcon)
@@ -247,9 +227,9 @@ struct GroupListView: View {
                 viewModel.fetchGroup()
                 isPresentingGroupForm.toggle()
             }
-            Button("Share Group", systemImage: "square.and.arrow.up") {
-                shareGroup(group)
-            }
+            ShareLink(item: shareURL ?? URL(fileURLWithPath: "/")) {
+                Label("Share Group", systemImage: "square.and.arrow.up")
+            }.disabled(shareURL == nil)
             Button("Delete Group", systemImage: "trash", role: .destructive) {
                 selectedGroup = group
                 isPresentingDeleteDialog = true

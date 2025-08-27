@@ -35,7 +35,7 @@ struct CustomRoundedStyle: ViewModifier {
                     .glassEffect(.regular.tint(tint), in: Capsule())    // Apply a glass background
             }
         } else {
-            if tint == .gray {
+            if (tint == .gray || tint == .white) {
                 content
                     .padding(padding)           // Apply padding
                     .background(.thickMaterial) // Apply a tinted background

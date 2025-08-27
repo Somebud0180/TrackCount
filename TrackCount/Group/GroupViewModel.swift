@@ -145,16 +145,8 @@ class GroupViewModel: ObservableObject {
         
         let fileName = sanitizedTitle.isEmpty ? "shared_group.trackcount" : "\(sanitizedTitle).trackcount"
         
-        // Create temporary URL
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathComponent(fileName)
-        
-        // Ensure directory exists
-        try FileManager.default.createDirectory(
-            at: tempURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
+        // Use top-level temp directory, not a nested folder
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         
         // Write data
         let shareData = try group.encodeForSharing()

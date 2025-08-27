@@ -38,6 +38,9 @@ struct TrackView: View {
     }
     
     var body: some View {
+        // Safely get a share URL for the group
+        let shareURL = try? groupViewModel.shareGroup(selectedGroup)
+        
         NavigationStack {
             ScrollView {
                 Group {
@@ -88,9 +91,9 @@ struct TrackView: View {
                             groupViewModel.fetchGroup()
                             isPresentingGroupForm.toggle()
                         }
-                        Button("Share Group", systemImage: "square.and.arrow.up") {
-                            shareGroup(selectedGroup)
-                        }
+                        ShareLink(item: shareURL ?? URL(fileURLWithPath: "/")) {
+                            Label("Share Group", systemImage: "square.and.arrow.up")
+                        }.disabled(shareURL == nil)
                         Button("Delete Group", systemImage: "trash", role: .destructive) {
                             isPresentingDeleteDialog = true
                         }
@@ -413,28 +416,6 @@ struct TrackView: View {
             return Text("Delete Group?")
         } else {
             return Text("Delete \(selectedGroup.groupTitle ?? "This Group")?")
-        }
-    }
-    
-    /// A function that handles the preparation of the groups for sharing.
-    /// - Parameter group: The group to be shared, accepts type DMCardGroup.
-    private func shareGroup(_ group: DMCardGroup) {
-        do {
-            let tempURL = try groupViewModel.shareGroup(group)
-            let activityVC = UIActivityViewController(
-                activityItems: [tempURL],
-                applicationActivities: nil
-            )
-            
-            // Present sharing UI
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first,
-               let rootVC = window.rootViewController {
-                activityVC.popoverPresentationController?.sourceView = rootVC.view
-                rootVC.present(activityVC, animated: true)
-            }
-        } catch {
-            groupViewModel.warnError.append(error.localizedDescription)
         }
     }
 }
