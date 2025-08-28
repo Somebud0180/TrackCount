@@ -142,23 +142,26 @@ struct CardFormView: View {
                 Text("Leave at 0 to disable")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
-            
-            
-            ForEach(0..<3, id: \.self) { index in
-                VStack(alignment: .leading) {
-                    TextField("Modifier \(index + 1)", text: $viewModel.newCardModifierText[index])
-                        .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
-                        .errorOverlay("ModifierLessThanOne", with: viewModel.validationError)
-                        .keyboardType(.numberPad)
-                        .onSubmit {
-                            viewModel.initCounter()
-                        }
+                
+                
+                ForEach(0..<3, id: \.self) { index in
+                    VStack(alignment: .leading) {
+                        TextField("Modifier \(index + 1)", text: $viewModel.newCardModifierText[index])
+                            .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                            .errorOverlay("Modifier\(index)Negative", with: viewModel.validationError, warn: true)
+                            .errorOverlay("Modifier\(index)MoreThanMax", with: viewModel.validationError, warn: true)
+                            .keyboardType(.numberPad)
+                            .onSubmit {
+                                viewModel.initCounter()
+                            }
+                        errorMessageView("Modifier\(index)Negative", with: viewModel.validationError, message: "Modifier cannot be negative", warn: true)
+                        errorMessageView("Modifier\(index)MoreThanMax", with: viewModel.validationError, message: "Modifier cannot exceed 100,000", warn: true)
+                    }
                 }
-            }
+            }.errorOverlay("ModifierLessThanOne", with: viewModel.validationError, isRectangle: true)
             
             
-            errorMessageView("ModifierLessThanOne", with: viewModel.validationError, message: "At least one modifier must be greater than zero")
+            errorMessageView("ModifierLessThanOne", with: viewModel.validationError, message: "At least one modifier must be set")
         }
     }
     
@@ -368,6 +371,14 @@ struct CardFormView: View {
         // This helps in making sure that the text fields have updated their bound variables before saving.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             viewModel.saveCard(with: context)
+            
+            // When attempting save, perform counter card increment min max application
+            for (i, value) in viewModel.newCardModifierText.enumerated() {
+                let intValue = Int(value) ?? 0
+                let clamped = min(max(intValue, 0), viewModel.maxModifierLimit)
+                viewModel.newCardModifierText[i] = "\(clamped)"
+            }
+                
             if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
                 dismiss()
             }

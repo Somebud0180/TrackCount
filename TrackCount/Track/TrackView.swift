@@ -152,201 +152,184 @@ struct TrackView: View {
         Group {
             ZStack {
                 if #available(iOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: 25)
-                        .foregroundStyle(.thickMaterial)
-                        .shadow(radius: 5)
-                    if card.type == .counter {
-                        counterCard(card)
-                    } else if card.type == .toggle {
-                        toggleCard(card)
-                    } else if card.type == .timer || card.type == .timer_custom {
-                        timerCard(card)
-                            .transition(.scale.combined(with: .opacity))
+                    GlassEffectContainer {
+                        baseCard(card)
                     }
                 } else {
-                    RoundedRectangle(cornerRadius: 25)
-                        .foregroundStyle(.thickMaterial)
-                        .shadow(radius: 5)
-                    if card.type == .counter {
-                        counterCard(card)
-                    } else if card.type == .toggle {
-                        toggleCard(card)
-                    } else if card.type == .timer || card.type == .timer_custom {
-                        timerCard(card)
-                            .transition(.scale.combined(with: .opacity))
-                    }
+                    baseCard(card)
                 }
-            }
-            .padding()
+            }.padding()
+        }
+    }
+    
+    private func baseCard(_ card: DMStoredCard) -> some View {
+        Group {
+            RoundedRectangle(cornerRadius: 25)
+                .foregroundStyle(.thickMaterial)
+                .shadow(radius: 5)
+            
+            VStack(alignment: .center, spacing: 10) {
+                Text(card.title)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
+                    .accessibilityHint("Counter Card")
+                
+                Spacer()
+                
+                if card.type == .counter {
+                    counterCard(card)
+                } else if card.type == .toggle {
+                    toggleCard(card)
+                } else if card.type == .timer || card.type == .timer_custom {
+                    timerCard(card)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }.padding()
         }
     }
     
     /// Creates the counter card contents from the inputted card.
     private func counterCard(_ card: DMStoredCard) -> some View {
-        VStack(alignment: .center, spacing: 10) {
-            Text(card.title)
-                .font(.title2)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-                .accessibilityHint("Counter Card")
+        VStack {
+            buttonRow(
+                card: card,
+                operation: +,
+                symbol: "plus",
+                accessibilityLabel: "Increase counter",
+                accessibilityHintPrefix: "Increase"
+            )
             
-            Spacer()
+            // Current Count
+            Text(String(card.count))
+                .font(.largeTitle)
+                .contentTransition(.numericText())
+                .animation(.spring, value: card.count)
             
-            Group {
-                HStack {
-                    if let modifiers = card.modifier?.map({ $0.modifier }) {
-                        ForEach(0..<modifiers.count, id: \.self) { index in
-                            if !(modifiers[index] <= 0) {
-                                Button(action: {
-                                    withAnimation(.spring) {
-                                        card.count += modifiers[index]
-                                    }
-                                }) {
-                                    HStack(spacing: 2) {
-                                        Image(systemName: "plus")
-                                            .font(.body)
-                                            .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                                            .minimumScaleFactor(0.5)
-                                            .frame(height: 25)
-                                        if modifiers[index] != 1 {
-                                            Text("\(modifiers[index])")
-                                                .font(.title3)
-                                                .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                                                .lineLimit(1)
-                                        }
-                                    }
-                                    .frame(maxWidth: .infinity, minHeight: 20, maxHeight: 60)
-                                    .padding(6)
+            buttonRow(
+                card: card,
+                operation: -,
+                symbol: "minus",
+                accessibilityLabel: "Reduce counter",
+                accessibilityHintPrefix: "Reduce"
+            )
+        }
+        .frame(maxWidth: 400)
+    }
+    
+    /// Creates a row of buttons for modifying the counter.
+    @ViewBuilder private func buttonRow(
+        card: DMStoredCard,
+        operation: @escaping (Int, Int) -> Int,
+        symbol: String,
+        accessibilityLabel: String,
+        accessibilityHintPrefix: String
+    ) -> some View {
+        HStack {
+            if let modifiers = card.modifier?.map({ $0.modifier }) {
+                ForEach(0..<modifiers.count, id: \.self) { index in
+                    if modifiers[index] > 0 {
+                        let willOverflow = operation(1, 1) == 2
+                        ? card.count > Int.max - modifiers[index]
+                        : card.count < Int.min + modifiers[index]
+                        
+                        Button(action: {
+                            // Handle potential overflow and clamp the result within Int.min...Int.max
+                            let newValue = operation(card.count, modifiers[index])
+                            card.count = min(Int.max, max(Int.min, newValue))
+                        }) {
+                            HStack(spacing: 2) {
+                                Image(systemName: symbol)
+                                    .font(.body)
+                                    .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
+                                    .minimumScaleFactor(0.5)
+                                    .frame(height: 25)
+                                if modifiers[index] != 1 {
+                                    Text("\(modifiers[index])")
+                                        .font(.title3)
+                                        .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
+                                        .lineLimit(1)
                                 }
-                                .foregroundStyle(card.secondaryColor?.color ?? .white)
-                                .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
-                                .accessibilityLabel("Increase counter")
-                                .accessibilityHint("Increase \(card.title) by \(modifiers[index])")
                             }
+                            .frame(maxWidth: .infinity, minHeight: 20, maxHeight: 60)
+                            .padding(6)
                         }
+                        .disabled(willOverflow)
+                        .foregroundStyle(card.secondaryColor?.color ?? .white)
+                        .adaptiveGlassButton(tintColor: willOverflow ? .gray : card.primaryColor?.color ?? .blue)
+                        .accessibilityLabel(accessibilityLabel)
+                        .accessibilityHint("\(accessibilityHintPrefix) \(card.title) by \(modifiers[index])")
                     }
                 }
-                .padding(.horizontal, 3)
-                
-                // Current Count
-                Text(String(card.count))
-                    .font(.largeTitle)
-                    .contentTransition(.numericText())
-                    .animation(.spring, value: card.count)
-                
-                // Similar updates for decrement buttons
-                HStack {
-                    if let modifiers = card.modifier?.map({ $0.modifier }) {
-                        ForEach(0..<modifiers.count, id: \.self) { index in
-                            if !(modifiers[index] <= 0) {
-                                Button(action: {
-                                    withAnimation(.spring) {
-                                        card.count -= modifiers[index]
-                                    }
-                                }) {
-                                    HStack(spacing: 2) {
-                                        Image(systemName: "minus")
-                                            .font(.body)
-                                            .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                                            .minimumScaleFactor(0.5)
-                                            .frame(height: 25)
-                                        if modifiers[index] != 1 {
-                                            Text("\(modifiers[index])")
-                                                .font(.title3)
-                                                .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                                                .lineLimit(1)
-                                        }
-                                    }
-                                    .frame(maxWidth: .infinity, minHeight: 20, maxHeight: 60)
-                                    .padding(6)
-                                }
-                                .foregroundStyle(card.secondaryColor?.color ?? .white)
-                                .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
-                                .accessibilityLabel("Reduce counter")
-                                .accessibilityHint("Reduce \(card.title) by \(modifiers[index])")
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 3)
             }
         }
-        .padding()
     }
         
     /// Creates the toggle card contents from the inputted card.
     private func toggleCard(_ card: DMStoredCard) -> some View {
-        VStack(alignment: .center, spacing: 10) {
-            Text(card.title)
-                .font(.title2)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-                .accessibilityHint("Toggle Card")
-            
-            Spacer()
-            
+        Group {
             LazyVGrid(columns: buttonColumns) {
                 ForEach(0..<card.count, id: \.self) { index in
                     toggleButton(card, id: index)
                 }
             }
-            Spacer()
         }
-        .padding()
+        .frame(maxHeight: .infinity)
     }
     
     /// Creates buttons with data from the inputted card and index.
     private func toggleButton(_ card: DMStoredCard, id: Int) -> some View {
-        // Safely access state array
-        let isActive = card.state?.indices.contains(id) == true ? card.state?[id].state : false
-        let buttonText = card.buttonText?[id].buttonText
+        let isActive = card.state?[id].state ?? false
+        let buttonText = card.buttonText?[id].buttonText ?? ""
+        let symbolName = card.symbol ?? "questionmark.circle"
         
         return Button(action: {
-            // Safely toggle state
             if card.state?.indices.contains(id) == true {
                 withAnimation {
                     card.state?[id].state.toggle()
                 }
             }
         }) {
-            HStack {
-                if (buttonText?.isEmpty == false) {
-                    Text(buttonText ?? "")
-                        .font(.body)
-                        .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.accessibility1)
-                        .minimumScaleFactor(0.3)
-                        .lineLimit(2)
-                    
-                    Image(systemName: card.symbol ?? "questionmark.circle")
-                        .font(.footnote)
-                        .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
-                        .minimumScaleFactor(0.2)
+            Group {
+                if !buttonText.isEmpty {
+                    HStack {
+                        Text(buttonText)
+                            .font(.body)
+                            .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.accessibility1)
+                            .minimumScaleFactor(0.3)
+                            .lineLimit(2)
+                        Image(systemName: symbolName)
+                            .font(.footnote)
+                            .dynamicTypeSize(DynamicTypeSize.xSmall...DynamicTypeSize.xxxLarge)
+                            .minimumScaleFactor(0.2)
+                    }
                 } else {
-                    Image(systemName: card.symbol ?? "questionmark.circle")
-                        .font(.body)
-                        .minimumScaleFactor(0.2)
+                    VStack {
+                        Spacer()
+                        Image(systemName: symbolName)
+                            .font(.body)
+                            .minimumScaleFactor(0.2)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .foregroundStyle(isActive ?? false ? card.secondaryColor?.color ?? .white : .black)
-            .frame(maxWidth: .infinity, minHeight: 20, maxHeight: .infinity)
+            .foregroundStyle(isActive ? card.secondaryColor?.color ?? .white : .black)
             .padding(4)
         }
-        .adaptiveGlassConditionalButton(condition: isActive ?? false, tint: card.primaryColor?.color ?? .blue, shape: RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity, minHeight: 20, maxHeight: .infinity)
+        .adaptiveGlassConditionalButton(condition: isActive, tint: card.primaryColor?.color ?? .blue, shape: RoundedRectangle(cornerRadius: 12))
     }
     
     /// Creates the timer card contents from the inputted card.
     private func timerCard(_ card: DMStoredCard) -> some View {
-        VStack(alignment: .center, spacing: 10) {
-            Text(card.title)
-                .font(.title2)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-                .accessibilityHint("Timer Card")
-            
+        Group {
             if card.type == .timer_custom && card.state?[0].state == false  {
                 VStack {
                     Text("Set Timer")
                         .font(.headline)
+                    
+                    Spacer()
                     
                     TimeWheelPickerView(
                         timerArray: Binding(
@@ -365,6 +348,8 @@ struct TrackView: View {
                     )
                     .frame(height: 150)
                     
+                    Spacer()
+                    
                     Button(action: {
                         card.state?[0] = CardState(state: true)
                         timerViewModel.startTimer(card)
@@ -377,8 +362,6 @@ struct TrackView: View {
                     .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
                 }
             } else if card.type == .timer && card.state?[0].state == false {
-                Spacer()
-                
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                     ForEach(0..<card.count, id: \.self) { index in
                         Button(action: {
@@ -409,7 +392,6 @@ struct TrackView: View {
                 timerViewModel.activeTimerView(card)
             }
         }
-        .padding()
     }
     
     /// Computed property for alert title.
@@ -435,3 +417,4 @@ struct TrackView: View {
     
     return TrackView(selectedGroup: exampleGroup)
 }
+

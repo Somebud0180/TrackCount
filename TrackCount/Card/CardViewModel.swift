@@ -45,6 +45,7 @@ class CardViewModel: ObservableObject {
     
     // Counter limit
     let minModifierLimit = 0
+    let maxModifierLimit = 100000
     
     // Button limit
     let buttonTextLimit = 20
@@ -309,11 +310,13 @@ class CardViewModel: ObservableObject {
                 for (index, modifierValue) in newCardModifier.enumerated() {
                     if modifierValue < 0 {
                         validationError.append("Modifier\(index)Negative")
+                    } else if modifierValue > maxModifierLimit {
+                        validationError.append("Modifier\(index)MoreThanMax")
                     }
                 }
                 if !newCardModifier.contains(where: { $0 > 0 }) {
                     validationError.append("ModifierLessThanOne")
-                }
+                } 
             } else if newCardType == .toggle {
                 if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {
                     validationError.append("SymbolEmpty")
