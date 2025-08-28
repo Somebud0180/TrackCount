@@ -129,17 +129,14 @@ class GlobalTimerManager: ObservableObject {
                 // Cancel any scheduled notification since timer has completed
                 notificationManager.cancelTimerNotification(for: uuid)
                 
-                // Only trigger completion notification if we're NOT in TrackView
-                // This prevents duplicate audio when TimerViewModel is actively handling completions
-                if !isInTrackView {
-                    notificationManager.handleTimerCompletion(
-                        cardUUID: uuid,
-                        cardTitle: state.cardTitle,
-                        groupTitle: state.groupTitle,
-                        ringtone: state.ringtone
-                    )
-                }
-                // If we ARE in TrackView, let TimerViewModel handle the completion
+                // Always trigger completion notification - GlobalTimerManager handles ALL completions
+                // This ensures ringtones play regardless of which view you're in
+                notificationManager.handleTimerCompletion(
+                    cardUUID: uuid,
+                    cardTitle: state.cardTitle,
+                    groupTitle: state.groupTitle,
+                    ringtone: state.ringtone
+                )
             }
         }
         

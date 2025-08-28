@@ -143,12 +143,18 @@ struct TrackView: View {
             // Set navigation state to indicate we're in TrackView
             GlobalTimerManager.shared.setNavigationState(isInTrackView: true, groupUUID: selectedGroup.uuid)
             
+            // Cancel all pending timer notifications since user is actively viewing timers
+            NotificationManager.shared.cancelAllPendingTimerNotifications()
+            
             // Load any persisted timers for this group
             timerViewModel.loadPersistedTimers(for: selectedGroup)
         }
         .onDisappear {
             // Set navigation state to indicate we're leaving TrackView
             GlobalTimerManager.shared.setNavigationState(isInTrackView: false, groupUUID: nil)
+            
+            // Reschedule notifications for any active timers in this group
+            NotificationManager.shared.rescheduleNotificationsForGroup(groupUUID: selectedGroup.uuid)
             
             // Only cleanup audio and UI state, not the timer data
             timerViewModel.cleanupAudioOnly()

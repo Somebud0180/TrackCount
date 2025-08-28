@@ -43,15 +43,16 @@ class NotificationManager: NSObject, ObservableObject {
         
         let content = UNMutableNotificationContent()
         content.title = "Timer Complete"
-        content.body = "\(groupTitle)'s \(cardTitle) timer has finished!"
-        content.badge = 1
         
-        // Try to use custom sound if available, otherwise use default
-        if let soundURL = getSoundURL(for: ringtone) {
-            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundURL.lastPathComponent))
+        // Only include group name if it's not empty or blank
+        if groupTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            content.body = "\(cardTitle) timer has finished!"
         } else {
-            content.sound = .default
+            content.body = "\(groupTitle)'s \(cardTitle) timer has finished!"
         }
+        
+        content.badge = 1
+        content.sound = .default
         
         // Add user info for identification
         content.userInfo = [
@@ -105,34 +106,71 @@ class NotificationManager: NSObject, ObservableObject {
         }
     }
     
-    private func getSoundURL(for ringtone: String) -> URL? {
-        // Try to find the sound file in the app bundle
-        if let bundleURL = Bundle.main.url(forResource: ringtone, withExtension: "wav") {
-            return bundleURL
+    /// Cancels all pending timer notifications (for when entering TrackView)
+    func cancelAllPendingTimerNotifications() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        print("NotificationManager: Cancelled all pending timer notifications (entered TrackView)")
+    }
+    
+    /// Reschedules notifications for all active timers in a group (for when leaving TrackView)
+    func rescheduleNotificationsForGroup(groupUUID: UUID) {
+        // Get all active timers from GlobalTimerManager and reschedule their notifications
+        let globalTimerManager = GlobalTimerManager.shared
+        
+        for (cardUUID, timerState) in globalTimerManager.persistentTimerStates {
+            // Only reschedule for timers in this group that are still running
+            if timerState.groupUUID == groupUUID &&
+                timerState.isRunning &&
+                timerState.pausedAt == nil &&
+                timerState.timeRemaining > 0 {
+                
+                scheduleTimerNotification(
+                    for: cardUUID,
+                    cardTitle: timerState.cardTitle,
+                    groupTitle: timerState.groupTitle,
+                    timeRemaining: timerState.timeRemaining,
+                    ringtone: timerState.ringtone
+                )
+            }
         }
-        
-        // iOS notification sounds must be:
-        // - 30 seconds or less in duration
-        // - In Linear PCM or IMA4 (IMA/ADPCM) format
-        // - Packaged in a .caf, .aif, or .wav container file
-        // - Located in the main bundle
-        
-        // For now, return nil to use default notification sound
-        // Custom ringtones will play when the app is active via the regular audio system
-        return nil
+        print("NotificationManager: Rescheduled notifications for group \(groupUUID) (left TrackView)")
     }
     
     func handleTimerCompletion(cardUUID: UUID, cardTitle: String, groupTitle: String, ringtone: String) {
-        let isInBackground = UIApplication.shared.applicationState != .active
-        let isNotInTrackView = !GlobalTimerManager.shared.isInTrackView
+        let appState = UIApplication.shared.applicationState
+        let isInBackground = appState != .active
         
-        if isInBackground {
-            // App is completely backgrounded - trigger immediate notification
+        // Get the group UUID for this timer from GlobalTimerManager
+        let globalTimerManager = GlobalTimerManager.shared
+        let timerGroupUUID = globalTimerManager.persistentTimerStates[cardUUID]?.groupUUID
+        
+        // Check if user is viewing the same group where this timer completed
+        let isViewingSameGroup = globalTimerManager.isInTrackView &&
+        globalTimerManager.currentGroupUUID == timerGroupUUID
+        
+        print("NotificationManager: Timer completion for \(cardTitle)")
+        print("NotificationManager: App state is \(appState.rawValue) (0=active, 1=inactive, 2=background)")
+        print("NotificationManager: Is in background: \(isInBackground)")
+        print("NotificationManager: Is in TrackView: \(globalTimerManager.isInTrackView)")
+        print("NotificationManager: Current group: \(globalTimerManager.currentGroupUUID?.uuidString ?? "none")")
+        print("NotificationManager: Timer group: \(timerGroupUUID?.uuidString ?? "none")")
+        print("NotificationManager: Is viewing same group: \(isViewingSameGroup)")
+        
+        if isInBackground || !isViewingSameGroup {
+            // Show notification if app is backgrounded OR if user is not viewing this timer's group
+            print("NotificationManager: Showing notification for \(cardTitle) (background: \(isInBackground), different group: \(!isViewingSameGroup))")
             let content = UNMutableNotificationContent()
             content.title = "Timer Complete"
-            content.body = "\(groupTitle)'s \(cardTitle) timer has finished!"
+            
+            // Only include group name if it's not empty or blank
+            if groupTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                content.body = "\(cardTitle) timer has finished!"
+            } else {
+                content.body = "\(groupTitle)'s \(cardTitle) timer has finished!"
+            }
+            
             content.badge = 1
-            content.sound = .default // Always use default sound for background notifications
+            content.sound = .default // Always use default sound for notifications
             
             content.userInfo = [
                 "timerCardUUID": cardUUID.uuidString,
@@ -150,28 +188,17 @@ class NotificationManager: NSObject, ObservableObject {
             
             UNUserNotificationCenter.current().add(request) { error in
                 if let error = error {
-                    print("Error showing background completion notification: \(error)")
+                    print("Error showing completion notification: \(error)")
                 } else {
-                    print("Background timer completion notification sent for \(cardTitle)")
+                    print("Timer completion notification sent for \(cardTitle)")
                 }
             }
-        } else if isNotInTrackView {
-            // App is active but user is not in TrackView - play custom ringtone via TimerViewModel
-            // Post a notification that the TimerViewModel can handle to play the custom sound
-            DispatchQueue.main.async {
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("TimerCompletedInApp"),
-                    object: nil,
-                    userInfo: [
-                        "cardUUID": cardUUID,
-                        "cardTitle": cardTitle,
-                        "groupTitle": groupTitle,
-                        "ringtone": ringtone
-                    ]
-                )
-            }
+        } else {
+            // App is active and user is viewing the same group - directly play ringtone via AudioPlayerManager
+            print("NotificationManager: App is active and viewing same group, calling AudioPlayerManager for \(cardTitle)")
+            AudioPlayerManager.shared.playTimerRingtone(for: cardUUID, ringtone: ringtone)
+            print("NotificationManager: Called AudioPlayerManager.playTimerRingtone for \(cardTitle)")
         }
-        // If in TrackView, the TimerViewModel will handle completion directly
     }
 }
 
@@ -182,7 +209,34 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Show notification even when app is in foreground
+        // Check if this is a timer notification and if user is viewing the same group
+        let userInfo = notification.request.content.userInfo
+        
+        if let cardUUIDString = userInfo["timerCardUUID"] as? String,
+           let cardUUID = UUID(uuidString: cardUUIDString) {
+            
+            // Get the group UUID for this timer from GlobalTimerManager
+            let globalTimerManager = GlobalTimerManager.shared
+            let timerGroupUUID = globalTimerManager.persistentTimerStates[cardUUID]?.groupUUID
+            
+            // Check if user is viewing the same group where this timer completed
+            let isViewingSameGroup = globalTimerManager.isInTrackView &&
+            globalTimerManager.currentGroupUUID == timerGroupUUID
+            
+            print("NotificationManager: willPresent - timer: \(cardUUIDString)")
+            print("NotificationManager: willPresent - in TrackView: \(globalTimerManager.isInTrackView)")
+            print("NotificationManager: willPresent - viewing same group: \(isViewingSameGroup)")
+            
+            if isViewingSameGroup {
+                // User is viewing the same group - suppress the notification
+                print("NotificationManager: Suppressing notification for timer in currently viewed group")
+                completionHandler([])
+                return
+            }
+        }
+        
+        // Show notification for timers from other groups or non-timer notifications
+        print("NotificationManager: Showing notification")
         completionHandler([.alert, .sound, .badge])
     }
     

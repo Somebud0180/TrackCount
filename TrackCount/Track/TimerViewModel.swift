@@ -75,12 +75,10 @@ class TimerViewModel: ObservableObject {
                     timerStates[cardUUID] = .running
                     // Don't update lastTickTime here to avoid conflicts
                 } else if globalState.timeRemaining <= 0 {
-                    // Handle completed timers that finished while app was closed
+                    // Timer completed while app was closed - just update UI state
+                    // Don't call handleTimerCompletion to avoid double audio playback
                     timerStates[cardUUID] = .stopped
                     displayValues[cardUUID] = 0
-                    if let card = storedCards[cardUUID] {
-                        handleTimerCompletion(card)
-                    }
                 } else {
                     timerStates[cardUUID] = .stopped
                 }
@@ -270,11 +268,6 @@ class TimerViewModel: ObservableObject {
     
     /// Updates timer countdown and syncs with global state
     private func updateAllTimers() {
-        // If we're in TrackView, let the global timer manager handle updates to avoid conflicts
-        if globalTimerManager.isInTrackView {
-            return
-        }
-        
         let currentTime = Date()
         
         for (uuid, state) in timerStates {
@@ -286,10 +279,31 @@ class TimerViewModel: ObservableObject {
             let currentValue = displayValues[uuid] ?? 0
             let newValue = max(0, currentValue - elapsed)
             
+            // Always update display values for smooth countdown
             displayValues[uuid] = newValue
             lastTickTime[uuid] = currentTime
             
-            // Update global timer state
+            // Check for completion BEFORE updating global state
+            if newValue <= 0 && currentValue > 0 {
+                // Timer just completed - handle it directly when in TrackView
+                self.timerStates[uuid] = .stopped
+                
+                // Get ringtone for completion
+                let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
+                
+                // If in TrackView, directly call NotificationManager since GlobalTimerManager won't detect completion
+                if globalTimerManager.isInTrackView {
+                    print("TimerViewModel: Timer completed in TrackView, directly calling NotificationManager")
+                    NotificationManager.shared.handleTimerCompletion(
+                        cardUUID: uuid,
+                        cardTitle: card.title,
+                        groupTitle: card.group?.groupTitle ?? "Group",
+                        ringtone: ringtone
+                    )
+                }
+            }
+            
+            // Update global timer state so it's synchronized
             let timerIndex = selectedTimerIndex[uuid] ?? 0
             let totalTime = activeTimerValues[uuid] ?? newValue
             globalTimerManager.saveTimerState(
@@ -298,12 +312,11 @@ class TimerViewModel: ObservableObject {
                 timeRemaining: newValue,
                 totalTime: totalTime,
                 timerIndex: timerIndex,
-                isRunning: newValue > 0
+                isRunning: newValue > 0,
+                cardTitle: card.title,
+                groupTitle: card.group?.groupTitle ?? "Group",
+                ringtone: (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
             )
-            
-            if newValue <= 0 {
-                handleTimerCompletion(card)
-            }
         }
     }
     

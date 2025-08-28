@@ -10,16 +10,21 @@ import SwiftData
 
 @main
 struct TrackCountApp: App {
-    // Initialize the notification manager when app starts
+    // Initialize managers when app starts - order matters for dependencies
+    private let audioPlayerManager = AudioPlayerManager.shared // Initialize first
     private let notificationManager = NotificationManager.shared
     private let globalTimerManager = GlobalTimerManager.shared
-    private let audioPlayerManager = AudioPlayerManager.shared // Add centralized audio manager
     
     var body: some Scene {
         WindowGroup {
             HomeView()
                 .modelContainer(for: [DMStoredCard.self, DMCardGroup.self])
                 .onAppear {
+                    // Ensure all managers are properly initialized
+                    _ = audioPlayerManager // Force initialization
+                    _ = notificationManager
+                    _ = globalTimerManager
+                    
                     // Request notification permissions when app first appears
                     notificationManager.requestNotificationPermission()
                     

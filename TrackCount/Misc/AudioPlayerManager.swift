@@ -18,15 +18,18 @@ class AudioPlayerManager: ObservableObject {
     @Published var player: AVAudioPlayer?
     
     private init() {
-        // Listen for timer completion notifications
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleTimerCompletion(_:)),
-            name: NSNotification.Name("TimerCompletedInApp"),
-            object: nil
-        )
+        // Initialize audio session immediately to prevent FigApplicationStateMonitor errors
+        // This "primes" the audio session so first timer completions work properly
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, options: .duckOthers)
+            print("AudioPlayerManager: Audio session category set successfully during init")
+        } catch {
+            print("AudioPlayerManager: Error setting initial audio session category: \(error)")
+        }
         
-        // Listen for timer stop requests
+        // Remove timer completion notification listener since NotificationManager calls us directly
+        // Only keep the stop audio notifications for cleanup purposes
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleStopTimerAudio(_:)),
@@ -43,14 +46,6 @@ class AudioPlayerManager: ObservableObject {
         )
     }
     
-    @objc private func handleTimerCompletion(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let cardUUID = userInfo["cardUUID"] as? UUID,
-              let ringtone = userInfo["ringtone"] as? String else { return }
-        
-        playTimerRingtone(for: cardUUID, ringtone: ringtone)
-    }
-    
     @objc private func handleStopTimerAudio(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
               let cardUUID = userInfo["cardUUID"] as? UUID else { return }
@@ -63,11 +58,13 @@ class AudioPlayerManager: ObservableObject {
     }
     
     func playTimerRingtone(for cardUUID: UUID, ringtone: String) {
+        print("AudioPlayerManager: Attempting to play ringtone '\(ringtone)' for card \(cardUUID)")
+        
         // Always clean up existing audio for this card first
         stopTimerRingtone(for: cardUUID)
         
         guard let asset = NSDataAsset(name: ringtone) else {
-            print("Data asset not found for: \(ringtone)")
+            print("AudioPlayerManager: Data asset not found for: \(ringtone)")
             return
         }
         
@@ -76,10 +73,13 @@ class AudioPlayerManager: ObservableObject {
         try? asset.data.write(to: tempURL)
         let newPlayerItem = AVPlayerItem(url: tempURL)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        // Ensure we're on the main queue and force audio session setup
+        DispatchQueue.main.async {
             do {
-                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .duckOthers)
-                try AVAudioSession.sharedInstance().setActive(true)
+                // Always set up audio session properly - don't check if it's already active
+                let session = AVAudioSession.sharedInstance()
+                try session.setCategory(.playback, mode: .default, options: .duckOthers)
+                try session.setActive(true)
                 
                 let player = AVQueuePlayer()
                 let looper = AVPlayerLooper(player: player, templateItem: newPlayerItem)
@@ -88,9 +88,9 @@ class AudioPlayerManager: ObservableObject {
                 self.audioLoopers[cardUUID] = looper
                 player.play()
                 
-                print("Playing timer ringtone '\(ringtone)' for card \(cardUUID)")
+                print("AudioPlayerManager: Successfully started playing ringtone '\(ringtone)' for card \(cardUUID)")
             } catch {
-                print("Error setting up audio session: \(error)")
+                print("AudioPlayerManager: Error setting up audio session: \(error)")
             }
         }
     }
@@ -107,33 +107,39 @@ class AudioPlayerManager: ObservableObject {
         audioPlayers.removeValue(forKey: cardUUID)
         audioLoopers.removeValue(forKey: cardUUID)
         
-        // Deactivate audio session if no other audio is playing
-        if audioPlayers.isEmpty && audioLoopers.isEmpty {
-            do {
-                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-            } catch {
-                print("Failed to deactivate AVAudioSession: \(error)")
+        // Only deactivate audio session if NO audio is playing (including preview)
+        if audioPlayers.isEmpty && audioLoopers.isEmpty && player == nil {
+            DispatchQueue.main.async {
+                do {
+                    try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+                } catch {
+                    print("Failed to deactivate AVAudioSession: \(error)")
+                }
             }
         }
     }
     
     func stopAllTimerRingtones() {
-        // Clean up all audio players and loopers
+        // Clean up all audio players and loopers efficiently
+        for (_, looper) in audioLoopers {
+            looper.disableLooping()
+        }
         for (_, player) in audioPlayers {
             player.pause()
             player.removeAllItems()
         }
-        for (_, looper) in audioLoopers {
-            looper.disableLooping()
-        }
         audioPlayers.removeAll()
         audioLoopers.removeAll()
         
-        // Deactivate audio session
-        do {
-            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        } catch {
-            print("Failed to deactivate AVAudioSession: \(error)")
+        // Only deactivate if no preview audio is playing
+        if player == nil {
+            DispatchQueue.main.async {
+                do {
+                    try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+                } catch {
+                    print("Failed to deactivate AVAudioSession: \(error)")
+                }
+            }
         }
     }
     
