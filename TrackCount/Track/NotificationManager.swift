@@ -15,6 +15,7 @@ class NotificationManager: NSObject, ObservableObject {
     override init() {
         super.init()
         UNUserNotificationCenter.current().delegate = self
+        requestNotificationPermission()
     }
     
     func requestNotificationPermission() {
@@ -37,26 +38,32 @@ class NotificationManager: NSObject, ObservableObject {
         timeRemaining: TimeInterval,
         ringtone: String
     ) {
+        // Cancel any existing notification for this timer first
+        cancelTimerNotification(for: cardUUID)
+        
         let content = UNMutableNotificationContent()
         content.title = "Timer Complete"
         content.body = "\(groupTitle)'s \(cardTitle) timer has finished!"
         content.badge = 1
         
-        // Use default notification sound for reliability
-        // Custom ringtones will play when app is active
-        content.sound = .default
+        // Try to use custom sound if available, otherwise use default
+        if let soundURL = getSoundURL(for: ringtone) {
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundURL.lastPathComponent))
+        } else {
+            content.sound = .default
+        }
         
         // Add user info for identification
         content.userInfo = [
             "timerCardUUID": cardUUID.uuidString,
             "timerTitle": cardTitle,
             "groupTitle": groupTitle,
-            "ringtone": ringtone // Store for potential future use
+            "ringtone": ringtone
         ]
         
         // Schedule notification for when timer should complete
         let trigger = UNTimeIntervalNotificationTrigger(
-            timeInterval: max(1, timeRemaining),
+            timeInterval: max(0.1, timeRemaining),
             repeats: false
         )
         
@@ -70,7 +77,7 @@ class NotificationManager: NSObject, ObservableObject {
             if let error = error {
                 print("Error scheduling notification: \(error)")
             } else {
-                print("Successfully scheduled notification for timer: \(groupTitle)'s \(cardTitle)")
+                print("Successfully scheduled notification for timer: \(groupTitle)'s \(cardTitle) in \(timeRemaining) seconds")
             }
         }
     }
@@ -88,55 +95,52 @@ class NotificationManager: NSObject, ObservableObject {
     func cancelAllTimerNotifications() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        clearBadgeCount()
+    }
+    
+    /// Clears the app badge count
+    func clearBadgeCount() {
+        DispatchQueue.main.async {
+            UIApplication.shared.applicationIconBadgeNumber = 0
+        }
     }
     
     private func getSoundURL(for ringtone: String) -> URL? {
-        // For iOS notifications, custom sounds must be in specific formats and locations
-        // The simplest approach is to use the default sound for notifications
-        // and rely on in-app audio for custom ringtones when the app is active
+        // Try to find the sound file in the app bundle
+        if let bundleURL = Bundle.main.url(forResource: ringtone, withExtension: "wav") {
+            return bundleURL
+        }
         
         // iOS notification sounds must be:
         // - 30 seconds or less in duration
         // - In Linear PCM or IMA4 (IMA/ADPCM) format
         // - Packaged in a .caf, .aif, or .wav container file
-        // - Located in the main bundle or Documents directory
-        
-        // Try to find the sound file in the bundle first
-        if let bundleURL = Bundle.main.url(forResource: ringtone, withExtension: "wav") {
-            return bundleURL
-        }
+        // - Located in the main bundle
         
         // For now, return nil to use default notification sound
         // Custom ringtones will play when the app is active via the regular audio system
         return nil
     }
     
-    func handleTimerCompletion(cardUUID: UUID, cardTitle: String, ringtone: String) {
-        // If app is in background or user is not in TrackView, show notification
+    func handleTimerCompletion(cardUUID: UUID, cardTitle: String, groupTitle: String, ringtone: String) {
         let isInBackground = UIApplication.shared.applicationState != .active
         let isNotInTrackView = !GlobalTimerManager.shared.isInTrackView
         
-        if isInBackground || isNotInTrackView {
-            // Schedule immediate notification for timer completion
+        if isInBackground {
+            // App is completely backgrounded - trigger immediate notification
             let content = UNMutableNotificationContent()
             content.title = "Timer Complete"
-            content.body = "\(cardTitle) timer has finished!"
+            content.body = "\(groupTitle)'s \(cardTitle) timer has finished!"
             content.badge = 1
-            
-            // Set custom sound
-            if let soundURL = getSoundURL(for: ringtone) {
-                content.sound = UNNotificationSound(named: UNNotificationSoundName(soundURL.lastPathComponent))
-            } else {
-                content.sound = .default
-            }
+            content.sound = .default // Always use default sound for background notifications
             
             content.userInfo = [
                 "timerCardUUID": cardUUID.uuidString,
                 "timerTitle": cardTitle,
+                "groupTitle": groupTitle,
                 "completed": true
             ]
             
-            // Immediate notification
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
             let request = UNNotificationRequest(
                 identifier: "timer-completed-\(cardUUID.uuidString)",
@@ -146,10 +150,28 @@ class NotificationManager: NSObject, ObservableObject {
             
             UNUserNotificationCenter.current().add(request) { error in
                 if let error = error {
-                    print("Error showing completion notification: \(error)")
+                    print("Error showing background completion notification: \(error)")
+                } else {
+                    print("Background timer completion notification sent for \(cardTitle)")
                 }
             }
+        } else if isNotInTrackView {
+            // App is active but user is not in TrackView - play custom ringtone via TimerViewModel
+            // Post a notification that the TimerViewModel can handle to play the custom sound
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("TimerCompletedInApp"),
+                    object: nil,
+                    userInfo: [
+                        "cardUUID": cardUUID,
+                        "cardTitle": cardTitle,
+                        "groupTitle": groupTitle,
+                        "ringtone": ringtone
+                    ]
+                )
+            }
         }
+        // If in TrackView, the TimerViewModel will handle completion directly
     }
 }
 

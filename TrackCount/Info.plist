@@ -20,7 +20,6 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
-		<string>audio</string>
 	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>

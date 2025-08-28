@@ -36,20 +36,19 @@ class GlobalTimerManager: ObservableObject {
         var groupUUID: UUID
         var pausedAt: Date?
         var startedAt: Date
-        var pauseReason: PauseReason
         var lastSavedAt: Date
         var cardTitle: String
         var groupTitle: String
         var ringtone: String
         
-        // Add CodingKeys to handle the new properties
+        // Remove pauseReason since it's redundant with card state
         enum CodingKeys: String, CodingKey {
             case timeRemaining, totalTime, timerIndex, isRunning
-            case cardUUID, groupUUID, pausedAt, startedAt, pauseReason, lastSavedAt
+            case cardUUID, groupUUID, pausedAt, startedAt, lastSavedAt
             case cardTitle, groupTitle, ringtone
         }
         
-        init(timeRemaining: Double, totalTime: Double, timerIndex: Int, isRunning: Bool, cardUUID: UUID, groupUUID: UUID, pausedAt: Date?, startedAt: Date, pauseReason: PauseReason, cardTitle: String, groupTitle: String, ringtone: String) {
+        init(timeRemaining: Double, totalTime: Double, timerIndex: Int, isRunning: Bool, cardUUID: UUID, groupUUID: UUID, pausedAt: Date?, startedAt: Date, cardTitle: String, groupTitle: String, ringtone: String) {
             self.timeRemaining = timeRemaining
             self.totalTime = totalTime
             self.timerIndex = timerIndex
@@ -58,7 +57,6 @@ class GlobalTimerManager: ObservableObject {
             self.groupUUID = groupUUID
             self.pausedAt = pausedAt
             self.startedAt = startedAt
-            self.pauseReason = pauseReason
             self.lastSavedAt = Date()
             self.cardTitle = cardTitle
             self.groupTitle = groupTitle
@@ -76,18 +74,11 @@ class GlobalTimerManager: ObservableObject {
             groupUUID = try container.decode(UUID.self, forKey: .groupUUID)
             pausedAt = try container.decodeIfPresent(Date.self, forKey: .pausedAt)
             startedAt = try container.decode(Date.self, forKey: .startedAt)
-            pauseReason = try container.decode(PauseReason.self, forKey: .pauseReason)
             lastSavedAt = try container.decodeIfPresent(Date.self, forKey: .lastSavedAt) ?? Date()
             cardTitle = try container.decodeIfPresent(String.self, forKey: .cardTitle) ?? "Timer"
             groupTitle = try container.decodeIfPresent(String.self, forKey: .groupTitle) ?? "Group"
             ringtone = try container.decodeIfPresent(String.self, forKey: .ringtone) ?? "Code"
         }
-    }
-    
-    enum PauseReason: String, Codable {
-        case userPaused        // User manually paused the timer
-        case navigationPaused  // Timer paused due to leaving TrackView
-        case notPaused        // Timer is currently running
     }
     
     private init() {
@@ -120,6 +111,7 @@ class GlobalTimerManager: ObservableObject {
     
     private func updateBackgroundTimers() {
         let currentTime = Date()
+        var completedTimers = 0
         
         for (uuid, state) in persistentTimerStates {
             guard state.isRunning && state.pausedAt == nil else { continue }
@@ -132,16 +124,22 @@ class GlobalTimerManager: ObservableObject {
             if newTimeRemaining <= 0 && state.timeRemaining > 0 {
                 // Timer just completed
                 persistentTimerStates[uuid]?.isRunning = false
+                completedTimers += 1
                 
-                // Trigger notification for timer completion
-                // We need to find the card info from stored data
-                if let cardInfo = getCardInfo(for: uuid) {
+                // Cancel any scheduled notification since timer has completed
+                notificationManager.cancelTimerNotification(for: uuid)
+                
+                // Only trigger completion notification if we're NOT in TrackView
+                // This prevents duplicate audio when TimerViewModel is actively handling completions
+                if !isInTrackView {
                     notificationManager.handleTimerCompletion(
                         cardUUID: uuid,
-                        cardTitle: cardInfo.title,
-                        ringtone: cardInfo.ringtone
+                        cardTitle: state.cardTitle,
+                        groupTitle: state.groupTitle,
+                        ringtone: state.ringtone
                     )
                 }
+                // If we ARE in TrackView, let TimerViewModel handle the completion
             }
         }
         
@@ -165,23 +163,20 @@ class GlobalTimerManager: ObservableObject {
             groupUUID: groupUUID,
             pausedAt: nil,
             startedAt: Date(),
-            pauseReason: .notPaused,
             cardTitle: cardTitle ?? "Timer",
             groupTitle: groupTitle ?? "Group",
             ringtone: ringtone ?? "Code"
         )
         
-        // Schedule notification for timer completion if running
+        // Schedule notification for when this timer should complete
         if isRunning && timeRemaining > 0 {
-            if let cardTitle = cardTitle, let groupTitle = groupTitle, let ringtone = ringtone {
-                notificationManager.scheduleTimerNotification(
-                    for: cardUUID,
-                    cardTitle: cardTitle,
-                    groupTitle: groupTitle,
-                    timeRemaining: timeRemaining,
-                    ringtone: ringtone
-                )
-            }
+            notificationManager.scheduleTimerNotification(
+                for: cardUUID,
+                cardTitle: cardTitle ?? "Timer",
+                groupTitle: groupTitle ?? "Group",
+                timeRemaining: timeRemaining,
+                ringtone: ringtone ?? "Code"
+            )
         }
         
         persistTimerStates() // Persist state after saving
@@ -190,7 +185,6 @@ class GlobalTimerManager: ObservableObject {
     func pauseTimer(cardUUID: UUID) {
         persistentTimerStates[cardUUID]?.pausedAt = Date()
         persistentTimerStates[cardUUID]?.isRunning = false
-        persistentTimerStates[cardUUID]?.pauseReason = .userPaused
         
         // Cancel scheduled notification since timer is paused
         notificationManager.cancelTimerNotification(for: cardUUID)
@@ -203,7 +197,6 @@ class GlobalTimerManager: ObservableObject {
         
         persistentTimerStates[cardUUID]?.pausedAt = nil
         persistentTimerStates[cardUUID]?.isRunning = true
-        persistentTimerStates[cardUUID]?.pauseReason = .notPaused
         
         // Reschedule notification with remaining time
         if state.timeRemaining > 0 {
@@ -226,6 +219,12 @@ class GlobalTimerManager: ObservableObject {
         notificationManager.cancelTimerNotification(for: cardUUID)
         
         persistentTimerStates.removeValue(forKey: cardUUID)
+        
+        // Clear badge if no more active timers
+        if persistentTimerStates.isEmpty {
+            notificationManager.clearBadgeCount()
+        }
+        
         persistTimerStates() // Persist state after stopping
     }
     
@@ -234,7 +233,6 @@ class GlobalTimerManager: ObservableObject {
             if state.groupUUID == groupUUID && state.isRunning {
                 persistentTimerStates[uuid]?.pausedAt = Date()
                 persistentTimerStates[uuid]?.isRunning = false
-                persistentTimerStates[uuid]?.pauseReason = .navigationPaused
             }
         }
         persistTimerStates() // Persist state after pausing all timers in group
@@ -245,7 +243,6 @@ class GlobalTimerManager: ObservableObject {
             if state.groupUUID == groupUUID && state.pausedAt != nil {
                 persistentTimerStates[uuid]?.pausedAt = nil
                 persistentTimerStates[uuid]?.isRunning = true
-                persistentTimerStates[uuid]?.pauseReason = .notPaused
             }
         }
         persistTimerStates() // Persist state after resuming all timers in group
@@ -258,14 +255,6 @@ class GlobalTimerManager: ObservableObject {
     func setNavigationState(isInTrackView: Bool, groupUUID: UUID?) {
         self.isInTrackView = isInTrackView
         self.currentGroupUUID = groupUUID
-        
-        if !isInTrackView {
-            // Pause all timers when not in TrackView
-            if let groupUUID = groupUUID {
-                pauseAllTimersInGroup(groupUUID: groupUUID)
-            }
-        }
-        // Remove the automatic resume logic - let TimerViewModel handle selective resuming
     }
     
     private func persistTimerStates() {
@@ -310,6 +299,8 @@ class GlobalTimerManager: ObservableObject {
     }
     
     @objc private func appWillResignActive() {
+        // Update all timer states and schedule notifications for background
+        scheduleBackgroundNotifications()
         // Save states when app goes to background
         persistTimerStates()
     }
@@ -317,6 +308,38 @@ class GlobalTimerManager: ObservableObject {
     @objc private func appDidBecomeActive() {
         // Update timers when app becomes active
         updateTimersAfterAppLaunch()
+        // Cancel scheduled notifications since we're back in foreground
+        cancelScheduledNotifications()
+        // Clear badge when app becomes active (handled in TrackCountApp now)
+    }
+    
+    /// Schedule notifications for all running timers when app goes to background
+    private func scheduleBackgroundNotifications() {
+        for (uuid, state) in persistentTimerStates {
+            if state.isRunning && state.pausedAt == nil && state.timeRemaining > 0 {
+                notificationManager.scheduleTimerNotification(
+                    for: uuid,
+                    cardTitle: state.cardTitle,
+                    groupTitle: state.groupTitle,
+                    timeRemaining: state.timeRemaining,
+                    ringtone: state.ringtone
+                )
+            }
+        }
+    }
+    
+    /// Cancel all scheduled timer notifications when app becomes active
+    private func cancelScheduledNotifications() {
+        for uuid in persistentTimerStates.keys {
+            notificationManager.cancelTimerNotification(for: uuid)
+        }
+    }
+    
+    /// Clears all timer states and notifications - useful for cleanup
+    func clearAllTimers() {
+        persistentTimerStates.removeAll()
+        notificationManager.cancelAllTimerNotifications()
+        persistTimerStates()
     }
     
     deinit {

@@ -21,9 +21,6 @@ class TimerViewModel: ObservableObject {
     @Published var pausedTimerValues: [UUID: Double] = [:]
     @Published var timerStates: [UUID: TimerState] = [:]
     
-    @Published var audioPlayers: [UUID: AVQueuePlayer] = [:]
-    @Published var audioLoopers: [UUID: AVPlayerLooper] = [:]
-    
     private var lastTickTime: [UUID: Date] = [:]
     private var timerStartTime: [UUID: Date] = [:]
     private let timerPublisher = Timer.publish(every: 1/30.0, on: .main, in: .common).autoconnect()
@@ -51,6 +48,14 @@ class TimerViewModel: ObservableObject {
             .sink { [weak self] persistentStates in
                 self?.syncWithGlobalTimers(persistentStates: persistentStates)
             }
+        
+        // Subscribe to in-app timer completion notifications
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleInAppTimerCompletion(_:)),
+            name: NSNotification.Name("TimerCompletedInApp"),
+            object: nil
+        )
     }
     
     /// Syncs local timer states with global persistent timers
@@ -230,6 +235,9 @@ class TimerViewModel: ObservableObject {
         displayValues[card.uuid] = 0
         pausedTimerValues.removeValue(forKey: card.uuid)
         
+        // Stop any playing audio for this timer immediately
+        timerSound(card, mode: .stop)
+        
         // Remove from global timer manager
         globalTimerManager.stopTimer(cardUUID: card.uuid)
     }
@@ -312,17 +320,7 @@ class TimerViewModel: ObservableObject {
                 if persistentState.pausedAt != nil {
                     timerStates[card.uuid] = .paused
                     pausedTimerValues[card.uuid] = persistentState.timeRemaining
-                    
-                    // Only auto-resume if it was paused due to navigation, not user action
-                    if persistentState.pauseReason == .navigationPaused && persistentState.timeRemaining > 0 {
-                        // Auto-resume navigation-paused timers
-                        timerStates[card.uuid] = .running
-                        lastTickTime[card.uuid] = Date()
-                        card.state?[0] = CardState(state: true)
-                        storedCards[card.uuid] = card
-                        globalTimerManager.resumeTimer(cardUUID: card.uuid)
-                    }
-                    // If pauseReason == .userPaused, keep it paused and let user manually resume
+                    // Timer is paused - keep it paused until user manually resumes
                 } else if persistentState.isRunning && persistentState.timeRemaining > 0 {
                     timerStates[card.uuid] = .running
                     lastTickTime[card.uuid] = Date()
@@ -347,55 +345,39 @@ class TimerViewModel: ObservableObject {
     private func handleTimerCompletion(_ card: DMStoredCard) {
         if isTimerAlertEnabled {
             self.timerStates[card.uuid] = .stopped
-            timerSound(card, mode: .play)
+            // Send notification to centralized audio manager instead of local handling
+            let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
+            NotificationCenter.default.post(
+                name: NSNotification.Name("TimerCompletedInApp"),
+                object: nil,
+                userInfo: [
+                    "cardUUID": card.uuid,
+                    "ringtone": ringtone
+                ]
+            )
         }
     }
     
-    /// Plays the timer complete tone.
-    /// Handles simultaneous playback of the same tone by pausing the existing timer tone and playing a new one, with the paused tone being resumed after the existing tone is cancelled.
+    /// Stops timer audio by sending notification to centralized audio manager
     func timerSound(_ card: DMStoredCard, mode: audioMode) {
-        let ringtoneToPlay = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
-        
-        guard let asset = NSDataAsset(name: ringtoneToPlay) else {
-            print("Data asset not found for: \(ringtoneToPlay)")
-            return
-        }
-        
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(ringtoneToPlay).wav")
-        try? asset.data.write(to: tempURL)
-        let newPlayerItem = AVPlayerItem(url: tempURL)
-        
-        if mode == .play {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .duckOthers)
-                try? AVAudioSession.sharedInstance().setActive(true)
-                
-                let player = AVQueuePlayer()
-                let looper = AVPlayerLooper(player: player, templateItem: newPlayerItem)
-                
-                self.audioPlayers[card.uuid] = player
-                self.audioLoopers[card.uuid] = looper
-                player.play()
-            }
-        } else if mode == .stop {
-            if let looper = audioLoopers[card.uuid] {
-                looper.disableLooping()
-            }
-            if let player = audioPlayers[card.uuid] {
-                player.pause()
-                player.removeAllItems()
-            }
-            
-            audioPlayers.removeValue(forKey: card.uuid)
-            audioLoopers.removeValue(forKey: card.uuid)
-            
-            if audioPlayers.isEmpty && audioLoopers.isEmpty {
-                do {
-                    try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-                } catch {
-                    print("Failed to deactivate AVAudioSession: \(error)")
-                }
-            }
+        if mode == .stop {
+            // Send stop notification to centralized audio manager
+            NotificationCenter.default.post(
+                name: NSNotification.Name("StopTimerAudio"),
+                object: nil,
+                userInfo: ["cardUUID": card.uuid]
+            )
+        } else {
+            // Send play notification to centralized audio manager
+            let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
+            NotificationCenter.default.post(
+                name: NSNotification.Name("TimerCompletedInApp"),
+                object: nil,
+                userInfo: [
+                    "cardUUID": card.uuid,
+                    "ringtone": ringtone
+                ]
+            )
         }
     }
     
@@ -425,22 +407,12 @@ class TimerViewModel: ObservableObject {
     
     /// Cleans up only audio resources without affecting timer persistence
     func cleanupAudioOnly() {
-        // Clean up audio players and loopers
-        for (_, player) in audioPlayers {
-            player.pause()
-            player.removeAllItems()
-        }
-        audioPlayers.removeAll()
-        audioLoopers.removeAll()
-        
-        // Deactivate audio session if no audio is playing
-        if audioPlayers.isEmpty && audioLoopers.isEmpty {
-            do {
-                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-            } catch {
-                print("Failed to deactivate AVAudioSession: \(error)")
-            }
-        }
+        // Audio is now handled centrally by AudioPlayerManager
+        // Just send notifications to stop all audio for cleanup
+        NotificationCenter.default.post(
+            name: NSNotification.Name("StopAllTimerAudio"),
+            object: nil
+        )
     }
     
     /// Cleans up timer-related variables
@@ -454,6 +426,12 @@ class TimerViewModel: ObservableObject {
             for card in cards {
                 if card.type == .timer || card.type == .timer_custom {
                     card.state?[0] = CardState(state: false)
+                    // Stop audio for each timer card
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("StopTimerAudio"),
+                        object: nil,
+                        userInfo: ["cardUUID": card.uuid]
+                    )
                 }
             }
         }
@@ -463,24 +441,16 @@ class TimerViewModel: ObservableObject {
         } catch {
             fatalError("Failed to save context after timer cleanup: \(error)")
         }
-        
-        // Clean up audio
-        for (_, player) in audioPlayers {
-            player.pause()
-            player.removeAllItems()
-        }
-        audioPlayers.removeAll()
-        audioLoopers.removeAll()
-        
-        do {
-            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        } catch {
-            print("Failed to deactivate AVAudioSession: \(error)")
-        }
     }
     
     deinit {
         sharedTimerCancellable?.cancel()
         globalTimerCancellable?.cancel()
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc private func handleInAppTimerCompletion(_ notification: Notification) {
+        // This method is no longer needed since AudioPlayerManager handles this directly
+        // Keep it for backward compatibility but it won't do anything
     }
 }
