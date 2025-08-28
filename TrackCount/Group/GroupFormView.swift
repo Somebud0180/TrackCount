@@ -86,7 +86,7 @@ struct GroupFormView: View {
             // A symbol preview/picker
             VStack(alignment: .leading, spacing: 4) {
                 Button(action: {
-                    isPickerPresented.toggle()
+                    isPickerPresented = true
                 }) {
                     HStack {
                         Text("Group Symbol:")
@@ -96,10 +96,10 @@ struct GroupFormView: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 24, height: 24)
                     }
-                    .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 }
                 .foregroundStyle(.foreground)
                 .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 .accessibilityIdentifier("Group Smybol Picker")
                 .sheet(isPresented: $isPickerPresented) {
                     SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)

@@ -230,7 +230,7 @@ struct CardFormView: View {
             // A symbol preview/picker
             VStack(alignment: .leading) {
                 Button(action: {
-                    isSymbolPickerPresented.toggle()
+                    isSymbolPickerPresented = true
                 }) {
                     HStack {
                         Text("Button Symbol:")
@@ -285,7 +285,7 @@ struct CardFormView: View {
         
         return Group {
             Button(action: {
-                isPresentingRingtonePickerView.toggle()
+                isPresentingRingtonePickerView = true
             }) {
                 HStack {
                     Text("Timer Ringtone")

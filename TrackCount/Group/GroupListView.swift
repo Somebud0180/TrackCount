@@ -13,18 +13,21 @@ import UniformTypeIdentifiers
 struct GroupListView: View {
     @EnvironmentObject private var importManager: ImportManager
     @Environment(\.colorScheme) private var colorScheme
-    @StateObject private var viewModel = GroupViewModel()
     @Environment(\.modelContext) private var context
+    @StateObject private var viewModel = GroupViewModel()
     
     @AppStorage("gradientAnimated") var isGradientAnimated: Bool = DefaultSettings.gradientAnimated
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
+    @State private var groupSheetHeight: CGFloat = .zero
     @State private var isPresentingFilePicker = false
     @State private var isPresentingGroupForm: Bool = false
     @State private var isPresentingGroupOrder: Bool = false
+    @State private var isPresentingCardListView: Bool = false
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var selectedGroup: DMCardGroup?
+    @State private var cardFormGroup: DMCardGroup?
     @State private var animateGradient: Bool = false
     
     private var columnLayout: [GridItem] {
@@ -103,7 +106,7 @@ struct GroupListView: View {
                         .navigationTitle("Your Groups")
                         .toolbar {
                             ToolbarItem(placement: .navigationBarTrailing) {
-                                Button(action: { isPresentingGroupForm.toggle() }) {
+                                Button(action: { isPresentingGroupForm = true }) {
                                     Label("Add Group", systemImage: "plus.circle")
                                 }
                                 .legacyDarkTint()
@@ -114,7 +117,7 @@ struct GroupListView: View {
                                     Button(action: { isPresentingFilePicker = true }) {
                                         Label("Import Group", systemImage: "square.and.arrow.down")
                                     }
-                                    Button(action: { isPresentingGroupOrder.toggle() }) {
+                                    Button(action: { isPresentingGroupOrder = true }) {
                                         Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
                                     }
                                 } label: {
@@ -126,7 +129,7 @@ struct GroupListView: View {
                         }
                         .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
                             GroupFormView(viewModel: viewModel)
-                                .presentationDetents([.fraction(0.5)])
+                                .presentationDetents([.fraction(0.45)])
                                 .onDisappear {
                                     viewModel.validationError.removeAll()
                                     viewModel.selectedGroup = nil
@@ -135,6 +138,20 @@ struct GroupListView: View {
                         .sheet(isPresented: $isPresentingGroupOrder) {
                             GroupOrderView()
                                 .environmentObject(viewModel)
+                        }
+                        .sheet(isPresented: $isPresentingCardListView) {
+                            if let group = cardFormGroup {
+                                CardListView(selectedGroup: group)
+                                    .presentationDetents([.medium, .large])
+                                    .onDisappear {
+                                        cardFormGroup = nil
+                                    }
+                            }
+                        }
+                        .onChange(of: cardFormGroup) {
+                            if cardFormGroup != nil {
+                                isPresentingCardListView = true
+                            }
                         }
                         .alert(isPresented: $isPresentingDeleteDialog) {
                             Alert(
@@ -218,14 +235,13 @@ struct GroupListView: View {
         let shareURL = try? viewModel.shareGroup(group)
         
         return Group {
-            NavigationLink(destination: CardListView(selectedGroup: group)) {
-                Label("Manage Cards", systemImage: "tablecells.badge.ellipsis")
-                    .labelStyle(.titleAndIcon)
+            Button("Manage Cards", systemImage: "tablecells.badge.ellipsis") {
+                cardFormGroup = group
             }
             Button("Edit Group", systemImage: "pencil") {
                 viewModel.selectedGroup = group
                 viewModel.fetchGroup()
-                isPresentingGroupForm.toggle()
+                isPresentingGroupForm = true
             }
             ShareLink(item: shareURL ?? URL(fileURLWithPath: "/")) {
                 Label("Share Group", systemImage: "square.and.arrow.up")

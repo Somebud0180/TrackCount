@@ -20,6 +20,7 @@ struct TrackView: View {
     
     var selectedGroup: DMCardGroup
     @Query private var storedCards: [DMStoredCard]
+    @State private var groupSheetHeight: CGFloat = .zero
     @State private var isPresentingGroupForm: Bool = false
     @State private var isPresentingCardFormView: Bool = false
     @State private var isPresentingCardListView: Bool = false
@@ -89,7 +90,7 @@ struct TrackView: View {
                     Menu {
                         Button("Edit Group", systemImage: "pencil") {
                             groupViewModel.fetchGroup()
-                            isPresentingGroupForm.toggle()
+                            isPresentingGroupForm = true
                         }
                         ShareLink(item: shareURL ?? URL(fileURLWithPath: "/")) {
                             Label("Share Group", systemImage: "square.and.arrow.up")
@@ -106,7 +107,7 @@ struct TrackView: View {
         }
         .sheet(isPresented: $isPresentingGroupForm) {
             GroupFormView(viewModel: groupViewModel)
-                .presentationDetents([.fraction(0.5)])
+                .presentationDetents([.fraction(0.45)])
                 .onDisappear {
                     groupViewModel.validationError.removeAll()
                     groupViewModel.selectedGroup = nil
@@ -123,6 +124,7 @@ struct TrackView: View {
         }
         .sheet(isPresented: $isPresentingCardListView) {
             CardListView(selectedGroup: selectedGroup)
+                .presentationDetents([.medium, .large])
         }
         .alert(isPresented: $isPresentingDeleteDialog) {
             Alert(

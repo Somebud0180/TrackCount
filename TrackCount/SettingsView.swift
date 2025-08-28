@@ -69,7 +69,7 @@ struct SettingsView: View {
                     Toggle("Play Ringtone When Timer Ends", isOn: $isTimerAlertEnabled)
                     HStack {
                         Button("Default Ringtone") {
-                            isPresentingRingtonePickerView.toggle()
+                            isPresentingRingtonePickerView = true
                         }
                         .foregroundStyle(isLight ? .black : .white)
                         
