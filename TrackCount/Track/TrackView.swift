@@ -140,10 +140,18 @@ struct TrackView: View {
             )
         }
         .onAppear {
-            timerViewModel.timerCleanup(for: context, group: selectedGroup)
+            // Set navigation state to indicate we're in TrackView
+            GlobalTimerManager.shared.setNavigationState(isInTrackView: true, groupUUID: selectedGroup.uuid)
+            
+            // Load any persisted timers for this group
+            timerViewModel.loadPersistedTimers(for: selectedGroup)
         }
         .onDisappear {
-            timerViewModel.timerCleanup(for: context, group: selectedGroup)
+            // Set navigation state to indicate we're leaving TrackView
+            GlobalTimerManager.shared.setNavigationState(isInTrackView: false, groupUUID: selectedGroup.uuid)
+            
+            // Only cleanup audio and UI state, not the timer data
+            timerViewModel.cleanupAudioOnly()
         }
     }
     
@@ -268,7 +276,7 @@ struct TrackView: View {
             }
         }
     }
-        
+    
     /// Creates the toggle card contents from the inputted card.
     private func toggleCard(_ card: DMStoredCard) -> some View {
         Group {
@@ -420,4 +428,3 @@ struct TrackView: View {
     
     return TrackView(selectedGroup: exampleGroup)
 }
-
