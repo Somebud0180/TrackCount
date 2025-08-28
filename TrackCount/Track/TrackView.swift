@@ -175,7 +175,7 @@ struct TrackView: View {
                     .multilineTextAlignment(.center)
                     .accessibilityHint("Counter Card")
                 
-                Spacer()
+                Spacer(minLength: 0)
                 
                 if card.type == .counter {
                     counterCard(card)
@@ -200,11 +200,15 @@ struct TrackView: View {
                 accessibilityHintPrefix: "Increase"
             )
             
+            Spacer()
+            
             // Current Count
             Text(String(card.count))
                 .font(.largeTitle)
                 .contentTransition(.numericText())
                 .animation(.spring, value: card.count)
+            
+            Spacer()
             
             buttonRow(
                 card: card,
@@ -214,7 +218,7 @@ struct TrackView: View {
                 accessibilityHintPrefix: "Reduce"
             )
         }
-        .frame(maxWidth: 400)
+        .frame(maxWidth: 450)
     }
     
     /// Creates a row of buttons for modifying the counter.
@@ -251,7 +255,7 @@ struct TrackView: View {
                                         .lineLimit(1)
                                 }
                             }
-                            .frame(maxWidth: .infinity, minHeight: 20, maxHeight: 60)
+                            .frame(maxWidth: .infinity, minHeight: 20, maxHeight: 44)
                             .padding(6)
                         }
                         .disabled(willOverflow)
@@ -290,7 +294,8 @@ struct TrackView: View {
                 }
             }
         }) {
-            Group {
+            VStack {
+                Spacer()
                 if !buttonText.isEmpty {
                     HStack {
                         Text(buttonText)
@@ -305,14 +310,12 @@ struct TrackView: View {
                     }
                 } else {
                     VStack {
-                        Spacer()
                         Image(systemName: symbolName)
                             .font(.body)
                             .minimumScaleFactor(0.2)
-                        Spacer()
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                Spacer()
             }
             .foregroundStyle(isActive ? card.secondaryColor?.color ?? .white : .black)
             .padding(4)
