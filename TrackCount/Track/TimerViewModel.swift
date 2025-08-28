@@ -58,13 +58,24 @@ class TimerViewModel: ObservableObject {
         for (cardUUID, globalState) in persistentStates {
             // Only sync if we're currently in the TrackView for this group
             if globalTimerManager.isInTrackView && globalTimerManager.currentGroupUUID == globalState.groupUUID {
+                // Use global timer as the single source of truth for display values
                 displayValues[cardUUID] = globalState.timeRemaining
                 selectedTimerIndex[cardUUID] = globalState.timerIndex
                 
+                // Update local timer state to match global state
                 if globalState.pausedAt != nil {
                     timerStates[cardUUID] = .paused
-                } else if globalState.isRunning {
+                    pausedTimerValues[cardUUID] = globalState.timeRemaining
+                } else if globalState.isRunning && globalState.timeRemaining > 0 {
                     timerStates[cardUUID] = .running
+                    // Don't update lastTickTime here to avoid conflicts
+                } else if globalState.timeRemaining <= 0 {
+                    // Handle completed timers that finished while app was closed
+                    timerStates[cardUUID] = .stopped
+                    displayValues[cardUUID] = 0
+                    if let card = storedCards[cardUUID] {
+                        handleTimerCompletion(card)
+                    }
                 } else {
                     timerStates[cardUUID] = .stopped
                 }
@@ -237,6 +248,11 @@ class TimerViewModel: ObservableObject {
     
     /// Updates timer countdown and syncs with global state
     private func updateAllTimers() {
+        // If we're in TrackView, let the global timer manager handle updates to avoid conflicts
+        if globalTimerManager.isInTrackView {
+            return
+        }
+        
         let currentTime = Date()
         
         for (uuid, state) in timerStates {
@@ -282,6 +298,17 @@ class TimerViewModel: ObservableObject {
                 if persistentState.pausedAt != nil {
                     timerStates[card.uuid] = .paused
                     pausedTimerValues[card.uuid] = persistentState.timeRemaining
+                    
+                    // Only auto-resume if it was paused due to navigation, not user action
+                    if persistentState.pauseReason == .navigationPaused && persistentState.timeRemaining > 0 {
+                        // Auto-resume navigation-paused timers
+                        timerStates[card.uuid] = .running
+                        lastTickTime[card.uuid] = Date()
+                        card.state?[0] = CardState(state: true)
+                        storedCards[card.uuid] = card
+                        globalTimerManager.resumeTimer(cardUUID: card.uuid)
+                    }
+                    // If pauseReason == .userPaused, keep it paused and let user manually resume
                 } else if persistentState.isRunning && persistentState.timeRemaining > 0 {
                     timerStates[card.uuid] = .running
                     lastTickTime[card.uuid] = Date()
@@ -354,6 +381,30 @@ class TimerViewModel: ObservableObject {
                 } catch {
                     print("Failed to deactivate AVAudioSession: \(error)")
                 }
+            }
+        }
+    }
+    
+    /// Pauses all active timers in a specific group
+    func pauseAllTimersInGroup(_ group: DMCardGroup) {
+        guard let cards = group.cards else { return }
+        
+        for card in cards {
+            // Only pause timers that are currently running
+            if timerStates[card.uuid] == .running {
+                pauseTimer(card)
+            }
+        }
+    }
+    
+    /// Resumes all paused timers in a specific group
+    func resumeAllTimersInGroup(_ group: DMCardGroup) {
+        guard let cards = group.cards else { return }
+        
+        for card in cards {
+            // Only resume timers that are currently paused and have a valid card state
+            if timerStates[card.uuid] == .paused && card.state?[0].state == true {
+                resumeTimer(card)
             }
         }
     }

@@ -147,8 +147,8 @@ struct TrackView: View {
             timerViewModel.loadPersistedTimers(for: selectedGroup)
         }
         .onDisappear {
-            // Set navigation state to indicate we're leaving TrackView
-            GlobalTimerManager.shared.setNavigationState(isInTrackView: false, groupUUID: selectedGroup.uuid)
+            // Intentionally pause all timers when leaving the view
+            timerViewModel.pauseAllTimersInGroup(selectedGroup)
             
             // Only cleanup audio and UI state, not the timer data
             timerViewModel.cleanupAudioOnly()
