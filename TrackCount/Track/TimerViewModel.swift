@@ -200,14 +200,20 @@ class TimerViewModel: ObservableObject {
         lastTickTime[card.uuid] = Date()
         storedCards[card.uuid] = card
         
-        // Save to global timer manager for persistence
+        // Get ringtone for notifications
+        let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
+        
+        // Save to global timer manager for persistence with notification info
         globalTimerManager.saveTimerState(
             cardUUID: card.uuid,
             groupUUID: card.group?.uuid ?? UUID(),
             timeRemaining: duration,
             totalTime: duration,
             timerIndex: timerIndex,
-            isRunning: true
+            isRunning: true,
+            cardTitle: card.title,
+            groupTitle: card.group?.groupTitle ?? "Group",
+            ringtone: ringtone
         )
         
         // Initialize shared timer if needed
@@ -242,8 +248,16 @@ class TimerViewModel: ObservableObject {
         timerStates[card.uuid] = .running
         lastTickTime[card.uuid] = Date()
         
-        // Resume in global timer manager
-        globalTimerManager.resumeTimer(cardUUID: card.uuid)
+        // Get ringtone for notifications
+        let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
+        
+        // Resume in global timer manager with notification info
+        globalTimerManager.resumeTimer(
+            cardUUID: card.uuid,
+            cardTitle: card.title,
+            groupTitle: card.group?.groupTitle ?? "Group",
+            ringtone: ringtone
+        )
     }
     
     /// Updates timer countdown and syncs with global state
