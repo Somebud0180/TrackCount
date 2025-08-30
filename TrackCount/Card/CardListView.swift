@@ -103,11 +103,11 @@ struct CardListView: View {
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.1)) {
                         isNewCardButtonPressed = true
+                        isPresentingCardFormView = true
                     }
                     
                     withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                         isNewCardButtonPressed = false
-                        isPresentingCardFormView = true
                     }
                 }) {
                     Text("Create a new card")

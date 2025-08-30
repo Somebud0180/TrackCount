@@ -149,12 +149,12 @@ class TimerViewModel: ObservableObject {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             self.isCancelButtonPressed = true
+                            self.stopTimer(card)
+                            card.state?[0] = CardState(state: false)
                         }
                         
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                             self.isCancelButtonPressed = false
-                            self.stopTimer(card)
-                            card.state?[0] = CardState(state: false)
                         }
                     }) {
                         Text("Cancel")
@@ -168,16 +168,16 @@ class TimerViewModel: ObservableObject {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             self.isPauseButtonPressed = true
-                        }
-                        
-                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                            self.isPauseButtonPressed = false
                             
                             if isPaused {
                                 self.resumeTimer(card)
                             } else {
                                 self.pauseTimer(card)
                             }
+                        }
+                        
+                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                            self.isPauseButtonPressed = false
                         }
                     }) {
                         Text(isPaused ? "Resume" : "Pause")
@@ -191,13 +191,13 @@ class TimerViewModel: ObservableObject {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             self.isPauseButtonPressed = true
+                            self.timerSound(card, mode: .stop)
+                            card.state?[0] = CardState(state: false)
+                            NotificationManager.shared.cancelTimerNotification(for: card.uuid)
                         }
                         
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                             self.isPauseButtonPressed = false
-                            self.timerSound(card, mode: .stop)
-                            card.state?[0] = CardState(state: false)
-                            NotificationManager.shared.cancelTimerNotification(for: card.uuid)
                         }
                     }) {
                         Text("End")

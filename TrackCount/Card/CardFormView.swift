@@ -77,11 +77,11 @@ struct CardFormView: View {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             isSaveButtonPressed = true
+                            saveCard()
                         }
                         
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                             isSaveButtonPressed = false
-                            saveCard()
                         }
                     }) {
                         Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")

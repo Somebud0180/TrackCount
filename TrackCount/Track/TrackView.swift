@@ -262,12 +262,12 @@ struct TrackView: View {
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.1)) {
                                 isPressed = true
+                                let newValue = operation(card.count, modifiers[index])
+                                card.count = min(Int.max, max(Int.min, newValue))
                             }
                             
                             withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                                 isPressed = false
-                                let newValue = operation(card.count, modifiers[index])
-                                card.count = min(Int.max, max(Int.min, newValue))
                             }
                         }) {
                             HStack(spacing: 2) {
@@ -320,15 +320,15 @@ struct TrackView: View {
         return Button(action: {
             withAnimation(.easeInOut(duration: 0.1)) {
                 pressedStates[buttonKey] = true
-            }
-            
-            withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                pressedStates[buttonKey] = false
                 
                 if card.state?.indices.contains(id) == true {
                     // Toggle using debounced state manager with temporary state
                     debouncedStateManager.toggleState(of: card, at: id, with: context)
                 }
+            }
+            
+            withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                pressedStates[buttonKey] = false
             }
         }) {
             VStack {
@@ -400,12 +400,12 @@ struct TrackView: View {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             isStartButtonPressed = true
+                            card.state?[0] = CardState(state: true)
+                            timerViewModel.startTimer(card)
                         }
                         
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                             isStartButtonPressed = false
-                            card.state?[0] = CardState(state: true)
-                            timerViewModel.startTimer(card)
                         }
                     }) {
                         Text("Start")

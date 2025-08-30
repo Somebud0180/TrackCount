@@ -122,15 +122,15 @@ struct GroupFormView: View {
             Button(action : {
                 withAnimation(.easeInOut(duration: 0.1)) {
                     isSaveButtonPressed = true
-                }
-                
-                withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                    isSaveButtonPressed = false
                     viewModel.saveGroup(with: context)
                     
                     if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
                         dismiss()
                     }
+                }
+                
+                withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                    isSaveButtonPressed = false
                 }
             }) {
                 Text(viewModel.selectedGroup != nil ? "Add Group" : "Save Changes")
