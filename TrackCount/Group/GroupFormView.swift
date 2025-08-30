@@ -9,12 +9,14 @@ import SwiftUI
 import SwiftData
 
 struct GroupFormView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: GroupViewModel
     
     // Set variable defaults
     @State private var isPickerPresented: Bool = false
+    @State private var isSaveButtonPressed: Bool = false
     
     struct ValidationVariables: Equatable {
         let groupTitle: String
@@ -22,8 +24,6 @@ struct GroupFormView: View {
     }
     
     var body: some View {
-        let characterLimit = viewModel.titleCharacterLimit
-        
         // Create an array containing all variables for the onChange form validation
         var validateVariables: ValidationVariables {
             ValidationVariables(
@@ -33,62 +33,18 @@ struct GroupFormView: View {
         }
         
         NavigationStack {
-            List {
-                ZStack(alignment: .bottomTrailing) {
-                    TextField("Set group title", text: $viewModel.newGroupTitle)
-                        .customRoundedStyle()
-                        .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
-                        .onChange(of: viewModel.newGroupTitle) {
-                            if viewModel.newGroupTitle.count > characterLimit {
-                                viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
-                                viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
-                            }
-                        }
-                        .onSubmit {
-                            viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
-                        }
-                    
-                    Text("\(viewModel.newGroupTitle.count)/\(characterLimit)")
-                        .padding(.trailing, 3)
-                        .foregroundStyle(.gray)
-                        .font(.footnote)
-                }
-                .listRowSeparator(.hidden)
-                
-                // A symbol preview/picker
-                VStack(alignment: .leading, spacing: 4) {
-                    Button(action: {
-                        isPickerPresented.toggle()
-                    }) {
-                        HStack {
-                            Text("Group Symbol:")
-                            Spacer()
-                            Image(systemName: viewModel.newGroupSymbol)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 24, height: 24)
-                        }
-                        .customRoundedStyle()
-                        .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
+            VStack {
+                if #available(iOS 26.0, *) {
+                    GlassEffectContainer {
+                        formView()
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .accessibilityIdentifier("Group Smybol Picker")
-                    .sheet(isPresented: $isPickerPresented) {
-                        SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
-                            .presentationDetents([.fraction(0.99)])
-                    }
-                    
-                    errorMessageView("TitleSymbolEmpty", with: viewModel.validationError, message: "A title or symbol is required")
-                }
-                .listRowSeparator(.hidden)
-            }
-            .onChange(of: validateVariables) {
-                if !viewModel.validationError.isEmpty {
-                    viewModel.validateForm()
+                } else {
+                    formView()
                 }
             }
-            .listStyle(PlainListStyle())
-            .navigationBarTitle(viewModel.selectedGroup == nil ? "Create Group" : "Edit Group", displayMode: .inline)
+            .padding(.horizontal)
+            .padding(.bottom)
+            .navigationBarTitle(viewModel.selectedGroup != nil ? "Create Group" : "Edit Group", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Dismiss") {
@@ -104,6 +60,60 @@ struct GroupFormView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $isPickerPresented) {
+            SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
+                .presentationDetents([.fraction(0.95)])
+        }
+        .onChange(of: validateVariables) {
+            if !viewModel.validationError.isEmpty {
+                viewModel.validateForm()
+            }
+        }
+    }
+    
+    private func formView() -> some View {
+        let characterLimit = viewModel.titleCharacterLimit
+        
+        return Group {
+            TextField("Set group title", text: $viewModel.newGroupTitle)
+                .autocapitalization(.words)
+                .disableAutocorrection(true)
+                .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
+                .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
+                .onChange(of: viewModel.newGroupTitle) {
+                    if viewModel.newGroupTitle.count > characterLimit {
+                        viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespacesAndNewlines))
+                        viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
+                    }
+                }
+                .onSubmit {
+                    viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespacesAndNewlines))
+                }
+            
+            // A symbol preview/picker
+            VStack(alignment: .leading, spacing: 4) {
+                Button(action: {
+                    isPickerPresented = true
+                }) {
+                    HStack {
+                        Text("Group Symbol:")
+                        Spacer()
+                        Image(systemName: viewModel.newGroupSymbol)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 24, height: 24)
+                    }
+                }
+                .foregroundStyle(.foreground)
+                .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
+                .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
+                .accessibilityIdentifier("Group Smybol Picker")
+                
+                errorMessageView("TitleSymbolEmpty", with: viewModel.validationError, message: "A title or symbol is required")
+            }
+            
+            Spacer()
             
             if !viewModel.warnError.isEmpty {
                 Text(viewModel.warnError.joined(separator: ", "))
@@ -112,19 +122,25 @@ struct GroupFormView: View {
             }
             
             Button(action : {
-                viewModel.saveGroup(with: context)
-                if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
-                    dismiss()
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isSaveButtonPressed = true
+                    viewModel.saveGroup(with: context)
+                    
+                    if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
+                        dismiss()
+                    }
+                }
+                
+                withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                    isSaveButtonPressed = false
                 }
             }) {
-                Text(viewModel.selectedGroup == nil ? "Add Group" : "Save Changes")
+                Text(viewModel.selectedGroup != nil ? "Add Group" : "Save Changes")
+                    .font(.title2)
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
                     .foregroundStyle(.white)
-                    .cornerRadius(8)
             }
-            .padding()
+            .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
         }
     }
 }

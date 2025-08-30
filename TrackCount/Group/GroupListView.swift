@@ -13,18 +13,21 @@ import UniformTypeIdentifiers
 struct GroupListView: View {
     @EnvironmentObject private var importManager: ImportManager
     @Environment(\.colorScheme) private var colorScheme
-    @StateObject private var viewModel = GroupViewModel()
     @Environment(\.modelContext) private var context
+    @StateObject private var viewModel = GroupViewModel()
     
     @AppStorage("gradientAnimated") var isGradientAnimated: Bool = DefaultSettings.gradientAnimated
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
+    @State private var groupSheetHeight: CGFloat = .zero
     @State private var isPresentingFilePicker = false
     @State private var isPresentingGroupForm: Bool = false
     @State private var isPresentingGroupOrder: Bool = false
+    @State private var isPresentingCardListView: Bool = false
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var selectedGroup: DMCardGroup?
+    @State private var cardFormGroup: DMCardGroup?
     @State private var animateGradient: Bool = false
     
     private var columnLayout: [GridItem] {
@@ -32,23 +35,21 @@ struct GroupListView: View {
     }
     
     var backgroundGradient: some View {
-        TimelineView(.animation(minimumInterval: 0.1)) { _ in
-            LinearGradient(
-                gradient: Gradient(colors: [primaryThemeColor.color.opacity(0.8), Color.clear]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .hueRotation(.degrees(animateGradient ? 30 : 0))
-            .task {
-                if isGradientAnimated {
-                    withAnimation(.easeInOut(duration: 2).repeatForever()) {
-                        animateGradient.toggle()
-                    }
+        LinearGradient(
+            gradient: Gradient(colors: [primaryThemeColor.color.opacity(0.8), Color.clear]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .hueRotation(.degrees(animateGradient ? 30 : 0))
+        .task {
+            if isGradientAnimated {
+                withAnimation(.easeInOut(duration: 2).repeatForever()) {
+                    animateGradient.toggle()
                 }
             }
-            .frame(height: 250)
-            .edgesIgnoringSafeArea(.all)
         }
+        .frame(height: 250)
+        .ignoresSafeArea()
     }
     
     var body: some View {
@@ -92,38 +93,44 @@ struct GroupListView: View {
                                             .frame(height: 200)
                                     }
                                     .buttonStyle(PlainButtonStyle())
-                                    .accessibilityIdentifier(group.groupTitle.isEmpty ? group.groupSymbol : group.groupTitle)
+                                    .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
                                     .contextMenu {
                                         contextMenu(for: group)
                                     }
                                 }
+                                .groupCardModifier()
                             }
                         }
-                        
                         .padding()
+                        .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         .navigationBarTitleDisplayMode(.large)
                         .navigationTitle("Your Groups")
                         .toolbar {
                             ToolbarItem(placement: .navigationBarTrailing) {
+                                Button(action: { isPresentingGroupForm = true }) {
+                                    Label("Add Group", systemImage: "plus.circle")
+                                }
+                                .legacyDarkTint()
+                            }
+                            
+                            ToolbarItem(placement: .navigationBarTrailing) {
                                 Menu {
-                                    Button(action: { isPresentingGroupForm.toggle() }) {
-                                        Label("Add Group", systemImage: "plus.square")
-                                    }
                                     Button(action: { isPresentingFilePicker = true }) {
                                         Label("Import Group", systemImage: "square.and.arrow.down")
                                     }
-                                    Button(action: { isPresentingGroupOrder.toggle() }) {
+                                    Button(action: { isPresentingGroupOrder = true }) {
                                         Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
                                     }
                                 } label: {
                                     Image(systemName: "ellipsis.circle")
                                 }
+                                .legacyDarkTint()
                                 .accessibilityIdentifier("Ellipsis Button")
                             }
                         }
                         .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
                             GroupFormView(viewModel: viewModel)
-                                .presentationDetents([.fraction(0.5)])
+                                .presentationDetents([.fraction(0.45)])
                                 .onDisappear {
                                     viewModel.validationError.removeAll()
                                     viewModel.selectedGroup = nil
@@ -132,6 +139,20 @@ struct GroupListView: View {
                         .sheet(isPresented: $isPresentingGroupOrder) {
                             GroupOrderView()
                                 .environmentObject(viewModel)
+                        }
+                        .sheet(isPresented: $isPresentingCardListView) {
+                            if let group = cardFormGroup {
+                                CardListView(selectedGroup: group)
+                                    .presentationDetents([.medium, .large])
+                                    .onDisappear {
+                                        cardFormGroup = nil
+                                    }
+                            }
+                        }
+                        .onChange(of: cardFormGroup) {
+                            if cardFormGroup != nil {
+                                isPresentingCardListView = true
+                            }
                         }
                         .alert(isPresented: $isPresentingDeleteDialog) {
                             Alert(
@@ -149,42 +170,39 @@ struct GroupListView: View {
                                 }
                             )
                         }
+                        .alert(importManager.previewGroup?.groupTitle.isEmpty ?? true ? "Import Group?" : "Import Group \(importManager.previewGroup?.groupTitle ?? "")?", isPresented: $importManager.showImportAlert) {
+                            VStack {
+                                Button("Cancel", role: .cancel) {
+                                    importManager.reset()
+                                }
+                                Button("Import") {
+                                    importManager.confirmImport(with: context)
+                                }
+                            }
+                        } message: {
+                            if let group = importManager.previewGroup {
+                                Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
+                            } else {
+                                Text("Do you want to import this group?")
+                            }
+                        }
                         .fileImporter(
                             isPresented: $isPresentingFilePicker,
                             allowedContentTypes: [.trackCountGroup],
                             allowsMultipleSelection: false
                         ) { result in
-                            DispatchQueue.main.async {
-                                switch result {
-                                case .success(let urls):
-                                    if let url = urls.first {
-                                        importManager.handleImport(url, with: context)
-                                    }
-                                case .failure(let error):
-                                    viewModel.warnError.append("File import failed: \(error.localizedDescription)")
+                            switch result {
+                            case .success(let urls):
+                                if let url = urls.first {
+                                    importManager.handleImport(url, with: context)
                                 }
+                            case .failure(let error):
+                                viewModel.warnError.append("File import failed: \(error.localizedDescription)")
                             }
                         }
                     }
                 }
-                .alert(importManager.previewGroup?.groupTitle.isEmpty ?? true ? "Import Group?" : "Import Group \"\(importManager.previewGroup!.groupTitle)\"?", isPresented: $importManager.showImportAlert) {
-                    VStack {
-                        Button("Cancel", role: .cancel) {
-                            importManager.reset()
-                        }
-                        Button("Import") {
-                            importManager.confirmImport(with: context)
-                        }
-                    }
-                } message: {
-                    if let group = importManager.previewGroup, #available(iOS 18, *) {
-                        Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
-                    } else {
-                        Text("Do you want to import this group?")
-                    }
-                }
-            }
-            .accentColor(colorScheme == .light ? .black : .primary)
+            }.accentColor(colorScheme == .light ? .black : .primary)
         }
     }
     
@@ -200,54 +218,32 @@ struct GroupListView: View {
     /// Computed property for alert title.
     private var alertTitle: Text {
         if let group = selectedGroup {
-            if group.groupTitle.isEmpty {
+            if (group.groupTitle?.isEmpty ?? true) {
                 return Text("Delete Group?")
             } else {
-                return Text("Delete \(group.groupTitle)?")
+                return Text("Delete \(group.groupTitle ?? "This Group")?")
             }
         }
         return Text("Delete Group?")
     }
     
-    
-    /// A function that handles the preparation of the groups for sharing.
-    /// - Parameter group: The group to be shared, accepts type DMCardGroup.
-    private func shareGroup(_ group: DMCardGroup) {
-        do {
-            let tempURL = try viewModel.shareGroup(group)
-            let activityVC = UIActivityViewController(
-                activityItems: [tempURL],
-                applicationActivities: nil
-            )
-            
-            // Present sharing UI
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first,
-               let rootVC = window.rootViewController {
-                activityVC.popoverPresentationController?.sourceView = rootVC.view
-                rootVC.present(activityVC, animated: true)
-            }
-        } catch {
-            viewModel.warnError.append(error.localizedDescription)
-        }
-    }
-    
     /// A function that contains the buttons used in the context menu for the cards.
     private func contextMenu(for group: DMCardGroup) -> some View {
-        Group {
-            NavigationLink(destination: CardListView(selectedGroup: group)) {
-                Text("Edit Cards")
-                Spacer()
-                Image(systemName: "folder")
+        // Safely get a share URL, disabling if unavailable
+        let shareURL = try? viewModel.shareGroup(group)
+        
+        return Group {
+            Button("Manage Cards", systemImage: "tablecells.badge.ellipsis") {
+                cardFormGroup = group
             }
             Button("Edit Group", systemImage: "pencil") {
                 viewModel.selectedGroup = group
                 viewModel.fetchGroup()
-                isPresentingGroupForm.toggle()
+                isPresentingGroupForm = true
             }
-            Button("Share Group", systemImage: "square.and.arrow.up") {
-                shareGroup(group)
-            }
+            ShareLink(item: shareURL ?? URL(fileURLWithPath: "/")) {
+                Label("Share Group", systemImage: "square.and.arrow.up")
+            }.disabled(shareURL == nil)
             Button("Delete Group", systemImage: "trash", role: .destructive) {
                 selectedGroup = group
                 isPresentingDeleteDialog = true

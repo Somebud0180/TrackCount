@@ -37,3 +37,9 @@ Keep track of your slideshow ice breakers with toggle buttons to keep track of w
 - Swift
 - SwiftUI
 - SwiftData
+
+
+##### AI Discloure
+<sup>A large chunk of this code was AI generated, both in the pre-release and post-release codebase.
+Promotional images, icons and other such artful works will never be AI generated.
+</sup>

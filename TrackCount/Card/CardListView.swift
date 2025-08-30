@@ -15,8 +15,10 @@ struct CardListView: View {
     
     // Set variable defaults
     var selectedGroup: DMCardGroup
+    @Query var storedCards: [DMStoredCard]
     @State private var isPresentingCardFormView: Bool = false
     @State private var validationError: [String] = []
+    @State private var isNewCardButtonPressed: Bool = false
     
     /// Initializes the selectedGroup and selectedCard variable for editing.
     /// - Parameters:
@@ -25,95 +27,114 @@ struct CardListView: View {
     init(selectedGroup: DMCardGroup) {
         _viewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
         self.selectedGroup = selectedGroup
+        let groupID = selectedGroup.uuid
+        _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
     }
     
     var body: some View {
         NavigationStack {
-            // List to preview, rearrange and delete created cards
-            List {
-                // Check if selectedGroup.cards. is empty and display a message if so
-                if selectedGroup.cards.isEmpty {
-                    Text("Create a new card to get started")
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .listRowSeparator(.hidden)
-                        .transition(.opacity)
-                } else {
-                    // Display validation error if any
-                    if !validationError.isEmpty {
-                        Text(viewModel.validationError.joined(separator: ", "))
-                            .foregroundStyle(.red)
+            ZStack(alignment: .bottom) {
+                // List to preview, rearrange and delete created cards
+                List {
+                    // Check if storedCards is empty and display a message if so
+                    if storedCards.isEmpty {
+                        Text("Create a new card to get started")
+                            .frame(maxWidth: .infinity, alignment: .center)
                             .listRowSeparator(.hidden)
-                            .padding()
+                            .transition(.opacity)
+                    } else {
+                        // Display validation error if any
+                        if !validationError.isEmpty {
+                            Text(viewModel.validationError.joined(separator: ", "))
+                                .foregroundStyle(.red)
+                                .listRowSeparator(.hidden)
+                                .padding()
+                        }
+                        
+                        // Display each card sorted by their id
+                        ForEach(storedCards, id: \.uuid) { card in
+                            Button(action: {
+                                viewModel.selectedCard = card
+                                viewModel.fetchCard()
+                                isPresentingCardFormView = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "line.horizontal.3")
+                                        .foregroundStyle(.gray)
+                                    Text(card.title)
+                                        .foregroundStyle(Color(.label))
+                                }
+                            }
+                            .listRowSeparator(.hidden)
+                            .swipeActions {
+                                Button(role: .destructive) {
+                                    viewModel.removeCard(card, with: context)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                        .onMove(perform: moveCard)
+                        .transition(.slide)
                     }
                     
-                    // Display each card sorted by their id
-                    ForEach(selectedGroup.cards.sorted(by: { $0.index < $1.index }), id: \.uuid) { card in
-                        Button(action: {
-                            viewModel.selectedCard = card
-                            viewModel.fetchCard()
-                            isPresentingCardFormView.toggle()
-                        }) {
-                            HStack {
-                                Image(systemName: "line.horizontal.3")
-                                    .foregroundStyle(.gray)
-                                Text(card.title)
-                                    .foregroundStyle(Color(.label))
-                            }
-                        }
-                        .listRowSeparator(.hidden)
-                        .swipeActions {
-                            Button(role: .destructive) {
-                                viewModel.removeCard(card, with: context)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
+                    if storedCards.isEmpty {
+                        Text("Tap on a card to edit, drag to reorder, and swipe to delete")
+                            .font(.footnote)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
+                            .foregroundStyle(.secondary)
+                            .listRowSeparator(.hidden)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .transition(.opacity)
                     }
-                    .onMove(perform: moveCard)
-                    .transition(.slide)
                 }
+                .padding(.top, -16)
+                .mask(LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: .white, location: 0.0),
+                        .init(color: .white, location: 0.8),
+                        .init(color: .clear, location: 1.0)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                ).blur(radius: 10))
                 
-                if !selectedGroup.cards.isEmpty {
-                    Text("Tap on a card to edit, drag to reorder, and swipe to delete")
-                        .font(.footnote)
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(1)
-                        .foregroundStyle(.secondary)
-                        .listRowSeparator(.hidden)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .transition(.opacity)
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        isNewCardButtonPressed = true
+                        isPresentingCardFormView = true
+                    }
+                    
+                    withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                        isNewCardButtonPressed = false
+                    }
+                }) {
+                    Text("Create a new card")
+                        .font(.title2)
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(.white)
+                }
+                .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isNewCardButtonPressed)
+                .padding()
+                
+            }
+            .navigationTitleViewBuilder {
+                if let title = selectedGroup.groupTitle, !title.isEmpty {
+                    Text(title)
+                } else {
+                    Image(systemName: selectedGroup.groupSymbol ?? "")
                 }
             }
-            .animation(.easeInOut(duration: 1), value: selectedGroup.cards)
-            
-            Button(action: {
-                isPresentingCardFormView.toggle()
+            .sheet(isPresented: $isPresentingCardFormView, onDismiss: {
+                viewModel.resetFields()
             }) {
-                Text("Create a new card")
-                    .font(.title2)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundStyle(.white)
-                    .cornerRadius(8)
+                CardFormView(viewModel: viewModel)
+                    .presentationDetents([.fraction(0.6), .fraction(0.99)])
+                    .onDisappear {
+                        viewModel.validationError.removeAll()
+                    }
             }
-            .padding()
-        }
-        .navigationTitleViewBuilder {
-            if selectedGroup.groupTitle.isEmpty {
-                Image(systemName: selectedGroup.groupSymbol)
-            } else {
-                Text(selectedGroup.groupTitle)
-            }
-        }
-        .sheet(isPresented: $isPresentingCardFormView, onDismiss: {
-            viewModel.resetFields()
-        }) {
-            CardFormView(viewModel: viewModel)
-                .presentationDetents([.fraction(0.6), .fraction(0.99)])
-                .onDisappear {
-                    viewModel.validationError.removeAll()
-                }
         }
     }
     
@@ -122,7 +143,7 @@ struct CardListView: View {
     /// Updates the card's index to reflect the new order.
     private func moveCard(from source: IndexSet, to destination: Int) {
         // Extract the cards in a mutable array
-        var mutableCards = selectedGroup.cards.sorted(by: { $0.index < $1.index })
+        var mutableCards = storedCards
         
         // Perform the move in the mutable array
         mutableCards.move(fromOffsets: source, toOffset: destination)
@@ -135,8 +156,10 @@ struct CardListView: View {
         // Save the changes back to the context
         do {
             for card in mutableCards {
-                if let selectedCard = selectedGroup.cards.first(where: { $0.uuid == card.uuid }) {
-                    selectedCard.index = card.index // Update the ID in the context
+                if let selectedCard = storedCards.first(where: { $0.uuid == card.uuid }) {
+                    withAnimation {
+                        selectedCard.index = card.index // Update the ID in the context
+                    }
                 }
             }
             try context.save() // Persist the changes

@@ -37,11 +37,11 @@ struct GroupOrderView: View {
                         HStack {
                             Image(systemName: "line.horizontal.3")
                                 .foregroundStyle(.gray)
-                            if !group.groupSymbol.isEmpty {
-                                Image(systemName: group.groupSymbol)
+                            if (group.groupSymbol?.isEmpty == false) {
+                                Image(systemName: group.groupSymbol ?? "")
                             }
-                            if !group.groupTitle.isEmpty {
-                                Text(group.groupTitle)
+                            if (group.groupTitle?.isEmpty == false) {
+                                Text(group.groupTitle ?? "")
                                     .foregroundStyle(Color(.label))
                             }
                         }
@@ -69,7 +69,6 @@ struct GroupOrderView: View {
                     }
                 }
             }
-            .animation(.easeInOut(duration: 1), value: savedGroups)
             .navigationTitle("Group Order")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -90,26 +89,27 @@ struct GroupOrderView: View {
     /// Updates the groups' index to reflect the new order.
     private func moveGroup(from source: IndexSet, to destination: Int) {
         // Extract the cards in a mutable array
-        var mutableGroups = savedGroups.sorted(by: { $0.index < $1.index })
+        var mutableGroups = savedGroups.sorted(by: { $0.index! < $1.index! })
         
-        // Perform the move in the mutable array
-        mutableGroups.move(fromOffsets: source, toOffset: destination)
-        
-        // Update the index of the card to reflect the new order
-        for index in mutableGroups.indices {
-            mutableGroups[index].index = index
-        }
-        
-        // Save the changes back to the context
-        do {
-            for groups in mutableGroups {
-                if let selectedGroup = savedGroups.first(where: { $0.uuid == groups.uuid }) {
-                    selectedGroup.index = groups.index // Update the ID in the context
-                }
+        withAnimation {
+            // Perform the move in the mutable array
+            mutableGroups.move(fromOffsets: source, toOffset: destination)
+            
+            for (newIndex, group) in mutableGroups.enumerated() {
+                group.index = newIndex
             }
-            try context.save() // Persist the changes
-        } catch {
-            validationError.append("Failed to save updated order: \(error.localizedDescription)")
+            
+            // Save the changes back to the context
+            do {
+                for group in mutableGroups {
+                    if let selectedGroup = savedGroups.first(where: { $0.uuid == group.uuid }) {
+                        selectedGroup.index = group.index // Update the ID in the context
+                    }
+                }
+                try context.save() // Persist the changes
+            } catch {
+                validationError.append("Failed to save updated order: \(error.localizedDescription)")
+            }
         }
     }
 }

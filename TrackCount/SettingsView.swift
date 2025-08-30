@@ -9,7 +9,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.dismiss) private var dismiss
     
     @AppStorage("timerAlertEnabled") var isTimerAlertEnabled: Bool = DefaultSettings.timerAlertEnabled
     @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
@@ -24,19 +23,13 @@ struct SettingsView: View {
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     
     var body: some View {
-        let isLight = colorScheme == .light
         NavigationStack {
             Form {
                 VStack(alignment: .center, spacing: 10) {
-                    Image(isLight ? "TrackCountIconLight" : "TrackCountIconDark")
+                    Image(colorScheme == .light ? "TrackCountIconLight" : "TrackCountIconDark")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
                         .frame(minWidth: 50, maxWidth: 100, alignment: .center)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.secondary, lineWidth: 0.5)
-                        )
                     Text("TrackCount")
                         .font(.system(.title, weight: .bold))
                         .lineLimit(1)
@@ -51,7 +44,7 @@ struct SettingsView: View {
                 
                 Section(header: Text("Theme")) {
                     Toggle("Animate Gradient", isOn: $isGradientAnimated)
-                    ColorPicker("Gradient Color", selection: $primaryThemeSwiftColor) 
+                    ColorPicker("Gradient Color", selection: $primaryThemeSwiftColor)
                         .onChange(of: primaryThemeSwiftColor) {
                             saveColor(primaryThemeSwiftColor, to: &primaryThemeColor)
                         }
@@ -70,9 +63,9 @@ struct SettingsView: View {
                     Toggle("Play Ringtone When Timer Ends", isOn: $isTimerAlertEnabled)
                     HStack {
                         Button("Default Ringtone") {
-                            isPresentingRingtonePickerView.toggle()
+                            isPresentingRingtonePickerView = true
                         }
-                        .foregroundStyle(isLight ? .black : .white)
+                        .foregroundStyle(colorScheme == .light ? .black : .white)
                         
                         Spacer()
                         
@@ -81,25 +74,23 @@ struct SettingsView: View {
                     }
                 }
                 
-                Section(header: Text("About")) {
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        Text("\(version) (\(build))")
-                            .foregroundStyle(.secondary)
-                    }
-                    .accessibilityLabel("Version")
-                    .accessibilityValue(Text("\(version) (\(build))"))
+                Section(footer:
+                    VStack {
+                        Link("Made with ❤️ Hack Club", destination: URL(string: "https://hackclub.com/")!)
+                        Link("Source Code on GitHub", destination: URL(string: "https://github.com/Somebud0180/TrackCount")!)
+                        HStack {
+                            Text("Version \(version) (\(build))")
+                        }
+                        .accessibilityLabel("Version")
+                        .accessibilityValue(Text("\(version) (\(build))"))
                 }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .foregroundStyle(.secondary)
+                ) {
+                }
+                .padding(.bottom)
             }
             .navigationBarTitle("Settings", displayMode: .inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Dismiss") {
-                        dismiss()
-                    }
-                }
-            }
             .sheet(isPresented: $isPresentingRingtonePickerView) {
                 RingtonePickerView(setVariable: $timerDefaultRingtone, fromSettings: true)
             }

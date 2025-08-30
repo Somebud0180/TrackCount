@@ -13,6 +13,7 @@ import Combine
 
 class CardViewModel: ObservableObject {
     // Set variable defaults
+    @Query var storedCards: [DMStoredCard]
     @Published var selectedGroup: DMCardGroup
     @Published var selectedCard: DMStoredCard?
     @Published var newCardIndex: Int = 0
@@ -44,6 +45,7 @@ class CardViewModel: ObservableObject {
     
     // Counter limit
     let minModifierLimit = 0
+    let maxModifierLimit = 100000
     
     // Button limit
     let buttonTextLimit = 20
@@ -63,13 +65,15 @@ class CardViewModel: ObservableObject {
     init(selectedGroup: DMCardGroup, selectedCard: DMStoredCard? = nil) {
         self.selectedGroup = selectedGroup
         self.selectedCard = selectedCard
+        let groupID = selectedGroup.uuid
+        _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
     }
     
     /// A function that grabs the saved data from a selected card.
     /// Used to populate the temporary variables within `CardViewModel` with the variables from the selected card.
     func fetchCard() {
         guard let card = selectedCard else { return }
-        self.newCardType = card.type
+        self.newCardType = card.type ?? .counter
         self.newCardTitle = card.title
         self.newCardCount = card.count
         self.newCardState = card.state?.isEmpty == false ? card.state!.map { $0.state } : Array(repeating: true, count: 1)
@@ -79,8 +83,8 @@ class CardViewModel: ObservableObject {
         self.newCardSymbol = card.symbol ?? ""
         self.newCardTimer = card.timer?.isEmpty == false ? card.timer!.map { $0.timerValue } : Array(repeating: 0, count: 1)
         self.newCardRingtone = card.timerRingtone ?? ""
-        self.newCardPrimary = card.primaryColor.color
-        self.newCardSecondary = card.secondaryColor.color
+        self.newCardPrimary = card.primaryColor?.color ?? .blue
+        self.newCardSecondary = card.secondaryColor?.color ?? .white
         
         if card.type == .timer || card.type == .timer_custom {
             // Convert timer values back to [h,m,s] format for each timer
@@ -210,18 +214,18 @@ class CardViewModel: ObservableObject {
         }
         
         // Check if there are any existing cards
-        if selectedGroup.cards.count == 0 {
+        if storedCards.count == 0 {
             newCardIndex = 0 // Set new index to 0 if there are no cards
         } else {
-            newCardIndex = selectedGroup.cards.count // Set new index to the next highest number
+            newCardIndex = storedCards.count // Set new index to the next highest number
         }
         
         do {
             if let card = selectedCard {
                 // Update the existing card
-                card.title = newCardTitle
+                card.title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                card.count = (newCardType == .counter && card.type != .counter) ? 0 : newCardCount // Check card count first due to type check, to avoid reseting an existing counter card
                 card.type = newCardType
-                card.count = newCardType == .counter ? 0 : newCardCount
                 card.state = newCardType == .toggle ? newCardState.prefix(newCardCount).map { CardState(state: $0) } : (newCardType == .timer || newCardType == .timer_custom) ? [CardState(state: false)] : nil
                 card.modifier = newCardType == .counter ? newCardModifier.map { CounterModifier(modifier: $0) } : nil
                 card.buttonText = newCardType == .toggle ? newButtonText.prefix(newCardCount).map { ButtonText(buttonText: $0) } : nil
@@ -230,13 +234,13 @@ class CardViewModel: ObservableObject {
                 card.timerRingtone = (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil
                 card.primaryColor = CodableColor(color: newCardPrimary)
                 card.secondaryColor = CodableColor(color: newCardSecondary)
+                card.group = selectedGroup
             } else {
                 // Create a new card
                 let newCard = DMStoredCard(
-                    uuid: UUID(),
                     index: newCardIndex,
                     type: newCardType,
-                    title: newCardTitle,
+                    title: newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines),
                     count: newCardType == .counter ? 0 : newCardCount,
                     state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
                         (newCardType == .timer || newCardType == .timer_custom) ? [false] : nil,
@@ -246,9 +250,16 @@ class CardViewModel: ObservableObject {
                     timer: (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer : nil,
                     timerRingtone: (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil,
                     primaryColor: newCardPrimary,
-                    secondaryColor: newCardSecondary
+                    secondaryColor: newCardSecondary,
+                    group: selectedGroup
                 )
-                selectedGroup.cards.append(newCard)
+                
+                // Ensure the relationship array exists then append for ordering
+                if selectedGroup.cards == nil { selectedGroup.cards = [] }
+                selectedGroup.cards?.append(newCard)
+                
+                // Insert into the model context so it persists
+                context.insert(newCard)
             }
             
             // Save the context
@@ -268,10 +279,10 @@ class CardViewModel: ObservableObject {
             context.delete(card)
             
             // Remove the card from the group`s cards array
-            selectedGroup.cards.removeAll { $0.uuid == card.uuid }
+            selectedGroup.cards?.removeAll { $0.uuid == card.uuid }
             
             // Update indices of remaining cards
-            let sortedCards = selectedGroup.cards.sorted(by: { $0.index < $1.index })
+            let sortedCards = selectedGroup.cards!.sorted(by: { $0.index! < $1.index! })
             for (index, card) in sortedCards.enumerated() {
                 card.index = index
             }
@@ -299,11 +310,13 @@ class CardViewModel: ObservableObject {
                 for (index, modifierValue) in newCardModifier.enumerated() {
                     if modifierValue < 0 {
                         validationError.append("Modifier\(index)Negative")
+                    } else if modifierValue > maxModifierLimit {
+                        validationError.append("Modifier\(index)MoreThanMax")
                     }
-                }                
+                }
                 if !newCardModifier.contains(where: { $0 > 0 }) {
                     validationError.append("ModifierLessThanOne")
-                }
+                } 
             } else if newCardType == .toggle {
                 if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {
                     validationError.append("SymbolEmpty")

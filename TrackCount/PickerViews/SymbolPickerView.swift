@@ -10,17 +10,16 @@ import SwiftUI
 /// A view containing symbols with the ability to pick one and store it to selectedSymbol.
 struct SymbolPickerView: View {
     /// Represents the interaction behavior setting for the symbol picker.
-    enum viewBehaviour {
+    enum ViewBehaviour {
         case tapToSelect // Tap to select
         case tapWithUnselect // Tap to select and tap again to unselect
     }
     
-    @Environment(\.presentationMode) var presentationMode
     @Environment(\.dismiss) var dismiss
     @Binding var selectedSymbol: String
     
     @State private var searchText: String = ""
-    @State private var viewBehaviour: viewBehaviour
+    @State private var viewBehaviour: ViewBehaviour
     
     /// The set of pickable symbols.
     private let symbols: [String: [String]] = [
@@ -39,21 +38,19 @@ struct SymbolPickerView: View {
     /// - Parameters:
     ///   - viewBehaviour: accepts tapToSelect which allows tapping the symbol to select or tapWithUnselect which also allows to unselect the symbol by tapping it again.
     ///   - selectedSymbol: accepts a variable to modify with the selected symbol.
-    init(viewBehaviour: viewBehaviour, selectedSymbol: Binding<String>) {
+    init(viewBehaviour: ViewBehaviour, selectedSymbol: Binding<String>) {
         self.viewBehaviour = viewBehaviour
         self._selectedSymbol = selectedSymbol
     }
     
-    
-    
-    private let columns = [
+    private let symbolColumns = [
         GridItem(.adaptive(minimum: 50))
     ]
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading) {
+                LazyVStack(alignment: .leading) {
                     ForEach(filteredCategories.keys.sorted(), id: \.self) { category in
                         VStack(alignment: .leading) {
                             Text(category.capitalized)
@@ -66,7 +63,7 @@ struct SymbolPickerView: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Search Symbols")
-            .navigationBarTitle("Symbols", displayMode: .inline)
+            .navigationBarTitle("Pick a Symbol", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -84,8 +81,8 @@ struct SymbolPickerView: View {
             searchText.isEmpty
             ? categorySymbols
             : categorySymbols.filter {
-                // Lowercase the input to make it case-insensetive
-                preprocess($0).contains(searchText.lowercased())}
+                // Lowercase the input to make it case-insensitive
+                preprocess($0).localizedStandardContains(searchText.lowercased())}
         }
         .filter { !$0.value.isEmpty } // Remove empty categories
     }
@@ -94,13 +91,14 @@ struct SymbolPickerView: View {
     private func preprocess(_ symbol: String) -> String {
         symbol
             .replacingOccurrences(of: ".fill", with: "") // Remove ".fill"
-            .replacingOccurrences(of: ".", with: " ") // Repalace "." with a space
+            .replacingOccurrences(of: ".", with: " ") // Replace "." with a space
+            .lowercased()
     }
     
     /// A function that creates a grid containing a set symbols.
     /// Grabs symbols from the passed over argument and lists each symbols that can be tapped to select it.
     private func createSymbolGrid(symbols: [String]) -> some View {
-        LazyVGrid(columns: columns, spacing: 20) {
+        LazyVGrid(columns: symbolColumns, spacing: 20) {
             ForEach(symbols, id: \.self) { symbol in
                 Image(systemName: symbol)
                     .resizable()
@@ -108,11 +106,12 @@ struct SymbolPickerView: View {
                     .frame(width: 32, height: 32)
                     .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
                     .background(selectedSymbol == symbol ? Color.blue.opacity(0.3) : Color.clear)
-                    .foregroundStyle(Color.secondary)
+                    .foregroundStyle(selectedSymbol == symbol ? Color.accentColor : Color.secondary)
                     .cornerRadius(8)
                     .onTapGesture {
                         handleSymbolSelection(symbol)
                     }
+                    .accessibilityLabel(Text(symbol))
                     .accessibilityIdentifier(symbol)
             }
         }
@@ -126,7 +125,7 @@ struct SymbolPickerView: View {
         case .tapToSelect:
             // Select the symbol and dismiss the picker
             selectedSymbol = symbol
-            presentationMode.wrappedValue.dismiss()
+            dismiss()
         case .tapWithUnselect:
             // Select the symbol and dismiss the picker
             // Or tap it again to unselect it
@@ -134,14 +133,37 @@ struct SymbolPickerView: View {
                 selectedSymbol = ""
             } else {
                 selectedSymbol = symbol
-                presentationMode.wrappedValue.dismiss()
+                dismiss()
             }
         }
     }
 }
 
-#Preview {
-    // Sample variable to pass to the picker
-    @Previewable @State var testSymbol: String = ""
-    SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $testSymbol)
+struct SymbolPickerView_Previews: PreviewProvider {
+    static var previews: some View {
+        StatefulPreviewWrapper("") { selectedSymbol in
+            SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: selectedSymbol)
+        }
+    }
+}
+
+struct StatefulPreviewWrapper<Value>: View {
+    @State var value: Value
+    var content: (Binding<Value>) -> AnyView
+    
+    init(_ value: Value, content: @escaping (Binding<Value>) -> AnyView) {
+        _value = State(initialValue: value)
+        self.content = content
+    }
+    
+    var body: some View {
+        content($value)
+    }
+}
+
+extension StatefulPreviewWrapper where Value == String {
+    init(_ value: Value, content: @escaping (Binding<Value>) -> SymbolPickerView) {
+        _value = State(initialValue: value)
+        self.content = { binding in AnyView(content(binding)) }
+    }
 }

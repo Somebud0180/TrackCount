@@ -20,9 +20,10 @@ struct RingtonePickerView: View {
     
     @AppStorage("timerDefaultRingtone") var timerDefaultRingtone: String = DefaultSettings.timerDefaultRingtone
     
-    @StateObject private var audioManager = AudioPlayerManager()
+    // Use the shared AudioPlayerManager instance instead of creating a new one
+    private let audioManager = AudioPlayerManager.shared
     @Binding var setVariable: String
-    @State private var player: AVAudioPlayer?
+    @State private var previewPlayer: AVAudioPlayer?
     var isFromSettings: Bool
     let ringtones: [Ringtone]
     

@@ -30,8 +30,8 @@ class GroupViewModel: ObservableObject {
     /// A function that fetches the existing group details for editing.
     func fetchGroup() {
         guard let selectedGroup else { return }
-        self.newGroupTitle = selectedGroup.groupTitle
-        self.newGroupSymbol = selectedGroup.groupSymbol
+        self.newGroupTitle = selectedGroup.groupTitle ?? ""
+        self.newGroupSymbol = selectedGroup.groupSymbol ?? ""
     }
     
     /// A function that stores the temporary variables to a group and saves it to the data model entity.
@@ -69,8 +69,7 @@ class GroupViewModel: ObservableObject {
                 selectedGroup?.groupSymbol = newGroupSymbol
             } else {
                 // Create a new group
-                let newGroup = DMCardGroup(uuid: UUID(),
-                                           index: newGroupIndex,
+                let newGroup = DMCardGroup(index: newGroupIndex,
                                            groupTitle: newGroupTitle,
                                            groupSymbol: newGroupSymbol)
                 
@@ -139,23 +138,15 @@ class GroupViewModel: ObservableObject {
     /// - Returns: Returns the packaged group in a temporary URL.
     func shareGroup(_ group: DMCardGroup) throws -> URL {
         // Sanitize filename
-        let sanitizedTitle = group.groupTitle
+        let sanitizedTitle = group.groupTitle ?? ""
             .components(separatedBy: .init(charactersIn: "/\\?%*|\"<>"))
             .joined()
-            .trimmingCharacters(in: .whitespaces)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         
         let fileName = sanitizedTitle.isEmpty ? "shared_group.trackcount" : "\(sanitizedTitle).trackcount"
         
-        // Create temporary URL
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathComponent(fileName)
-        
-        // Ensure directory exists
-        try FileManager.default.createDirectory(
-            at: tempURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
+        // Use top-level temp directory, not a nested folder
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         
         // Write data
         let shareData = try group.encodeForSharing()
