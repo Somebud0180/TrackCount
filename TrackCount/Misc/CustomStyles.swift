@@ -18,34 +18,60 @@ func defaultShape() -> some Shape {
 
 /// A rounded style with a thin material background and padding.
 struct CustomRoundedStyle: ViewModifier {
-    var isInteractive: Bool = false
-    var tint: Color = .gray
-    var padding: CGFloat = 12
-    var cornerRadius: CGFloat = 8
+    let isInteractive: Bool
+    let tint: Color
+    let padding: CGFloat
+    let cornerRadius: CGFloat
+    let externalPressed: Bool
+    
+    @State private var isHovering = false
+    @State private var isPressed = false
+    
+    var pressedSize: CGFloat {
+        if #available(iOS 26.0, *) {
+            return 1.1
+        } else {
+            return 0.95
+        }
+    }
+    
+    // Calculate the final scale based on all states
+    private var finalScale: CGFloat {
+        if externalPressed || isPressed {
+            return pressedSize
+        } else if isHovering {
+            return 1.05
+        } else {
+            return 1.0
+        }
+    }
     
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             if isInteractive {
                 content
-                    .padding(padding)                                               // Apply padding
-                    .glassEffect(.regular.interactive().tint(tint), in: Capsule())  // Apply a glass background
+                    .padding(padding)
+                    .glassEffect(.regular.interactive().tint(tint), in: Capsule())
             } else {
                 content
-                    .padding(padding)                                   // Apply padding
-                    .glassEffect(.regular.tint(tint), in: Capsule())    // Apply a glass background
+                    .padding(padding)
+                    .glassEffect(.regular.tint(tint), in: Capsule())
             }
         } else {
-            if (tint == .gray || tint == .white) {
-                content
-                    .padding(padding)           // Apply padding
-                    .background(.thickMaterial) // Apply a tinted background
-                    .cornerRadius(cornerRadius) // Set corner radius
-            } else {
-                content
-                    .padding(padding)           // Apply padding
-                    .background(tint)           // Apply a tinted background
-                    .cornerRadius(cornerRadius) // Set corner radius
-            }
+            content
+                .padding(padding)
+                .adaptiveBackgroundMaterial(tint)
+                .cornerRadius(cornerRadius)
+                .scaleEffect(isInteractive ? finalScale : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: finalScale)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
+                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { isPressing in
+                    isPressed = isPressing
+                } perform: {
+                    // Empty perform block - we only want the pressing state, not to intercept the tap
+                }
         }
     }
 }
@@ -102,47 +128,67 @@ struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
     let tintStrength: CGFloat
     let tint: Color
     let shape: S
+    let externalPressed: Bool
+    
+    @State private var isHovering = false
+    @State private var isPressed = false
+    
+    var pressedSize: CGFloat {
+        if #available(iOS 26.0, *) {
+            return 1.1
+        } else {
+            return 0.95
+        }
+    }
+    
+    // Calculate the final scale based on all states
+    private var finalScale: CGFloat {
+        if externalPressed || isPressed {
+            return pressedSize
+        } else if isHovering {
+            return 1.05
+        } else {
+            return 1.0
+        }
+    }
     
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             let tintColor = colorScheme == .dark ? tint.opacity(0.2) : tint.opacity(tintStrength)
-            if tintStrength == 0.0 {
-                if isInteractive {
-                    content.glassEffect(.regular.interactive(), in: shape)
-                } else {
-                    content.glassEffect(.regular, in: shape)
-                }
+            if isInteractive {
+                content.glassEffect(
+                    .regular
+                    .tint(tintStrength == 0.0 ? nil : tintColor)
+                    .interactive()
+                    , in: shape
+                )
             } else {
-                if isInteractive {
-                    content.glassEffect(.regular.tint(tintColor).interactive(), in: shape)
-                } else {
-                    content.glassEffect(.regular.tint(tintColor), in: shape)
-                }
+                content.glassEffect(
+                    .regular
+                    .tint(tintColor)
+                    , in: shape
+                )
             }
         } else {
             let tintColor = colorScheme == .dark ? tint.opacity(0.2) : tint.opacity(tintStrength)
             content
                 .background(tintColor, in: shape)
-        }
-    }
-}
-
-/// Legacy Dark Foreground Modifier for iOS versions below 26
-struct LegacyDarkTint: ViewModifier {
-    @Environment(\.colorScheme) var colorScheme
-    
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-        } else {
-            content
-                .tint(colorScheme == .dark ? .white : .primary)
+                .scaleEffect(isInteractive ? finalScale : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: finalScale)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
+                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { isPressing in
+                    isPressed = isPressing
+                } perform: {
+                    // Empty perform block - we only want the pressing state, not to intercept the tap
+                }
         }
     }
 }
 
 /// Group Card Interactive Modifier with press and hover effects
-struct GroupCardInteractiveModifier: ViewModifier {
+struct GroupCardModifier: ViewModifier {
     @State private var isHovering = false
     @State private var isPressed = false
     
@@ -184,11 +230,39 @@ struct GroupCardInteractiveModifier: ViewModifier {
     }
 }
 
+/// Legacy Dark Foreground Modifier for iOS versions below 26
+struct LegacyDarkTint: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+        } else {
+            content
+                .tint(colorScheme == .dark ? .white : .primary)
+        }
+    }
+}
+
+struct AdaptiveBackgroundMaterial: ViewModifier {
+    let tint: Color
+    
+    func body(content: Content) -> some View {
+        if (tint == .gray || tint == .white) {
+            content.background(.thickMaterial)
+        } else {
+            content.background(tint)
+        }
+    }
+}
+
+
+// MARK: - View Extensions
 // Extend View for easier usage
 extension View {
     /// A rounded style with a thin material background and padding.
-    func customRoundedStyle(interactive: Bool = false, tint: Color = .gray, padding: CGFloat = 12, cornerRadius: CGFloat = 8) -> some View {
-        self.modifier(CustomRoundedStyle(isInteractive: interactive, tint: tint, padding: padding, cornerRadius: cornerRadius))
+    func customRoundedStyle(interactive: Bool = false, tint: Color = .gray, padding: CGFloat = 12, cornerRadius: CGFloat = 8, externalPressed: Bool = false) -> some View {
+        self.modifier(CustomRoundedStyle(isInteractive: interactive, tint: tint, padding: padding, cornerRadius: cornerRadius, externalPressed: externalPressed))
     }
     
     /// A button style with a liquid glass / tinted background that changes based on a condition.
@@ -197,8 +271,13 @@ extension View {
     }
     
     /// A button style with a liquid glass / tinted background.
-    func adaptiveGlassButton<S: Shape>(interactive: Bool = true, tintStrength: CGFloat = 0.8, tintColor: Color = Color.white, shape: S = defaultShape()) -> some View {
-        self.modifier(AdaptiveGlassButtonModifier(isInteractive: interactive, tintStrength: tintStrength, tint: tintColor, shape: shape))
+    func adaptiveGlassButton<S: Shape>(interactive: Bool = true, tintStrength: CGFloat = 0.8, tintColor: Color = Color.white, shape: S = defaultShape(), externalPressed: Bool = false) -> some View {
+        self.modifier(AdaptiveGlassButtonModifier(isInteractive: interactive, tintStrength: tintStrength, tint: tintColor, shape: shape, externalPressed: externalPressed))
+    }
+    
+    /// A modifier that adds interactive effects for group cards, with subtle scaling on press and hover.
+    func groupCardModifier() -> some View {
+        self.modifier(GroupCardModifier())
     }
     
     /// A foreground style that ensures readability for iOS versions below 26.
@@ -206,8 +285,7 @@ extension View {
         self.modifier(LegacyDarkTint())
     }
     
-    /// A modifier that adds interactive effects for group cards, with subtle scaling on press and hover.
-    func groupCardInteractive() -> some View {
-        self.modifier(GroupCardInteractiveModifier())
+    func adaptiveBackgroundMaterial(_ tint: Color) -> some View {
+        self.modifier(AdaptiveBackgroundMaterial(tint: tint))
     }
 }

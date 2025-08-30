@@ -16,6 +16,7 @@ struct GroupFormView: View {
     
     // Set variable defaults
     @State private var isPickerPresented: Bool = false
+    @State private var isSaveButtonPressed: Bool = false
     
     struct ValidationVariables: Equatable {
         let groupTitle: String
@@ -42,6 +43,7 @@ struct GroupFormView: View {
                 }
             }
             .padding(.horizontal)
+            .padding(.bottom)
             .onChange(of: validateVariables) {
                 if !viewModel.validationError.isEmpty {
                     viewModel.validateForm()
@@ -71,16 +73,16 @@ struct GroupFormView: View {
         
         return Group {
             TextField("Set group title", text: $viewModel.newGroupTitle)
-                .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                 .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 .onChange(of: viewModel.newGroupTitle) {
                     if viewModel.newGroupTitle.count > characterLimit {
-                        viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
+                        viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespacesAndNewlines))
                         viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
                     }
                 }
                 .onSubmit {
-                    viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespaces))
+                    viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespacesAndNewlines))
                 }
             
             // A symbol preview/picker
@@ -98,7 +100,7 @@ struct GroupFormView: View {
                     }
                 }
                 .foregroundStyle(.foreground)
-                .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                 .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 .accessibilityIdentifier("Group Smybol Picker")
                 .sheet(isPresented: $isPickerPresented) {
@@ -118,26 +120,25 @@ struct GroupFormView: View {
             }
             
             Button(action : {
-                viewModel.saveGroup(with: context)
-                if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
-                    dismiss()
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isSaveButtonPressed = true
+                }
+                
+                withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                    isSaveButtonPressed = false
+                    viewModel.saveGroup(with: context)
+                    
+                    if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
+                        dismiss()
+                    }
                 }
             }) {
-                if #available(iOS 26.0, *) {
-                    Text(viewModel.selectedGroup != nil ? "Add Group" : "Save Changes")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .customRoundedStyle(interactive: true, tint: .blue, padding: 6)
-                        .foregroundStyle(.white)
-                } else {
-                    Text(viewModel.selectedGroup != nil ? "Add Group" : "Save Changes")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .cornerRadius(8)
-                }
-            }.padding(.bottom)
+                Text(viewModel.selectedGroup != nil ? "Add Group" : "Save Changes")
+                    .font(.title2)
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(.white)
+            }
+            .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
         }
     }
 }

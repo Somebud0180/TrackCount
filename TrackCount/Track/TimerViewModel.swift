@@ -21,6 +21,10 @@ class TimerViewModel: ObservableObject {
     @Published var pausedTimerValues: [UUID: Double] = [:]
     @Published var timerStates: [UUID: TimerState] = [:]
     
+    @State private var isCancelButtonPressed: Bool = false
+    @State private var isPauseButtonPressed: Bool = false
+    @State private var isEndButtonPressed: Bool = false
+    
     private var lastTickTime: [UUID: Date] = [:]
     private var timerStartTime: [UUID: Date] = [:]
     private let timerPublisher = Timer.publish(every: 1/30.0, on: .main, in: .common).autoconnect()
@@ -143,42 +147,64 @@ class TimerViewModel: ObservableObject {
             HStack {
                 if (self.timerStates[card.uuid] != .stopped) {
                     Button(action: {
-                        self.stopTimer(card)
-                        card.state?[0] = CardState(state: false)
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            self.isCancelButtonPressed = true
+                        }
+                        
+                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                            self.isCancelButtonPressed = false
+                            self.stopTimer(card)
+                            card.state?[0] = CardState(state: false)
+                        }
                     }) {
                         Text("Cancel")
                             .foregroundStyle(card.secondaryColor?.color ?? .white)
                     }
                     .padding()
-                    .adaptiveGlassButton(tintColor: .secondary)
+                    .adaptiveGlassButton(tintColor: .secondary, externalPressed: self.isCancelButtonPressed)
                     
                     Spacer()
                     
                     Button(action: {
-                        if isPaused {
-                            self.resumeTimer(card)
-                        } else {
-                            self.pauseTimer(card)
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            self.isPauseButtonPressed = true
+                        }
+                        
+                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                            self.isPauseButtonPressed = false
+                            
+                            if isPaused {
+                                self.resumeTimer(card)
+                            } else {
+                                self.pauseTimer(card)
+                            }
                         }
                     }) {
                         Text(isPaused ? "Resume" : "Pause")
                             .foregroundStyle(card.secondaryColor?.color ?? .white)
                     }
                     .padding()
-                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
+                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: self.isPauseButtonPressed)
                 } else {
                     Spacer()
                     
                     Button(action: {
-                        card.state?[0] = CardState(state: false)
-                        NotificationManager.shared.cancelTimerNotification(for: card.uuid)
-                        self.timerSound(card, mode: .stop)
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            self.isPauseButtonPressed = true
+                        }
+                        
+                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                            self.isPauseButtonPressed = false
+                            self.timerSound(card, mode: .stop)
+                            card.state?[0] = CardState(state: false)
+                            NotificationManager.shared.cancelTimerNotification(for: card.uuid)
+                        }
                     }) {
                         Text("End")
                             .foregroundStyle(card.secondaryColor?.color ?? .white)
                     }
                     .padding()
-                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
+                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: self.isPauseButtonPressed)
                 }
             }
             .padding(.horizontal)

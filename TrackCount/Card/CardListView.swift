@@ -18,6 +18,7 @@ struct CardListView: View {
     @Query var storedCards: [DMStoredCard]
     @State private var isPresentingCardFormView: Bool = false
     @State private var validationError: [String] = []
+    @State private var isNewCardButtonPressed: Bool = false
     
     /// Initializes the selectedGroup and selectedCard variable for editing.
     /// - Parameters:
@@ -100,14 +101,21 @@ struct CardListView: View {
                 ).blur(radius: 10))
                 
                 Button(action: {
-                    isPresentingCardFormView = true
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        isNewCardButtonPressed = true
+                    }
+                    
+                    withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                        isNewCardButtonPressed = false
+                        isPresentingCardFormView = true
+                    }
                 }) {
                     Text("Create a new card")
                         .font(.title2)
                         .frame(maxWidth: .infinity)
                         .foregroundStyle(.white)
                 }
-                .customRoundedStyle(interactive: true, tint: .blue)
+                .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isNewCardButtonPressed)
                 .padding()
                 
             }

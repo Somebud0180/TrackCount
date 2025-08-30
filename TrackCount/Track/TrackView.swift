@@ -32,14 +32,6 @@ struct TrackView: View {
     let gridColumns = [GridItem(.adaptive(minimum: 450), spacing: 8)]
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
-    var pressedSize: CGFloat {
-        if #available(iOS 26.0, *) {
-            return 1.1
-        } else {
-            return 0.95
-        }
-    }
-    
     init(selectedGroup: DMCardGroup) {
         _groupViewModel = StateObject(wrappedValue: GroupViewModel(selectedGroup: selectedGroup))
         _timerViewModel = StateObject(wrappedValue: TimerViewModel())
@@ -262,14 +254,21 @@ struct TrackView: View {
             if let modifiers = card.modifier?.map({ $0.modifier }) {
                 ForEach(0..<modifiers.count, id: \.self) { index in
                     if modifiers[index] > 0 {
+                        @State var isPressed = false
                         let willOverflow = operation(1, 1) == 2
                         ? card.count > Int.max - modifiers[index]
                         : card.count < Int.min + modifiers[index]
                         
                         Button(action: {
-                            // Handle potential overflow and clamp the result within Int.min...Int.max
-                            let newValue = operation(card.count, modifiers[index])
-                            card.count = min(Int.max, max(Int.min, newValue))
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                isPressed = true
+                            }
+                            
+                            withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                                isPressed = false
+                                let newValue = operation(card.count, modifiers[index])
+                                card.count = min(Int.max, max(Int.min, newValue))
+                            }
                         }) {
                             HStack(spacing: 2) {
                                 Image(systemName: symbol)
@@ -289,7 +288,7 @@ struct TrackView: View {
                         }
                         .disabled(willOverflow)
                         .foregroundStyle(card.secondaryColor?.color ?? .white)
-                        .adaptiveGlassButton(interactive: !willOverflow, tintColor: willOverflow ? .gray : card.primaryColor?.color ?? .blue)
+                        .adaptiveGlassButton(interactive: !willOverflow, tintColor: willOverflow ? .gray : card.primaryColor?.color ?? .blue, externalPressed: isPressed)
                         .accessibilityLabel(accessibilityLabel)
                         .accessibilityHint("\(accessibilityHintPrefix) \(card.title) by \(modifiers[index])")
                     }
@@ -323,14 +322,10 @@ struct TrackView: View {
                 pressedStates[buttonKey] = true
             }
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    pressedStates[buttonKey] = false
-                }
-            }
-            
-            if card.state?.indices.contains(id) == true {
-                withAnimation {
+            withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                pressedStates[buttonKey] = false
+                
+                if card.state?.indices.contains(id) == true {
                     // Toggle using debounced state manager with temporary state
                     debouncedStateManager.toggleState(of: card, at: id, with: context)
                 }
@@ -373,7 +368,9 @@ struct TrackView: View {
     
     /// Creates the timer card contents from the inputted card.
     private func timerCard(_ card: DMStoredCard) -> some View {
-        Group {
+        @State var isStartButtonPressed: Bool = false
+        
+        return Group {
             if card.type == .timer_custom && card.state?[0].state == false  {
                 VStack {
                     Text("Set Timer")
@@ -401,15 +398,22 @@ struct TrackView: View {
                     Spacer()
                     
                     Button(action: {
-                        card.state?[0] = CardState(state: true)
-                        timerViewModel.startTimer(card)
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            isStartButtonPressed = true
+                        }
+                        
+                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                            isStartButtonPressed = false
+                            card.state?[0] = CardState(state: true)
+                            timerViewModel.startTimer(card)
+                        }
                     }) {
                         Text("Start")
                             .foregroundStyle(card.secondaryColor?.color ?? .white)
                             .frame(maxWidth: .infinity)
                             .padding()
                     }
-                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue)
+                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: isStartButtonPressed)
                 }
             } else if card.type == .timer && card.state?[0].state == false {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {

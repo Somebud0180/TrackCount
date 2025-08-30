@@ -18,6 +18,8 @@ struct CardFormView: View {
     @State private var isSymbolPickerPresented: Bool = false
     @State private var isPresentingRingtonePickerView: Bool = false
     
+    @State private var isSaveButtonPressed: Bool = false
+    
     struct ValidationVariables: Equatable {
         let title: String
         let modifier: [Int]
@@ -73,14 +75,21 @@ struct CardFormView: View {
                     }
                     
                     Button(action: {
-                        saveCard()
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            isSaveButtonPressed = true
+                        }
+                        
+                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                            isSaveButtonPressed = false
+                            saveCard()
+                        }
                     }) {
                         Text(viewModel.selectedCard == nil ? "Add Card" : "Save Changes")
                             .font(.title2)
                             .frame(maxWidth: .infinity)
                             .foregroundStyle(.white)
                     }
-                    .customRoundedStyle(interactive: true, tint: .blue)
+                    .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
                 }
                 .padding()
             }
@@ -111,7 +120,7 @@ struct CardFormView: View {
             // Text field for card title
             VStack(alignment: .leading) {
                 TextField("Set card title", text: $viewModel.newCardTitle)
-                    .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                    .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                     .errorOverlay("CardTitleEmpty", with: viewModel.validationError)
                     .accessibilityIdentifier("Card Title Field")
                 
@@ -147,7 +156,7 @@ struct CardFormView: View {
                 ForEach(0..<3, id: \.self) { index in
                     VStack(alignment: .leading) {
                         TextField("Modifier \(index + 1)", text: $viewModel.newCardModifierText[index])
-                            .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                            .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                             .errorOverlay("Modifier\(index)Negative", with: viewModel.validationError, warn: true)
                             .errorOverlay("Modifier\(index)MoreThanMax", with: viewModel.validationError, warn: true)
                             .keyboardType(.numberPad)
@@ -214,7 +223,7 @@ struct CardFormView: View {
                 HStack {
                     Text("Buttons: ")
                     TextField("", value: $viewModel.newCardCount, formatter: buttonCountFormatter)
-                        .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                        .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                         .errorOverlay("ButtonExceedsLimits", with: viewModel.validationError)
                         .keyboardType(.numberPad)
                     Stepper("", value: $viewModel.newCardCount, in: viewModel.minButtonLimit...viewModel.maxButtonLimit)
@@ -243,7 +252,7 @@ struct CardFormView: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 24, height: 24)
                     }
-                    .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                    .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                     .errorOverlay("SymbolEmpty", with: viewModel.validationError)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -261,7 +270,7 @@ struct CardFormView: View {
                     let characterLimit = viewModel.buttonTextLimit
                     
                     TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
-                        .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                        .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                         .onChange(of: viewModel.newButtonText[index]) {
                             if viewModel.newButtonText[index].count > characterLimit {
                                 viewModel.newButtonText[index] = String(viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces))
@@ -298,7 +307,7 @@ struct CardFormView: View {
                     Text("\(viewModel.newCardRingtone.isEmpty ? "Default" : viewModel.newCardRingtone)")
                         .foregroundStyle(.secondary)
                 }
-                .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
             }
             .buttonStyle(PlainButtonStyle())
             
@@ -311,7 +320,7 @@ struct CardFormView: View {
                     HStack {
                         Text("Timers: ")
                         TextField("", value: $viewModel.newCardCount, formatter: timerCountFormatter)
-                            .customRoundedStyle(interactive: false, tint: colorScheme == . dark ? .gray : .white)
+                            .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                             .errorOverlay("TimerExceedsLimits", with: viewModel.validationError)
                             .keyboardType(.numberPad)
                         Stepper("", value: $viewModel.newCardCount, in: viewModel.minTimerAmount...viewModel.maxTimerAmount)

@@ -98,7 +98,7 @@ struct GroupListView: View {
                                         contextMenu(for: group)
                                     }
                                 }
-                                .groupCardInteractive()
+                                .groupCardModifier()
                             }
                         }
                         .padding()

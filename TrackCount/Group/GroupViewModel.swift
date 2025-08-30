@@ -141,7 +141,7 @@ class GroupViewModel: ObservableObject {
         let sanitizedTitle = group.groupTitle ?? ""
             .components(separatedBy: .init(charactersIn: "/\\?%*|\"<>"))
             .joined()
-            .trimmingCharacters(in: .whitespaces)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         
         let fileName = sanitizedTitle.isEmpty ? "shared_group.trackcount" : "\(sanitizedTitle).trackcount"
         
