@@ -171,6 +171,7 @@ class TimerViewModel: ObservableObject {
                     
                     Button(action: {
                         card.state?[0] = CardState(state: false)
+                        NotificationManager.shared.cancelTimerNotification(for: card.uuid)
                         self.timerSound(card, mode: .stop)
                     }) {
                         Text("End")

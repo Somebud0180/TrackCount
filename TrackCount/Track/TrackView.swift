@@ -289,7 +289,7 @@ struct TrackView: View {
                         }
                         .disabled(willOverflow)
                         .foregroundStyle(card.secondaryColor?.color ?? .white)
-                        .adaptiveGlassButton(tintColor: willOverflow ? .gray : card.primaryColor?.color ?? .blue)
+                        .adaptiveGlassButton(interactive: !willOverflow, tintColor: willOverflow ? .gray : card.primaryColor?.color ?? .blue)
                         .accessibilityLabel(accessibilityLabel)
                         .accessibilityHint("\(accessibilityHintPrefix) \(card.title) by \(modifiers[index])")
                     }

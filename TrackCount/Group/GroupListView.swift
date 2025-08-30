@@ -98,6 +98,7 @@ struct GroupListView: View {
                                         contextMenu(for: group)
                                     }
                                 }
+                                .groupCardInteractive()
                             }
                         }
                         .padding()
@@ -169,7 +170,7 @@ struct GroupListView: View {
                                 }
                             )
                         }
-                        .alert(importManager.previewGroup?.groupTitle?.isEmpty ?? true ? "Import Group?" : "Import Group \(importManager.previewGroup!.groupTitle ?? "")?", isPresented: $importManager.showImportAlert) {
+                        .alert(importManager.previewGroup?.groupTitle.isEmpty ?? true ? "Import Group?" : "Import Group \(importManager.previewGroup?.groupTitle ?? "")?", isPresented: $importManager.showImportAlert) {
                             VStack {
                                 Button("Cancel", role: .cancel) {
                                     importManager.reset()
@@ -179,8 +180,8 @@ struct GroupListView: View {
                                 }
                             }
                         } message: {
-                            if let group = importManager.previewGroup, #available(iOS 18, *) {
-                                Text("This group contains \(group.cards?.count ?? 1) \(group.cards?.count == 1 ? "card" : "cards").")
+                            if let group = importManager.previewGroup {
+                                Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
                             } else {
                                 Text("Do you want to import this group?")
                             }
@@ -190,15 +191,13 @@ struct GroupListView: View {
                             allowedContentTypes: [.trackCountGroup],
                             allowsMultipleSelection: false
                         ) { result in
-                            DispatchQueue.main.async {
-                                switch result {
-                                case .success(let urls):
-                                    if let url = urls.first {
-                                        importManager.handleImport(url, with: context)
-                                    }
-                                case .failure(let error):
-                                    viewModel.warnError.append("File import failed: \(error.localizedDescription)")
+                            switch result {
+                            case .success(let urls):
+                                if let url = urls.first {
+                                    importManager.handleImport(url, with: context)
                                 }
+                            case .failure(let error):
+                                viewModel.warnError.append("File import failed: \(error.localizedDescription)")
                             }
                         }
                     }

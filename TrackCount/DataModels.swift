@@ -157,68 +157,32 @@ extension DMCardGroup {
         return try JSONEncoder().encode(shareData)
     }
     
-    /// Unpacks the shareable format into the app's standard group and cards.
-    /// - Parameters:
-    ///   - data: The data to be decoded/unpacked.
-    ///   - context: The context where the data is saved.
-    /// - Returns: A standard group and card.
-    static func decodeFromShared(_ data: Data, context: ModelContext) throws -> DMCardGroup {
+    /// Creates a temporary preview model from shared data without SwiftData context
+    /// - Parameter data: The data to be decoded/unpacked.
+    /// - Returns: A preview group that can be displayed without database insertion.
+    static func createPreviewFromShared(_ data: Data) throws -> PreviewCardGroup {
         let shareData = try JSONDecoder().decode(ShareableGroup.self, from: data)
-        let group = DMCardGroup(
-            uuid: UUID(),
-            index: 0, // Will be updated when added to context
+        
+        let previewCards = shareData.cards?.map { cardData in
+            PreviewCard(
+                type: cardData.type ?? .counter,
+                title: cardData.title ?? "",
+                count: cardData.count ?? 1,
+                modifier: cardData.modifier,
+                buttonText: cardData.buttonText,
+                symbol: cardData.symbol,
+                timer: cardData.timer,
+                timerRingtone: cardData.timerRingtone,
+                primaryColor: cardData.primaryColor,
+                secondaryColor: cardData.secondaryColor
+            )
+        } ?? []
+        
+        return PreviewCardGroup(
             groupTitle: shareData.groupTitle ?? "",
-            groupSymbol: shareData.groupSymbol ?? ""
+            groupSymbol: shareData.groupSymbol ?? "",
+            cards: previewCards
         )
-        
-        // Create cards from shared data
-        group.cards = try shareData.cards?.enumerated().map { index, cardData in
-            if cardData.type == .counter {
-                return DMStoredCard(
-                    uuid: UUID(),
-                    index: index,
-                    type: cardData.type ?? .counter,
-                    title: cardData.title ?? "",
-                    count: cardData.count ?? 1,
-                    modifier: cardData.modifier,
-                    primaryColor: cardData.primaryColor?.color ?? .blue,
-                    secondaryColor: cardData.secondaryColor?.color ?? .white,
-                    group: group
-                )
-            } else if cardData.type == .toggle {
-                return DMStoredCard(
-                    uuid: UUID(),
-                    index: index,
-                    type: cardData.type ?? .toggle,
-                    title: cardData.title ?? "",
-                    count: cardData.count ?? 1,
-                    state: Array(repeating: true, count: cardData.count ?? 1),
-                    buttonText: cardData.buttonText ?? [],
-                    symbol: cardData.symbol,
-                    primaryColor: cardData.primaryColor?.color ?? .blue,
-                    secondaryColor: cardData.secondaryColor?.color ?? .white,
-                    group: group
-                )
-            } else if cardData.type == .timer || cardData.type == .timer_custom {
-                return DMStoredCard(
-                    uuid: UUID(),
-                    index: index,
-                    type: cardData.type ?? .timer,
-                    title: cardData.title ?? "",
-                    count: cardData.count ?? 1,
-                    state: Array(repeating: false, count: 1),
-                    timer: cardData.timer,
-                    timerRingtone: cardData.timerRingtone,
-                    primaryColor: cardData.primaryColor?.color ?? .blue,
-                    secondaryColor: cardData.secondaryColor?.color ?? .white,
-                    group: group
-                )
-            } else {
-                throw NSError(domain: "Invalid card type", code: 0, userInfo: nil)
-            }
-        }
-        
-        return group
     }
 }
 
@@ -257,7 +221,7 @@ extension DMStoredCard.Types {
     }
 }
 
-
+// MARK: - Sharing Structures
 /// Codable group structure for sharing.
 struct ShareableGroup: Codable {
     let groupTitle: String?
@@ -279,3 +243,99 @@ struct ShareableCard: Codable {
     let secondaryColor: CodableColor?
 }
 
+/// Temporary preview models for import that don't require SwiftData context
+/// These are used for displaying import previews without database insertion
+class PreviewCardGroup: ObservableObject, Identifiable {
+    let id = UUID()
+    let groupTitle: String
+    let groupSymbol: String
+    let cards: [PreviewCard]
+    
+    init(groupTitle: String, groupSymbol: String, cards: [PreviewCard]) {
+        self.groupTitle = groupTitle
+        self.groupSymbol = groupSymbol
+        self.cards = cards
+    }
+}
+
+class PreviewCard: ObservableObject, Identifiable {
+    let id = UUID()
+    let type: DMStoredCard.Types
+    let title: String
+    let count: Int
+    let modifier: [Int]?
+    let buttonText: [String]?
+    let symbol: String?
+    let timer: [Int]?
+    let timerRingtone: String?
+    let primaryColor: CodableColor?
+    let secondaryColor: CodableColor?
+    
+    init(type: DMStoredCard.Types, title: String, count: Int, modifier: [Int]? = nil,
+         buttonText: [String]? = nil, symbol: String? = nil, timer: [Int]? = nil,
+         timerRingtone: String? = nil, primaryColor: CodableColor? = nil,
+         secondaryColor: CodableColor? = nil) {
+        self.type = type
+        self.title = title
+        self.count = count
+        self.modifier = modifier
+        self.buttonText = buttonText
+        self.symbol = symbol
+        self.timer = timer
+        self.timerRingtone = timerRingtone
+        self.primaryColor = primaryColor
+        self.secondaryColor = secondaryColor
+    }
+}
+
+extension PreviewCardGroup {
+    /// Convert to actual SwiftData model for database insertion
+    func toSwiftDataModel(context: ModelContext) throws -> DMCardGroup {
+        let group = DMCardGroup(
+            uuid: UUID(),
+            index: 0, // Will be updated when added to context
+            groupTitle: groupTitle,
+            groupSymbol: groupSymbol
+        )
+        
+        // Insert the group first to establish it in the context
+        context.insert(group)
+        
+        // Now create and insert cards one by one
+        for (index, previewCard) in cards.enumerated() {
+            let card = previewCard.toSwiftDataModel(index: index, group: group)
+            context.insert(card)
+            
+            // Add to group's cards array after both objects are in context
+            if group.cards == nil {
+                group.cards = []
+            }
+            group.cards?.append(card)
+        }
+        
+        return group
+    }
+}
+
+extension PreviewCard {
+    /// Convert to actual SwiftData model for database insertion
+    func toSwiftDataModel(index: Int, group: DMCardGroup) -> DMStoredCard {
+        return DMStoredCard(
+            uuid: UUID(),
+            index: index,
+            type: type,
+            title: title,
+            count: count,
+            state: type == .toggle ? Array(repeating: true, count: count) :
+                (type == .timer || type == .timer_custom ? Array(repeating: false, count: 1) : []),
+            modifier: modifier,
+            buttonText: buttonText,
+            symbol: symbol,
+            timer: timer,
+            timerRingtone: timerRingtone,
+            primaryColor: primaryColor?.color ?? .blue,
+            secondaryColor: secondaryColor?.color ?? .white,
+            group: group
+        )
+    }
+}

@@ -98,6 +98,7 @@ struct CustomConditionalButtonModifier<S: Shape>: ViewModifier {
 /// Liquid Glass / Tinted Button Background
 struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
     @Environment(\.colorScheme) var colorScheme
+    let isInteractive: Bool
     let tintStrength: CGFloat
     let tint: Color
     let shape: S
@@ -106,20 +107,17 @@ struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
         if #available(iOS 26.0, *) {
             let tintColor = colorScheme == .dark ? tint.opacity(0.2) : tint.opacity(tintStrength)
             if tintStrength == 0.0 {
-                content
-                    .glassEffect(
-                        .regular
-                            .interactive()
-                        ,in: shape
-                    )
+                if isInteractive {
+                    content.glassEffect(.regular.interactive(), in: shape)
+                } else {
+                    content.glassEffect(.regular, in: shape)
+                }
             } else {
-                content
-                    .glassEffect(
-                        .regular
-                            .tint(tintColor)
-                            .interactive()
-                        ,in: shape
-                    )
+                if isInteractive {
+                    content.glassEffect(.regular.tint(tintColor).interactive(), in: shape)
+                } else {
+                    content.glassEffect(.regular.tint(tintColor), in: shape)
+                }
             }
         } else {
             let tintColor = colorScheme == .dark ? tint.opacity(0.2) : tint.opacity(tintStrength)
@@ -143,6 +141,49 @@ struct LegacyDarkTint: ViewModifier {
     }
 }
 
+/// Group Card Interactive Modifier with press and hover effects
+struct GroupCardInteractiveModifier: ViewModifier {
+    @State private var isHovering = false
+    @State private var isPressed = false
+    
+    var pressedSize: CGFloat {
+        if #available(iOS 26.0, *) {
+            return 1.04
+        } else {
+            return 0.98
+        }
+    }
+    
+    // Calculate the final scale based on all states
+    private var finalScale: CGFloat {
+        if isPressed {
+            return pressedSize
+        } else if isHovering {
+            return 1.02
+        } else {
+            return 1.0
+        }
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(finalScale)
+            .animation(.easeInOut(duration: 0.15), value: finalScale)
+            .onHover { hovering in
+                isHovering = hovering
+            }
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isPressed = true
+                }
+                
+                withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
+                    isPressed = false
+                }
+            }
+    }
+}
+
 // Extend View for easier usage
 extension View {
     /// A rounded style with a thin material background and padding.
@@ -156,12 +197,17 @@ extension View {
     }
     
     /// A button style with a liquid glass / tinted background.
-    func adaptiveGlassButton<S: Shape>(tintStrength: CGFloat = 0.8, tintColor: Color = Color.white, shape: S = defaultShape()) -> some View {
-        self.modifier(AdaptiveGlassButtonModifier(tintStrength: tintStrength, tint: tintColor, shape: shape))
+    func adaptiveGlassButton<S: Shape>(interactive: Bool = true, tintStrength: CGFloat = 0.8, tintColor: Color = Color.white, shape: S = defaultShape()) -> some View {
+        self.modifier(AdaptiveGlassButtonModifier(isInteractive: interactive, tintStrength: tintStrength, tint: tintColor, shape: shape))
     }
     
     /// A foreground style that ensures readability for iOS versions below 26.
     func legacyDarkTint() -> some View {
         self.modifier(LegacyDarkTint())
+    }
+    
+    /// A modifier that adds interactive effects for group cards, with subtle scaling on press and hover.
+    func groupCardInteractive() -> some View {
+        self.modifier(GroupCardInteractiveModifier())
     }
 }

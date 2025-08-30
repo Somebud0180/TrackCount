@@ -223,7 +223,7 @@ class CardViewModel: ObservableObject {
         do {
             if let card = selectedCard {
                 // Update the existing card
-                card.title = newCardTitle
+                card.title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
                 card.count = (newCardType == .counter && card.type != .counter) ? 0 : newCardCount // Check card count first due to type check, to avoid reseting an existing counter card
                 card.type = newCardType
                 card.state = newCardType == .toggle ? newCardState.prefix(newCardCount).map { CardState(state: $0) } : (newCardType == .timer || newCardType == .timer_custom) ? [CardState(state: false)] : nil
@@ -240,7 +240,7 @@ class CardViewModel: ObservableObject {
                 let newCard = DMStoredCard(
                     index: newCardIndex,
                     type: newCardType,
-                    title: newCardTitle,
+                    title: newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines),
                     count: newCardType == .counter ? 0 : newCardCount,
                     state: newCardType == .toggle ? newCardState.prefix(newCardCount).map { $0 } :
                         (newCardType == .timer || newCardType == .timer_custom) ? [false] : nil,
