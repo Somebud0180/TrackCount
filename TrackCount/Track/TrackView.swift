@@ -29,7 +29,7 @@ struct TrackView: View {
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var pressedStates: [String: Bool] = [:]
     
-    let gridColumns = [GridItem(.adaptive(minimum: 450), spacing: 8)]
+    let gridColumns = [GridItem(.adaptive(minimum: 500), spacing: 8)]
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
     init(selectedGroup: DMCardGroup) {
@@ -213,6 +213,8 @@ struct TrackView: View {
     /// Creates the counter card contents from the inputted card.
     private func counterCard(_ card: DMStoredCard) -> some View {
         VStack {
+            Spacer()
+            
             buttonRow(
                 card: card,
                 operation: +,
@@ -221,15 +223,12 @@ struct TrackView: View {
                 accessibilityHintPrefix: "Increase"
             )
             
-            Spacer()
-            
             // Current Count
             Text(String(card.count))
                 .font(.largeTitle)
+                .padding(.vertical, 12)
                 .contentTransition(.numericText())
                 .animation(.spring, value: card.count)
-            
-            Spacer()
             
             buttonRow(
                 card: card,
@@ -238,6 +237,8 @@ struct TrackView: View {
                 accessibilityLabel: "Reduce counter",
                 accessibilityHintPrefix: "Reduce"
             )
+            
+            Spacer()
         }
         .frame(maxWidth: 450)
     }
