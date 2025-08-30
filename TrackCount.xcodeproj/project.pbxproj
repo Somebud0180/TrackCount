@@ -25,7 +25,7 @@
 
 /* Begin PBXFileReference section */
 		AAC5116C2D49EDA500BF52A5 /* TrackCount.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = TrackCount.xctestplan; path = ../TrackCount.xctestplan; sourceTree = "<group>"; };
-		AACD8EFD2E5A9EEF00292F0A /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AACD8EFD2E5A9EEF00292F0A /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = TrackCount.app; path = "/Users/ethanlagera/Documents/XCode/TrackCount/build/Debug-iphoneos/TrackCount.app"; sourceTree = "<absolute>"; };
 		AAE4CACB2D4B0F5600795A08 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE4CACC2D4B0F5600795A08 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -125,7 +125,6 @@
 				AAC5116A2D49ED4700BF52A5 /* TrackCountUITests */,
 				AAE4CACB2D4B0F5600795A08 /* TrackCountUITests.xctest */,
 				AAE4CACC2D4B0F5600795A08 /* TrackCountTests.xctest */,
-				AACD8EFD2E5A9EEF00292F0A /* TrackCount.app */,
 			);
 			sourceTree = "<group>";
 		};

@@ -23,19 +23,13 @@ struct SettingsView: View {
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     
     var body: some View {
-        let isLight = colorScheme == .light
         NavigationStack {
             Form {
                 VStack(alignment: .center, spacing: 10) {
-                    Image(isLight ? "TrackCountIconLight" : "TrackCountIconDark")
+                    Image(colorScheme == .light ? "TrackCountIconLight" : "TrackCountIconDark")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
                         .frame(minWidth: 50, maxWidth: 100, alignment: .center)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.secondary, lineWidth: 0.5)
-                        )
                     Text("TrackCount")
                         .font(.system(.title, weight: .bold))
                         .lineLimit(1)
@@ -71,7 +65,7 @@ struct SettingsView: View {
                         Button("Default Ringtone") {
                             isPresentingRingtonePickerView = true
                         }
-                        .foregroundStyle(isLight ? .black : .white)
+                        .foregroundStyle(colorScheme == .light ? .black : .white)
                         
                         Spacer()
                         

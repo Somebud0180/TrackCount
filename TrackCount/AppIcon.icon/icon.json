@@ -1,0 +1,112 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.59216,0.27843,1.00000,1.00000",
+      "srgb:0.16471,0.47843,1.00000,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "blur-material" : null,
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "srgb:0.59216,0.27843,1.00000,1.00000",
+                  "display-p3:0.16471,0.47843,1.00000,1.00000"
+                ]
+              }
+            }
+          ],
+          "glass" : false,
+          "image-name" : "Vector.png",
+          "name" : "Vector",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              256,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    },
+    {
+      "blur-material" : null,
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "srgb:0.59216,0.27843,1.00000,1.00000",
+                  "srgb:0.42353,0.32549,1.00000,1.00000"
+                ]
+              }
+            }
+          ],
+          "image-name" : "Plus Button.png",
+          "name" : "Plus Button",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -160,
+              -200
+            ]
+          }
+        },
+        {
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "display-p3:0.14118,0.41176,1.00000,1.00000",
+                  "srgb:0.16471,0.47843,1.00000,1.00000"
+                ]
+              }
+            }
+          ],
+          "image-name" : "Minus Button.png",
+          "name" : "Minus Button",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -160,
+              200
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.25
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
