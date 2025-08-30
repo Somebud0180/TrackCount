@@ -120,8 +120,8 @@ struct CardFormView: View {
             // Text field for card title
             VStack(alignment: .leading) {
                 TextField("Set card title", text: $viewModel.newCardTitle)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.words)
+                    .autocapitalization(.words)
+                    .disableAutocorrection(true)
                     .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                     .errorOverlay("CardTitleEmpty", with: viewModel.validationError)
                     .accessibilityIdentifier("Card Title Field")
@@ -272,8 +272,8 @@ struct CardFormView: View {
                     let characterLimit = viewModel.buttonTextLimit
                     
                     TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.words)
+                        .autocapitalization(.words)
+                        .disableAutocorrection(true)
                         .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                         .onChange(of: viewModel.newButtonText[index]) {
                             if viewModel.newButtonText[index].count > characterLimit {

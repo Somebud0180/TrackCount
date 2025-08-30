@@ -73,8 +73,8 @@ struct GroupFormView: View {
         
         return Group {
             TextField("Set group title", text: $viewModel.newGroupTitle)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.words)
+                .autocapitalization(.words)
+                .disableAutocorrection(true)
                 .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                 .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 .onChange(of: viewModel.newGroupTitle) {
