@@ -100,8 +100,8 @@ struct GroupListView: View {
                                 }
                             }
                         }
-                        .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         .padding()
+                        .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         .navigationBarTitleDisplayMode(.large)
                         .navigationTitle("Your Groups")
                         .toolbar {
@@ -169,6 +169,22 @@ struct GroupListView: View {
                                 }
                             )
                         }
+                        .alert(importManager.previewGroup?.groupTitle?.isEmpty ?? true ? "Import Group?" : "Import Group \(importManager.previewGroup!.groupTitle ?? "")?", isPresented: $importManager.showImportAlert) {
+                            VStack {
+                                Button("Cancel", role: .cancel) {
+                                    importManager.reset()
+                                }
+                                Button("Import") {
+                                    importManager.confirmImport(with: context)
+                                }
+                            }
+                        } message: {
+                            if let group = importManager.previewGroup, #available(iOS 18, *) {
+                                Text("This group contains \(group.cards?.count ?? 1) \(group.cards?.count == 1 ? "card" : "cards").")
+                            } else {
+                                Text("Do you want to import this group?")
+                            }
+                        }
                         .fileImporter(
                             isPresented: $isPresentingFilePicker,
                             allowedContentTypes: [.trackCountGroup],
@@ -187,24 +203,7 @@ struct GroupListView: View {
                         }
                     }
                 }
-                .alert(importManager.previewGroup?.groupTitle?.isEmpty ?? true ? "Import Group?" : "Import Group \(importManager.previewGroup!.groupTitle ?? "")?", isPresented: $importManager.showImportAlert) {
-                    VStack {
-                        Button("Cancel", role: .cancel) {
-                            importManager.reset()
-                        }
-                        Button("Import") {
-                            importManager.confirmImport(with: context)
-                        }
-                    }
-                } message: {
-                    if let group = importManager.previewGroup, #available(iOS 18, *) {
-                        Text("This group contains \(group.cards?.count ?? 1) \(group.cards?.count == 1 ? "card" : "cards").")
-                    } else {
-                        Text("Do you want to import this group?")
-                    }
-                }
-            }
-            .accentColor(colorScheme == .light ? .black : .primary)
+            }.accentColor(colorScheme == .light ? .black : .primary)
         }
     }
     

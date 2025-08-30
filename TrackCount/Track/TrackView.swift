@@ -17,6 +17,8 @@ struct TrackView: View {
     @StateObject private var groupViewModel: GroupViewModel
     @StateObject private var timerViewModel: TimerViewModel
     @StateObject private var cardViewModel: CardViewModel
+    @StateObject private var debouncedStateManager: DebouncedCardStateManager
+    @Namespace private var toggleButtonNamespace
     
     var selectedGroup: DMCardGroup
     @Query private var storedCards: [DMStoredCard]
@@ -25,14 +27,24 @@ struct TrackView: View {
     @State private var isPresentingCardFormView: Bool = false
     @State private var isPresentingCardListView: Bool = false
     @State private var isPresentingDeleteDialog: Bool = false
+    @State private var pressedStates: [String: Bool] = [:]
     
     let gridColumns = [GridItem(.adaptive(minimum: 450), spacing: 8)]
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
+    
+    var pressedSize: CGFloat {
+        if #available(iOS 26.0, *) {
+            return 1.1
+        } else {
+            return 0.95
+        }
+    }
     
     init(selectedGroup: DMCardGroup) {
         _groupViewModel = StateObject(wrappedValue: GroupViewModel(selectedGroup: selectedGroup))
         _timerViewModel = StateObject(wrappedValue: TimerViewModel())
         _cardViewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
+        _debouncedStateManager = StateObject(wrappedValue: DebouncedCardStateManager())
         self.selectedGroup = selectedGroup
         let groupID = selectedGroup.uuid
         _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
@@ -155,6 +167,9 @@ struct TrackView: View {
             
             // Reschedule notifications for any active timers in this group
             NotificationManager.shared.rescheduleNotificationsForGroup(groupUUID: selectedGroup.uuid)
+            
+            // Apply any pending temporary changes immediately before leaving the view
+            debouncedStateManager.applyAllTemporaryChanges(with: context)
             
             // Only cleanup audio and UI state, not the timer data
             timerViewModel.cleanupAudioOnly()
@@ -297,14 +312,27 @@ struct TrackView: View {
     
     /// Creates buttons with data from the inputted card and index.
     private func toggleButton(_ card: DMStoredCard, id: Int) -> some View {
-        let isActive = card.state?[id].state ?? false
+        let isActive = debouncedStateManager.getToggleState(for: card, buttonIndex: id)
         let buttonText = card.buttonText?[id].buttonText ?? ""
         let symbolName = card.symbol ?? "questionmark.circle"
+        let buttonKey = "\(card.uuid)_\(id)"
+        let isPressed = pressedStates[buttonKey] ?? false
         
         return Button(action: {
+            withAnimation(.easeInOut(duration: 0.1)) {
+                pressedStates[buttonKey] = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    pressedStates[buttonKey] = false
+                }
+            }
+            
             if card.state?.indices.contains(id) == true {
                 withAnimation {
-                    card.state?[id].state.toggle()
+                    // Toggle using debounced state manager with temporary state
+                    debouncedStateManager.toggleState(of: card, at: id, with: context)
                 }
             }
         }) {
@@ -331,11 +359,16 @@ struct TrackView: View {
                 }
                 Spacer()
             }
-            .foregroundStyle(isActive ? card.secondaryColor?.color ?? .white : .black)
             .padding(4)
+            .frame(maxWidth: .infinity, minHeight: 20, maxHeight: .infinity)
+            .foregroundStyle(isActive ? card.secondaryColor?.color ?? .white : .black)
         }
-        .frame(maxWidth: .infinity, minHeight: 20, maxHeight: .infinity)
-        .adaptiveGlassConditionalButton(condition: isActive, tint: card.primaryColor?.color ?? .blue, shape: RoundedRectangle(cornerRadius: 12))
+        .customConditionalButtonModifier(
+            condition: isActive,
+            tint: card.primaryColor?.color ?? .blue,
+            shape: RoundedRectangle(cornerRadius: 12),
+            externalPressed: isPressed
+        )
     }
     
     /// Creates the timer card contents from the inputted card.

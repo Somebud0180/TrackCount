@@ -50,25 +50,48 @@ struct CustomRoundedStyle: ViewModifier {
     }
 }
 
-// Liquid Glass / Tinted (Conditional) Button Modifier
-struct AdaptiveGlassConditionalButtonModifier<S: Shape>: ViewModifier {
+// Simplified Conditional Button Modifier with unified scaling
+struct CustomConditionalButtonModifier<S: Shape>: ViewModifier {
     let condition: Bool
     let tint: Color
     let shape: S
+    let externalPressed: Bool
+    
+    @State private var isHovering = false
+    @State private var isPressed = false
+    
+    var pressedSize: CGFloat {
+        if #available(iOS 26.0, *) {
+            return 1.1
+        } else {
+            return 0.95
+        }
+    }
+    
+    // Calculate the final scale based on all states
+    private var finalScale: CGFloat {
+        if externalPressed || isPressed {
+            return pressedSize
+        } else if isHovering {
+            return 1.05
+        } else {
+            return 1.0
+        }
+    }
     
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .glassEffect(
-                    .regular
-                    .tint(condition ? tint.opacity(0.9) : .secondary)
-                    .interactive()
-                    ,in: shape
-                )
-        } else {
-            content
-                .background(condition ? tint.opacity(0.9) : .secondary, in: shape)
-        }
+        content
+            .background(condition ? tint.opacity(0.9) : .secondary, in: shape)
+            .scaleEffect(finalScale)
+            .animation(.easeInOut(duration: 0.15), value: finalScale)
+            .onHover { hovering in
+                isHovering = hovering
+            }
+            .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { isPressing in
+                isPressed = isPressing
+            } perform: {
+                // Empty perform block - we only want the pressing state, not to intercept the tap
+            }
     }
 }
 
@@ -86,15 +109,15 @@ struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
                 content
                     .glassEffect(
                         .regular
-                        .interactive()
+                            .interactive()
                         ,in: shape
                     )
             } else {
                 content
                     .glassEffect(
                         .regular
-                        .tint(tintColor)
-                        .interactive()
+                            .tint(tintColor)
+                            .interactive()
                         ,in: shape
                     )
             }
@@ -128,8 +151,8 @@ extension View {
     }
     
     /// A button style with a liquid glass / tinted background that changes based on a condition.
-    func adaptiveGlassConditionalButton<S: Shape>(condition: Bool, tint: Color, shape: S = defaultShape()) -> some View {
-        self.modifier(AdaptiveGlassConditionalButtonModifier(condition: condition, tint: tint, shape: shape))
+    func customConditionalButtonModifier<S: Shape>(condition: Bool, tint: Color, shape: S = defaultShape(), externalPressed: Bool = false) -> some View {
+        self.modifier(CustomConditionalButtonModifier(condition: condition, tint: tint, shape: shape, externalPressed: externalPressed))
     }
     
     /// A button style with a liquid glass / tinted background.
@@ -142,4 +165,3 @@ extension View {
         self.modifier(LegacyDarkTint())
     }
 }
-

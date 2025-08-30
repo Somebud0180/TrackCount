@@ -12,7 +12,7 @@ struct GroupCardView: View {
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("gradientInDarkGroup") var isGradientInDarkGroup: Bool = DefaultSettings.gradientInDarkGroup
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
-    @State private var animateGradient: Bool = false
+    @State private var gradientPhase: Double = 0.0
     let group: DMCardGroup
     
     /// Dynamically computes gradient colors based on colorScheme.
@@ -29,8 +29,8 @@ struct GroupCardView: View {
         let backgroundGradient = RadialGradient(
             colors: gradientColors,
             center: .center,
-            startRadius: animateGradient ? 15 : 30,
-            endRadius: animateGradient ? 100 : 85
+            startRadius: 15 + (1 - gradientPhase) * 15,
+            endRadius: 85 + gradientPhase * 15
         )
         
         ZStack {
@@ -40,14 +40,14 @@ struct GroupCardView: View {
                 .onAppear {
                     withAnimation(
                         .easeInOut(duration: 3)
-                        .repeatForever(autoreverses: true)
+                            .repeatForever(autoreverses: true)
                     ) {
-                        animateGradient.toggle()
+                        gradientPhase = 1.0
                     }
                 }
                 .onDisappear {
                     // Stop animation when view disappears
-                    animateGradient = false
+                    gradientPhase = 0.0
                 }
             
             // Background Glass

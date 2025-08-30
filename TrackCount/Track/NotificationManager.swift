@@ -101,8 +101,12 @@ class NotificationManager: NSObject, ObservableObject {
     
     /// Clears the app badge count
     func clearBadgeCount() {
-        DispatchQueue.main.async {
-            UIApplication.shared.applicationIconBadgeNumber = 0
+        UNUserNotificationCenter.current().setBadgeCount(0) { error in
+            if let error = error {
+                print("Failed to clear badge count: \(error)")
+            } else {
+                print("Badge count cleared successfully.")
+            }
         }
     }
     
@@ -237,7 +241,7 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         
         // Show notification for timers from other groups or non-timer notifications
         print("NotificationManager: Showing notification")
-        completionHandler([.alert, .sound, .badge])
+        completionHandler([.banner, .list, .sound, .badge])
     }
     
     func userNotificationCenter(
@@ -265,3 +269,4 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         completionHandler()
     }
 }
+
