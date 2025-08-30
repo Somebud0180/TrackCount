@@ -93,11 +93,7 @@ struct CardFormView: View {
                 }
                 .padding()
             }
-            
             .navigationBarTitle(viewModel.selectedCard == nil ? "Create Card" : "Edit Card", displayMode: .inline)
-            .onChange(of: viewModel.newCardType) {
-                viewModel.initTypes(for: .switchType)
-            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Dismiss") {
@@ -110,6 +106,13 @@ struct CardFormView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $isSymbolPickerPresented) {
+            SymbolPickerView(viewBehaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
+                .presentationDetents([.fraction(0.95)])
+        }
+        .onChange(of: viewModel.newCardType) {
+            viewModel.initTypes(for: .switchType)
         }
     }
     
@@ -256,12 +259,7 @@ struct CardFormView: View {
                     }
                     .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                     .errorOverlay("SymbolEmpty", with: viewModel.validationError)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .sheet(isPresented: $isSymbolPickerPresented) {
-                    SymbolPickerView(viewBehaviour: .tapToSelect, selectedSymbol: $viewModel.newCardSymbol)
-                        .presentationDetents([.fraction(0.99)])
-                }
+                }.buttonStyle(PlainButtonStyle())
                 
                 errorMessageView("SymbolEmpty", with: viewModel.validationError, message: "A symbol is required")
             }

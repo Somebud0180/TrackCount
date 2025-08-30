@@ -44,11 +44,6 @@ struct GroupFormView: View {
             }
             .padding(.horizontal)
             .padding(.bottom)
-            .onChange(of: validateVariables) {
-                if !viewModel.validationError.isEmpty {
-                    viewModel.validateForm()
-                }
-            }
             .navigationBarTitle(viewModel.selectedGroup != nil ? "Create Group" : "Edit Group", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -64,6 +59,15 @@ struct GroupFormView: View {
                         }
                     }
                 }
+            }
+        }
+        .sheet(isPresented: $isPickerPresented) {
+            SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
+                .presentationDetents([.fraction(0.95)])
+        }
+        .onChange(of: validateVariables) {
+            if !viewModel.validationError.isEmpty {
+                viewModel.validateForm()
             }
         }
     }
@@ -105,10 +109,6 @@ struct GroupFormView: View {
                 .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                 .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 .accessibilityIdentifier("Group Smybol Picker")
-                .sheet(isPresented: $isPickerPresented) {
-                    SymbolPickerView(viewBehaviour: .tapWithUnselect, selectedSymbol: $viewModel.newGroupSymbol)
-                        .presentationDetents([.fraction(0.99)])
-                }
                 
                 errorMessageView("TitleSymbolEmpty", with: viewModel.validationError, message: "A title or symbol is required")
             }
