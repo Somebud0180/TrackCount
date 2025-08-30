@@ -50,6 +50,8 @@ struct CardFormView: View {
                     } else {
                         formView()
                     }
+                    
+                    Spacer(minLength: 80)
                 }
                 .mask(LinearGradient(
                     gradient: Gradient(stops: [
