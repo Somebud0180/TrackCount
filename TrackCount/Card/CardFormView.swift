@@ -150,6 +150,41 @@ struct CardFormView: View {
         }.padding(.horizontal)
     }
     
+    private func pickerFormView() -> some View {
+        Group {
+            VStack(alignment: .leading, spacing: 4) {
+                // Picker for card type
+                if horizontalSizeClass == .regular {
+                    Picker(selection: $viewModel.newCardType) {
+                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                            Text(type.formattedName).tag(type)
+                                .padding(.vertical)
+                        }
+                    } label: {
+                        Text("Type")
+                    }
+                    .pickerStyle(.segmented)
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+                } else {
+                    Picker(selection: $viewModel.newCardType) {
+                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                            Text(type.formattedName).tag(type)
+                        }
+                    } label: {
+                        Text("Type")
+                    }
+                    .pickerStyle(.menu)
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+                }
+                
+                // Definition for selected card type
+                Text(viewModel.newCardType.typeDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+    
     private func counterFormView() -> some View {
         Group {
             VStack(alignment: .leading) {
@@ -178,39 +213,6 @@ struct CardFormView: View {
             
             
             errorMessageView("ModifierLessThanOne", with: viewModel.validationError, message: "At least one modifier must be set")
-        }
-    }
-    
-    private func pickerFormView() -> some View {
-        Group {
-            VStack(alignment: .leading, spacing: 4) {
-                // Picker for card type
-                if horizontalSizeClass == .regular {
-                    Picker(selection: $viewModel.newCardType) {
-                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                            Text(type.formattedName).tag(type)
-                                .padding(.vertical)
-                        }
-                    } label: {
-                        Text("Type")
-                    }
-                    .pickerStyle(.segmented)
-                } else {
-                    Picker(selection: $viewModel.newCardType) {
-                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                            Text(type.formattedName).tag(type)
-                        }
-                    } label: {
-                        Text("Type")
-                    }
-                    .pickerStyle(.menu)
-                }
-                
-                // Definition for selected card type
-                Text(viewModel.newCardType.typeDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
     }
     
