@@ -431,6 +431,7 @@ struct TrackView: View {
                                 .overlay(
                                     Text((card.timer?[index].timerValue ?? 0).formatTime())
                                         .font(.system(.title2, weight: .bold))
+                                        .foregroundStyle(card.secondaryColor?.color ?? .white)
                                         .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                                         .lineLimit(1)
                                         .minimumScaleFactor(0.3)
