@@ -159,6 +159,7 @@ struct CardFormView: View {
                         ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
                             Text(type.formattedName).tag(type)
                                 .padding(.vertical)
+                                .foregroundStyle(colorScheme == .dark ? .white : .black)
                         }
                     } label: {
                         Text("Type")
@@ -169,6 +170,7 @@ struct CardFormView: View {
                     Picker(selection: $viewModel.newCardType) {
                         ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
                             Text(type.formattedName).tag(type)
+                                .foregroundStyle(colorScheme == .dark ? .white : .black)
                         }
                     } label: {
                         Text("Type")
