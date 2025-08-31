@@ -159,24 +159,20 @@ struct CardFormView: View {
                         ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
                             Text(type.formattedName).tag(type)
                                 .padding(.vertical)
-                                .foregroundStyle(colorScheme == .dark ? .white : .black)
                         }
                     } label: {
                         Text("Type")
                     }
                     .pickerStyle(.segmented)
-                    .foregroundStyle(colorScheme == .dark ? .white : .black)
                 } else {
                     Picker(selection: $viewModel.newCardType) {
                         ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
                             Text(type.formattedName).tag(type)
-                                .foregroundStyle(colorScheme == .dark ? .white : .black)
                         }
                     } label: {
                         Text("Type")
                     }
                     .pickerStyle(.menu)
-                    .foregroundStyle(colorScheme == .dark ? .white : .black)
                 }
                 
                 // Definition for selected card type
