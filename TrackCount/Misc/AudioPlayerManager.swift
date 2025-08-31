@@ -58,8 +58,6 @@ class AudioPlayerManager: ObservableObject {
     }
     
     func playTimerRingtone(for cardUUID: UUID, ringtone: String) {
-        print("AudioPlayerManager: Attempting to play ringtone '\(ringtone)' for card \(cardUUID)")
-        
         // Always clean up existing audio for this card first
         stopTimerRingtone(for: cardUUID)
         
@@ -87,8 +85,6 @@ class AudioPlayerManager: ObservableObject {
                 self.audioPlayers[cardUUID] = player
                 self.audioLoopers[cardUUID] = looper
                 player.play()
-                
-                print("AudioPlayerManager: Successfully started playing ringtone '\(ringtone)' for card \(cardUUID)")
             } catch {
                 print("AudioPlayerManager: Error setting up audio session: \(error)")
             }
@@ -166,8 +162,6 @@ class AudioPlayerManager: ObservableObject {
             player = try AVAudioPlayer(data: asset.data)
             player?.numberOfLoops = 0 // Play once for preview
             player?.play()
-            
-            print("Playing preview ringtone: \(ringtoneToPlay)")
         } catch {
             print("Error playing preview audio: \(error)")
         }

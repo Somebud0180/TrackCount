@@ -320,7 +320,6 @@ class TimerViewModel: ObservableObject {
                 
                 // If in TrackView, directly call NotificationManager since GlobalTimerManager won't detect completion
                 if globalTimerManager.isInTrackView {
-                    print("TimerViewModel: Timer completed in TrackView, directly calling NotificationManager")
                     NotificationManager.shared.handleTimerCompletion(
                         cardUUID: uuid,
                         cardTitle: card.title,

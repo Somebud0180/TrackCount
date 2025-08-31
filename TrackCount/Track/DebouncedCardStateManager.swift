@@ -159,16 +159,11 @@ class DebouncedCardStateManager: ObservableObject {
         // Clear and invalidate the timer for this specific card
         saveTimers[cardUUID]?.invalidate()
         saveTimers[cardUUID] = nil
-        
-        // Note: We don't need to save here anymore since changes are applied immediately
-        // The debounce only prevents rapid successive saves, not the state changes themselves
-        print("Debounce timer completed for card \(cardUUID)")
     }
     
     private func saveToContext(_ context: ModelContext) {
         do {
             try context.save()
-            print("Debounced card state changes saved successfully")
         } catch {
             print("Failed to save debounced card state changes: \(error)")
         }
