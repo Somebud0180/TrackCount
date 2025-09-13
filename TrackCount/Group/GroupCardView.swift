@@ -12,7 +12,9 @@ struct GroupCardView: View {
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("gradientInDarkGroup") var isGradientInDarkGroup: Bool = DefaultSettings.gradientInDarkGroup
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
+    // Replaces implicit repeatForever animation with a controlled phase driven by a Task loop to avoid jumpy resets.
     @State private var gradientPhase: Double = 0.0
+    @State private var gradientAnimationTask: Task<Void, Never>? = nil
     @State private var progressValue: Double = 0.0
     @State private var clearValue: Double = 0.0
     @State private var isClearing: Bool = false
@@ -43,6 +45,19 @@ struct GroupCardView: View {
         return false
     }
     
+    /// Checks if any timer in this group has completed (timeRemaining <= 0 with a valid totalTime)
+    private var hasCompletedTimer: Bool {
+        guard let cards = group.cards else { return false }
+        for card in cards {
+            if card.type == .timer || card.type == .timer_custom {
+                if let state = timerManager.persistentTimerStates[card.uuid] {
+                    if state.totalTime > 0 && state.timeRemaining <= 0 { return true }
+                }
+            }
+        }
+        return false
+    }
+    
     var body: some View {
         /// Variable that stores black in light mode and white in dark mode.
         /// Used for items with non-white primary light mode colors (i.e. buttons).
@@ -56,20 +71,15 @@ struct GroupCardView: View {
             endRadius: 85 + gradientPhase * 15
         )
         
+        // Card stack without outer ZStack alignment wrapper; badge applied via .if overlay
         ZStack {
             // Background Gradient
             RoundedRectangle(cornerRadius: 12)
                 .fill(backgroundGradient)
-                .onAppear {
-                    withAnimation(
-                        .easeInOut(duration: 3)
-                        .repeatForever(autoreverses: true)
-                    ) {
-                        gradientPhase = 1.0
-                    }
-                }
+                .onAppear { startGradientAnimation() }
                 .onDisappear {
-                    // Stop animation when view disappears
+                    gradientAnimationTask?.cancel()
+                    gradientAnimationTask = nil
                     gradientPhase = 0.0
                     progressValue = 0.0
                     clearValue = 0.0
@@ -87,13 +97,9 @@ struct GroupCardView: View {
                             lineCap: .round
                         )
                     )
-                    .onAppear {
-                        startProgressAnimation()
-                    }
+                    .onAppear { startProgressAnimation() }
                     .onChange(of: hasRunningTimer) { _, newValue in
-                        if newValue {
-                            startProgressAnimation()
-                        } else {
+                        if newValue { startProgressAnimation() } else {
                             animationTask?.cancel()
                             withAnimation(.easeOut(duration: 0.5)) {
                                 progressValue = 0.0
@@ -104,10 +110,9 @@ struct GroupCardView: View {
                     }
             }
             
-            
             // Background Glass
             RoundedRectangle(cornerRadius: 12)
-                .fill(.thinMaterial) // Applies the frosted glass effect
+                .fill(.thinMaterial)
             
             // Content
             VStack {
@@ -117,7 +122,6 @@ struct GroupCardView: View {
                         .minimumScaleFactor(0.5)
                         .foregroundStyle(primaryColor.opacity(0.8))
                 }
-                
                 if (group.groupTitle?.isEmpty == false) {
                     Text(group.groupTitle ?? "")
                         .font(.system(.title3, weight: .bold))
@@ -127,6 +131,22 @@ struct GroupCardView: View {
                         .foregroundStyle(primaryColor.opacity(0.8))
                         .padding(.horizontal)
                 }
+            }
+        }
+        .if(hasCompletedTimer) {
+            $0.overlay(alignment: .topTrailing) {
+                Circle()
+                    .fill(primaryThemeColor.color.gradient)
+                    .stroke(.thinMaterial, lineWidth: 2)
+                    .overlay(
+                        Image(systemName: "timer")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Color.white.readableOn(primaryThemeColor.color))
+                    )
+                    .frame(width: 24, height: 24)
+                    .offset(x: 10, y: -10) // Exceed outside top-right corner
+                    .accessibilityLabel(Text("Completed timer"))
+                    .transition(.scale.combined(with: .opacity))
             }
         }
     }
@@ -190,6 +210,33 @@ struct GroupCardView: View {
                     isClearing = false
                 }
             }
+        }
+    }
+    
+    /// Starts a smooth, continuously breathing gradient animation using a controllable Task instead of repeatForever to prevent jumpy inversion.
+    private func startGradientAnimation() {
+        if gradientAnimationTask != nil { return } // Prevent multiple tasks
+        gradientAnimationTask = Task {
+            while !Task.isCancelled {
+                withAnimation(.easeInOut(duration: 3)) {
+                    gradientPhase = gradientPhase == 0 ? 1 : 0
+                }
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+            }
+        }
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func `if`<Content: View>(
+        _ condition: Bool,
+        transform: (Self) -> Content
+    ) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
         }
     }
 }
