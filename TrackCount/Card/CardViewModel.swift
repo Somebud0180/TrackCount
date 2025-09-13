@@ -218,10 +218,16 @@ class CardViewModel: ObservableObject {
             newCardIndex = selectedGroup.cards?.count ?? 0 // Set new index to the next highest number
         }
         
-        print(newCardIndex)
-        
         do {
             if let card = selectedCard {
+                // Notify timer system to cancel any running timers for this card BEFORE changes
+                if card.type == .timer || card.type == .timer_custom {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("TimerCardEdited"),
+                        object: nil,
+                        userInfo: ["cardUUID": card.uuid]
+                    )
+                }
                 // Update the existing card
                 card.title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
                 card.count = (newCardType == .counter && card.type != .counter) ? 0 : newCardCount // Check card count first due to type check, to avoid reseting an existing counter card
@@ -316,7 +322,7 @@ class CardViewModel: ObservableObject {
                 }
                 if !newCardModifier.contains(where: { $0 > 0 }) {
                     validationError.append("ModifierLessThanOne")
-                } 
+                }
             } else if newCardType == .toggle {
                 if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {
                     validationError.append("SymbolEmpty")

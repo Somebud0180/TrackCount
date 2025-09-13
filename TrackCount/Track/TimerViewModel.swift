@@ -60,6 +60,14 @@ class TimerViewModel: ObservableObject {
             name: NSNotification.Name("TimerCompletedInApp"),
             object: nil
         )
+        
+        // Observe card edits to cancel any running timers for that card
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleTimerCardEdited(_:)),
+            name: NSNotification.Name("TimerCardEdited"),
+            object: nil
+        )
     }
     
     /// Syncs local timer states with global persistent timers
@@ -249,12 +257,30 @@ class TimerViewModel: ObservableObject {
         timerStates[card.uuid] = .stopped
         displayValues[card.uuid] = 0
         pausedTimerValues.removeValue(forKey: card.uuid)
+        activeTimerValues.removeValue(forKey: card.uuid)
+        storedCards.removeValue(forKey: card.uuid)
         
         // Stop any playing audio for this timer immediately
         timerSound(card, mode: .stop)
         
         // Remove from global timer manager
         globalTimerManager.stopTimer(cardUUID: card.uuid)
+    }
+    
+    /// Stops a timer using only its UUID (when DMStoredCard reference may not exist)
+    private func stopTimer(for uuid: UUID) {
+        timerStates[uuid] = .stopped
+        displayValues[uuid] = 0
+        pausedTimerValues.removeValue(forKey: uuid)
+        activeTimerValues.removeValue(forKey: uuid)
+        storedCards.removeValue(forKey: uuid)
+        
+        NotificationCenter.default.post(
+            name: NSNotification.Name("StopTimerAudio"),
+            object: nil,
+            userInfo: ["cardUUID": uuid]
+        )
+        globalTimerManager.stopTimer(cardUUID: uuid)
     }
     
     /// Pauses the timer
@@ -472,7 +498,16 @@ class TimerViewModel: ObservableObject {
     }
     
     @objc private func handleInAppTimerCompletion(_ notification: Notification) {
-        // This method is no longer needed since AudioPlayerManager handles this directly
-        // Keep it for backward compatibility but it won't do anything
+        // Backward compatibility - no action needed
+    }
+    
+    /// Handles a timer card being edited; cancels any running/paused timers for that card
+    @objc private func handleTimerCardEdited(_ notification: Notification) {
+        guard let uuid = notification.userInfo?["cardUUID"] as? UUID else { return }
+        if let card = storedCards[uuid] {
+            stopTimer(card)
+        } else {
+            stopTimer(for: uuid)
+        }
     }
 }
