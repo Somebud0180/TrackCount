@@ -13,7 +13,6 @@ import Combine
 
 class CardViewModel: ObservableObject {
     // Set variable defaults
-    @Query var storedCards: [DMStoredCard]
     @Published var selectedGroup: DMCardGroup
     @Published var selectedCard: DMStoredCard?
     @Published var newCardIndex: Int = 0
@@ -66,7 +65,6 @@ class CardViewModel: ObservableObject {
         self.selectedGroup = selectedGroup
         self.selectedCard = selectedCard
         let groupID = selectedGroup.uuid
-        _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
     }
     
     /// A function that grabs the saved data from a selected card.
@@ -214,11 +212,13 @@ class CardViewModel: ObservableObject {
         }
         
         // Check if there are any existing cards
-        if storedCards.count == 0 {
+        if selectedGroup.cards?.count == 0 {
             newCardIndex = 0 // Set new index to 0 if there are no cards
         } else {
-            newCardIndex = storedCards.count // Set new index to the next highest number
+            newCardIndex = selectedGroup.cards?.count ?? 0 // Set new index to the next highest number
         }
+        
+        print(newCardIndex)
         
         do {
             if let card = selectedCard {

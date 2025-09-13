@@ -31,7 +31,11 @@ struct GroupListView: View {
     @State private var animateGradient: Bool = false
     
     private var columnLayout: [GridItem] {
-        return [GridItem(.adaptive(minimum: 110, maximum: 400), spacing: 16)]
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return [GridItem(.adaptive(minimum: 220, maximum: 600), spacing: 16)]
+        } else {
+            return [GridItem(.adaptive(minimum: 110, maximum: 400), spacing: 16)]
+        }
     }
     
     var backgroundGradient: some View {
