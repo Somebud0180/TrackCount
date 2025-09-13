@@ -150,9 +150,7 @@ class TimerViewModel: ObservableObject {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             self.isCancelButtonPressed = true
                             self.stopTimer(card)
-                            card.state?[0] = CardState(state: false)
                         }
-                        
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                             self.isCancelButtonPressed = false
                         }
@@ -168,14 +166,8 @@ class TimerViewModel: ObservableObject {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             self.isPauseButtonPressed = true
-                            
-                            if isPaused {
-                                self.resumeTimer(card)
-                            } else {
-                                self.pauseTimer(card)
-                            }
+                            if isPaused { self.resumeTimer(card) } else { self.pauseTimer(card) }
                         }
-                        
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                             self.isPauseButtonPressed = false
                         }
@@ -192,10 +184,8 @@ class TimerViewModel: ObservableObject {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             self.isPauseButtonPressed = true
                             self.timerSound(card, mode: .stop)
-                            card.state?[0] = CardState(state: false)
                             NotificationManager.shared.cancelTimerNotification(for: card.uuid)
                         }
-                        
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
                             self.isPauseButtonPressed = false
                         }
@@ -359,11 +349,9 @@ class TimerViewModel: ObservableObject {
                 if persistentState.pausedAt != nil {
                     timerStates[card.uuid] = .paused
                     pausedTimerValues[card.uuid] = persistentState.timeRemaining
-                    // Timer is paused - keep it paused until user manually resumes
                 } else if persistentState.isRunning && persistentState.timeRemaining > 0 {
                     timerStates[card.uuid] = .running
                     lastTickTime[card.uuid] = Date()
-                    card.state?[0] = CardState(state: true)
                     storedCards[card.uuid] = card
                 } else {
                     timerStates[card.uuid] = .stopped
@@ -436,11 +424,8 @@ class TimerViewModel: ObservableObject {
     func resumeAllTimersInGroup(_ group: DMCardGroup) {
         guard let cards = group.cards else { return }
         
-        for card in cards {
-            // Only resume timers that are currently paused and have a valid card state
-            if timerStates[card.uuid] == .paused && card.state?[0].state == true {
-                resumeTimer(card)
-            }
+        for card in cards where timerStates[card.uuid] == .paused {
+            resumeTimer(card)
         }
     }
     
@@ -460,18 +445,16 @@ class TimerViewModel: ObservableObject {
         selectedTimerIndex.removeAll()
         pausedTimerValues.removeAll()
         activeTimerValues.removeAll()
+        timerStates.removeAll()
         
         if let cards = group.cards {
-            for card in cards {
-                if card.type == .timer || card.type == .timer_custom {
-                    card.state?[0] = CardState(state: false)
-                    // Stop audio for each timer card
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("StopTimerAudio"),
-                        object: nil,
-                        userInfo: ["cardUUID": card.uuid]
-                    )
-                }
+            for card in cards where card.type == .timer || card.type == .timer_custom {
+                // Stop audio for each timer card
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("StopTimerAudio"),
+                    object: nil,
+                    userInfo: ["cardUUID": card.uuid]
+                )
             }
         }
         

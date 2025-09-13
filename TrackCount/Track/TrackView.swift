@@ -373,9 +373,9 @@ struct TrackView: View {
     /// Creates the timer card contents from the inputted card.
     private func timerCard(_ card: DMStoredCard) -> some View {
         @State var isStartButtonPressed: Bool = false
-        
+        let timerState = timerViewModel.timerStates[card.uuid] ?? .stopped
         return Group {
-            if card.type == .timer_custom && card.state?[0].state == false  {
+            if card.type == .timer_custom && timerState == .stopped  {
                 VStack {
                     Text("Set Timer")
                         .font(.headline)
@@ -404,7 +404,6 @@ struct TrackView: View {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             isStartButtonPressed = true
-                            card.state?[0] = CardState(state: true)
                             timerViewModel.startTimer(card)
                         }
                         
@@ -419,12 +418,11 @@ struct TrackView: View {
                     }
                     .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: isStartButtonPressed)
                 }
-            } else if card.type == .timer && card.state?[0].state == false {
+            } else if card.type == .timer && timerState == .stopped {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                     ForEach(0..<card.count, id: \.self) { index in
                         Button(action: {
                             timerViewModel.selectedTimerIndex[card.uuid] = index
-                            card.state?[0] = CardState(state: true)
                             timerViewModel.startTimer(card)
                         }) {
                             Circle()
@@ -542,7 +540,7 @@ extension Color {
             opacity: Double(a)
         )
     }
-
+    
     /// Returns a lightened version of the color by blending it towards white.
     /// - Parameter amount: A value from 0 (no change) to 1 (white). Default is 0.5.
     func lightened(by amount: CGFloat = 0.5) -> Color {
@@ -592,4 +590,3 @@ extension View {
     
     return TrackView(selectedGroup: exampleGroup)
 }
-
