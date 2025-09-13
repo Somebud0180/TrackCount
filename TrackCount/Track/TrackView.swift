@@ -373,9 +373,9 @@ struct TrackView: View {
     /// Creates the timer card contents from the inputted card.
     private func timerCard(_ card: DMStoredCard) -> some View {
         @State var isStartButtonPressed: Bool = false
-        let timerState = timerViewModel.timerStates[card.uuid] ?? .stopped
+        let timerState = timerViewModel.timerStates[card.uuid] ?? .idle
         return Group {
-            if card.type == .timer_custom && timerState == .stopped  {
+            if card.type == .timer_custom && timerState == .idle  {
                 VStack {
                     Text("Set Timer")
                         .font(.headline)
@@ -418,7 +418,7 @@ struct TrackView: View {
                     }
                     .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: isStartButtonPressed)
                 }
-            } else if card.type == .timer && timerState == .stopped {
+            } else if card.type == .timer && timerState == .idle {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                     ForEach(0..<card.count, id: \.self) { index in
                         Button(action: {
