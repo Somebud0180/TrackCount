@@ -64,7 +64,6 @@ class CardViewModel: ObservableObject {
     init(selectedGroup: DMCardGroup, selectedCard: DMStoredCard? = nil) {
         self.selectedGroup = selectedGroup
         self.selectedCard = selectedCard
-        let groupID = selectedGroup.uuid
     }
     
     /// A function that grabs the saved data from a selected card.

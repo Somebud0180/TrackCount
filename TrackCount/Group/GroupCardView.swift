@@ -113,6 +113,22 @@ struct GroupCardView: View {
             // Background Glass
             RoundedRectangle(cornerRadius: 12)
                 .fill(.thinMaterial)
+                .if(hasCompletedTimer) {
+                    $0.overlay(alignment: .topTrailing) {
+                        Circle()
+                            .fill(primaryThemeColor.color.gradient)
+                            .stroke(.thinMaterial, lineWidth: 2)
+                            .overlay(
+                                Image(systemName: "timer")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(Color.white.readableOn(primaryThemeColor.color))
+                            )
+                            .frame(width: 24, height: 24)
+                            .offset(x: 10, y: -10) // Exceed outside top-right corner
+                            .accessibilityLabel(Text("Completed timer"))
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
             
             // Content
             VStack {
@@ -131,22 +147,6 @@ struct GroupCardView: View {
                         .foregroundStyle(primaryColor.opacity(0.8))
                         .padding(.horizontal)
                 }
-            }
-        }
-        .if(hasCompletedTimer) {
-            $0.overlay(alignment: .topTrailing) {
-                Circle()
-                    .fill(primaryThemeColor.color.gradient)
-                    .stroke(.thinMaterial, lineWidth: 2)
-                    .overlay(
-                        Image(systemName: "timer")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color.white.readableOn(primaryThemeColor.color))
-                    )
-                    .frame(width: 24, height: 24)
-                    .offset(x: 10, y: -10) // Exceed outside top-right corner
-                    .accessibilityLabel(Text("Completed timer"))
-                    .transition(.scale.combined(with: .opacity))
             }
         }
     }
