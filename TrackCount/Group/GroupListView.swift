@@ -29,6 +29,18 @@ struct GroupListView: View {
     @State private var selectedGroup: DMCardGroup?
     @State private var cardFormGroup: DMCardGroup?
     @State private var animateGradient: Bool = false
+    @State private var searchText: String = ""
+    
+    private var filteredGroups: [DMCardGroup] {
+        if searchText.isEmpty {
+            return savedGroups
+        } else {
+            return savedGroups.filter { group in
+                (group.groupTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+                (preprocess(group.groupSymbol ?? "").localizedCaseInsensitiveContains(searchText))
+            }
+        }
+    }
     
     private var columnLayout: [GridItem] {
         if UIDevice.current.userInterfaceIdiom == .pad {
@@ -88,7 +100,7 @@ struct GroupListView: View {
                         }
                         
                         LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
-                            ForEach(savedGroups) { group in
+                            ForEach(filteredGroups) { group in
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
@@ -107,106 +119,108 @@ struct GroupListView: View {
                         }
                         .padding()
                         .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
-                        .navigationBarTitleDisplayMode(.large)
-                        .navigationTitle("Your Groups")
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button(action: { isPresentingGroupForm = true }) {
-                                    Label("Add Group", systemImage: "plus.circle")
-                                }
-                                .legacyDarkTint()
-                            }
-                            
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Menu {
-                                    Button(action: { isPresentingFilePicker = true }) {
-                                        Label("Import Group", systemImage: "square.and.arrow.down")
-                                    }
-                                    Button(action: { isPresentingGroupOrder = true }) {
-                                        Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
-                                    }
-                                } label: {
-                                    Image(systemName: "ellipsis.circle")
-                                }
-                                .legacyDarkTint()
-                                .accessibilityIdentifier("Ellipsis Button")
-                            }
-                        }
-                        .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
-                            GroupFormView(viewModel: viewModel)
-                                .presentationDetents([.fraction(0.45)])
-                                .onDisappear {
-                                    viewModel.validationError.removeAll()
-                                    viewModel.selectedGroup = nil
-                                }
-                        }
-                        .sheet(isPresented: $isPresentingGroupOrder) {
-                            GroupOrderView()
-                                .environmentObject(viewModel)
-                        }
-                        .sheet(isPresented: $isPresentingCardListView) {
-                            if let group = cardFormGroup {
-                                CardListView(selectedGroup: group)
-                                    .presentationDetents([.medium, .large])
-                                    .onDisappear {
-                                        cardFormGroup = nil
-                                    }
-                            }
-                        }
-                        .onChange(of: cardFormGroup) {
-                            if cardFormGroup != nil {
-                                isPresentingCardListView = true
-                            }
-                        }
-                        .alert(isPresented: $isPresentingDeleteDialog) {
-                            Alert(
-                                title: alertTitle,
-                                message: Text("Are you sure you want to delete this group? This cannot be undone."),
-                                primaryButton: .destructive(Text("Confirm")) {
-                                    if let group = selectedGroup {
-                                        viewModel.removeGroup(group, with: context)
-                                        selectedGroup = nil
-                                    }
-                                },
-                                secondaryButton: .cancel {
-                                    selectedGroup = nil
-                                    isPresentingDeleteDialog = false
-                                }
-                            )
-                        }
-                        .alert(importManager.previewGroup?.groupTitle.isEmpty ?? true ? "Import Group?" : "Import Group \(importManager.previewGroup?.groupTitle ?? "")?", isPresented: $importManager.showImportAlert) {
-                            VStack {
-                                Button("Cancel", role: .cancel) {
-                                    importManager.reset()
-                                }
-                                Button("Import") {
-                                    importManager.confirmImport(with: context)
-                                }
-                            }
-                        } message: {
-                            if let group = importManager.previewGroup {
-                                Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
-                            } else {
-                                Text("Do you want to import this group?")
-                            }
-                        }
-                        .fileImporter(
-                            isPresented: $isPresentingFilePicker,
-                            allowedContentTypes: [.trackCountGroup],
-                            allowsMultipleSelection: false
-                        ) { result in
-                            switch result {
-                            case .success(let urls):
-                                if let url = urls.first {
-                                    importManager.handleImport(url, with: context)
-                                }
-                            case .failure(let error):
-                                viewModel.warnError.append("File import failed: \(error.localizedDescription)")
-                            }
-                        }
                     }
                 }
-            }.accentColor(colorScheme == .light ? .black : .primary)
+            }
+            .searchable(text: $searchText, prompt: "Search groups")
+            .accentColor(colorScheme == .light ? .black : .primary)
+            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("Your Groups")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { isPresentingGroupForm = true }) {
+                        Label("Add Group", systemImage: "plus.circle")
+                    }
+                    .legacyDarkTint()
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button(action: { isPresentingFilePicker = true }) {
+                            Label("Import Group", systemImage: "square.and.arrow.down")
+                        }
+                        Button(action: { isPresentingGroupOrder = true }) {
+                            Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .legacyDarkTint()
+                    .accessibilityIdentifier("Ellipsis Button")
+                }
+            }
+            .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
+                GroupFormView(viewModel: viewModel)
+                    .presentationDetents([.fraction(0.45)])
+                    .onDisappear {
+                        viewModel.validationError.removeAll()
+                        viewModel.selectedGroup = nil
+                    }
+            }
+            .sheet(isPresented: $isPresentingGroupOrder) {
+                GroupOrderView()
+                    .environmentObject(viewModel)
+            }
+            .sheet(isPresented: $isPresentingCardListView) {
+                if let group = cardFormGroup {
+                    CardListView(selectedGroup: group)
+                        .presentationDetents([.medium, .large])
+                        .onDisappear {
+                            cardFormGroup = nil
+                        }
+                }
+            }
+            .onChange(of: cardFormGroup) {
+                if cardFormGroup != nil {
+                    isPresentingCardListView = true
+                }
+            }
+            .alert(isPresented: $isPresentingDeleteDialog) {
+                Alert(
+                    title: alertTitle,
+                    message: Text("Are you sure you want to delete this group? This cannot be undone."),
+                    primaryButton: .destructive(Text("Confirm")) {
+                        if let group = selectedGroup {
+                            viewModel.removeGroup(group, with: context)
+                            selectedGroup = nil
+                        }
+                    },
+                    secondaryButton: .cancel {
+                        selectedGroup = nil
+                        isPresentingDeleteDialog = false
+                    }
+                )
+            }
+            .alert(importManager.previewGroup?.groupTitle.isEmpty ?? true ? "Import Group?" : "Import Group \(importManager.previewGroup?.groupTitle ?? "")?", isPresented: $importManager.showImportAlert) {
+                VStack {
+                    Button("Cancel", role: .cancel) {
+                        importManager.reset()
+                    }
+                    Button("Import") {
+                        importManager.confirmImport(with: context)
+                    }
+                }
+            } message: {
+                if let group = importManager.previewGroup {
+                    Text("This group contains \(group.cards.count) \(group.cards.count == 1 ? "card" : "cards").")
+                } else {
+                    Text("Do you want to import this group?")
+                }
+            }
+            .fileImporter(
+                isPresented: $isPresentingFilePicker,
+                allowedContentTypes: [.trackCountGroup],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    if let url = urls.first {
+                        importManager.handleImport(url, with: context)
+                    }
+                case .failure(let error):
+                    viewModel.warnError.append("File import failed: \(error.localizedDescription)")
+                }
+            }
         }
     }
     
@@ -253,6 +267,14 @@ struct GroupListView: View {
                 isPresentingDeleteDialog = true
             }
         }
+    }
+    
+    /// A helper function to preprocess the symbol names for better searchability.
+    private func preprocess(_ symbol: String) -> String {
+        symbol
+            .replacingOccurrences(of: ".fill", with: "") // Remove ".fill"
+            .replacingOccurrences(of: ".", with: " ") // Replace "." with a space
+            .lowercased()
     }
 }
 
