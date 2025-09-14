@@ -30,7 +30,7 @@ struct TrackView: View {
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var pressedStates: [String: Bool] = [:]
     
-    let gridColumns = [GridItem(.adaptive(minimum: 400), spacing: 8)]
+    let gridColumns = [GridItem(.adaptive(minimum: 400), spacing: 16)]
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
     init(selectedGroup: DMCardGroup) {
@@ -57,7 +57,7 @@ struct TrackView: View {
                             .multilineTextAlignment(.center)
                     } else {
                         // Define the grid layout
-                        LazyVGrid(columns: gridColumns) {
+                        LazyVGrid(columns: gridColumns, spacing: 16) {
                             // Display a message when there are no cards
                             // Iterate through the sorted cards and display each card
                             ForEach(storedCards, id: \.uuid) { card in
@@ -66,7 +66,7 @@ struct TrackView: View {
                         }
                     }
                 }
-                .padding(.vertical)
+                .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitleViewBuilder {
@@ -180,7 +180,7 @@ struct TrackView: View {
                 } else {
                     baseCard(card)
                 }
-            }.padding()
+            }
         }
     }
     
