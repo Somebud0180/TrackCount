@@ -30,7 +30,9 @@ struct TrackView: View {
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var pressedStates: [String: Bool] = [:]
     
-    let gridColumns = [GridItem(.adaptive(minimum: 400), spacing: 16)]
+    @AppStorage("trackGridSize") var gridSizeOption: Int = DefaultSettings.trackGridSize  // 0 = compact, 1 = default, 2 = relaxed
+    @State private var gridSize: [CGFloat] = [350, 400, 450]
+    
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
     init(selectedGroup: DMCardGroup) {
@@ -38,6 +40,7 @@ struct TrackView: View {
         _timerViewModel = StateObject(wrappedValue: TimerViewModel())
         _cardViewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
         _debouncedStateManager = StateObject(wrappedValue: DebouncedCardStateManager())
+        
         self.selectedGroup = selectedGroup
         let groupID = selectedGroup.uuid
         _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
@@ -46,6 +49,9 @@ struct TrackView: View {
     var body: some View {
         // Safely get a share URL for the group
         let shareURL = try? groupViewModel.shareGroup(selectedGroup)
+        
+        // Define grid layout with adaptive columns
+        let gridColumns = [GridItem(.adaptive(minimum: gridSize[gridSizeOption]), spacing: 16)]
         
         NavigationStack {
             ScrollView {
@@ -100,9 +106,30 @@ struct TrackView: View {
                         ShareLink(item: shareURL ?? URL(fileURLWithPath: "/")) {
                             Label("Share Group", systemImage: "square.and.arrow.up")
                         }.disabled(shareURL == nil)
-                        Button("Delete Group", systemImage: "trash", role: .destructive) {
-                            isPresentingDeleteDialog = true
-                        }
+                        
+                        Menu {
+                            Button(action: { withAnimation { gridSizeOption = 0 }}) {
+                                if gridSizeOption == 0 { Label("Compact", systemImage: "checkmark") } else {
+                                    Text("Compact")
+                                }
+                            }
+                            Button(action: { withAnimation { gridSizeOption = 1 }}) {
+                                if gridSizeOption == 1 { Label("Medium", systemImage: "checkmark") } else {
+                                    Text("Medium")
+                                }
+                            }
+                            Button(action: { withAnimation { gridSizeOption = 2 }}) {
+                                if gridSizeOption == 2 { Label("Large", systemImage: "checkmark") } else {
+                                    Text("Large")
+                                }
+                            }
+                        } label: {
+                                Label("Grid Size", systemImage: "square.grid.2x2")
+                            }
+                            
+                            Button("Delete Group", systemImage: "trash", role: .destructive) {
+                                isPresentingDeleteDialog = true
+                            }
                     } label: {
                         Label("Group Options", systemImage: "ellipsis.circle")
                     }
@@ -576,3 +603,4 @@ extension Color {
     
     return TrackView(selectedGroup: exampleGroup)
 }
+

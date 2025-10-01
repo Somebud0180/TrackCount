@@ -14,6 +14,7 @@ struct DefaultSettings {
     static let gradientAnimated = true
     static let gradientInDarkHome = true
     static let gradientInDarkGroup = true
+    static let trackGridSize = 1
     static let primaryThemeColor = RawColor(color: Color.blue.light)
 }
 
