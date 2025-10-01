@@ -63,7 +63,8 @@ struct SymbolPickerView: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Search Symbols")
-            .navigationBarTitle("Pick a Symbol", displayMode: .inline)
+            .navigationTitle("Pick a Symbol")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
