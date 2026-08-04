@@ -283,13 +283,15 @@ class CardViewModel: ObservableObject {
             // Remove the card from the context
             context.delete(card)
             
-            // Remove the card from the group`s cards array
+            // Remove the card from the group's cards array
             selectedGroup.cards?.removeAll { $0.uuid == card.uuid }
             
-            // Update indices of remaining cards
-            let sortedCards = selectedGroup.cards!.sorted(by: { $0.index! < $1.index! })
-            for (index, card) in sortedCards.enumerated() {
-                card.index = index
+            // Update indices of remaining cards safely
+            if let cards = selectedGroup.cards {
+                let sortedCards = cards.sorted(by: { ($0.index ?? 0) < ($1.index ?? 0) })
+                for (index, remainingCard) in sortedCards.enumerated() {
+                    remainingCard.index = index
+                }
             }
             
             // Save the context

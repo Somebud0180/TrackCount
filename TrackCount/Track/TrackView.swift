@@ -283,7 +283,8 @@ struct TrackView: View {
             if let modifiers = card.modifier?.map({ $0.modifier }) {
                 ForEach(0..<modifiers.count, id: \.self) { index in
                     if modifiers[index] > 0 {
-                        @State var isPressed = false
+                        let buttonKey = "\(card.uuid)_mod_\(symbol)_\(index)"
+                        let isPressed = pressedStates[buttonKey] ?? false
                         let willOverflow = operation(1, 1) == 2
                         ? card.count > Int.max - modifiers[index]
                         : card.count < Int.min + modifiers[index]
@@ -291,13 +292,13 @@ struct TrackView: View {
                         
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.1)) {
-                                isPressed = true
+                                pressedStates[buttonKey] = true
                                 let newValue = operation(card.count, modifiers[index])
                                 card.count = min(Int.max, max(Int.min, newValue))
                             }
                             
                             withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                                isPressed = false
+                                pressedStates[buttonKey] = false
                             }
                         }) {
                             HStack(spacing: 2) {
@@ -399,7 +400,8 @@ struct TrackView: View {
     
     /// Creates the timer card contents from the inputted card.
     private func timerCard(_ card: DMStoredCard) -> some View {
-        @State var isStartButtonPressed: Bool = false
+        let startButtonKey = "\(card.uuid)_start"
+        let isStartButtonPressed = pressedStates[startButtonKey] ?? false
         let timerState = timerViewModel.timerStates[card.uuid] ?? .idle
         return Group {
             if card.type == .timer_custom && timerState == .idle  {
@@ -430,12 +432,12 @@ struct TrackView: View {
                     
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
-                            isStartButtonPressed = true
+                            pressedStates[startButtonKey] = true
                             timerViewModel.startTimer(card)
                         }
                         
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                            isStartButtonPressed = false
+                            pressedStates[startButtonKey] = false
                         }
                     }) {
                         Text("Start")
@@ -480,11 +482,7 @@ struct TrackView: View {
     
     /// Computed property for alert title.
     private var alertTitle: Text {
-        if (selectedGroup.groupTitle?.isEmpty == false) {
-            return Text("Delete Group?")
-        } else {
-            return Text("Delete \(selectedGroup.groupTitle ?? "This Group")?")
-        }
+        return Text("Delete \(selectedGroup.groupTitle ?? "This Group")?")
     }
 }
 

@@ -282,10 +282,11 @@ class GlobalTimerManager: ObservableObject {
         for (uuid, state) in persistentTimerStates {
             // Check if the timer was running and not paused at app launch
             if state.isRunning && state.pausedAt == nil {
-                let elapsed = currentTime.timeIntervalSince(state.startedAt)
+                let elapsed = currentTime.timeIntervalSince(state.lastSavedAt)
                 let newTimeRemaining = max(0, state.timeRemaining - elapsed)
                 
                 persistentTimerStates[uuid]?.timeRemaining = newTimeRemaining
+                persistentTimerStates[uuid]?.lastSavedAt = currentTime
                 
                 if newTimeRemaining <= 0 {
                     persistentTimerStates[uuid]?.isRunning = false
@@ -296,6 +297,10 @@ class GlobalTimerManager: ObservableObject {
     }
     
     @objc private func appWillResignActive() {
+        let now = Date()
+        for uuid in persistentTimerStates.keys {
+            persistentTimerStates[uuid]?.lastSavedAt = now
+        }
         // Update all timer states and schedule notifications for background
         scheduleBackgroundNotifications()
         // Save states when app goes to background

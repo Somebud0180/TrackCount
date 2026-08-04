@@ -21,9 +21,9 @@ class TimerViewModel: ObservableObject {
     @Published var pausedTimerValues: [UUID: Double] = [:]
     @Published var timerStates: [UUID: TimerState] = [:]
     
-    @State private var isCancelButtonPressed: Bool = false
-    @State private var isPauseButtonPressed: Bool = false
-    @State private var isEndButtonPressed: Bool = false
+    @Published var isCancelButtonPressed: Bool = false
+    @Published var isPauseButtonPressed: Bool = false
+    @Published var isEndButtonPressed: Bool = false
     
     private var lastTickTime: [UUID: Date] = [:]
     private var timerStartTime: [UUID: Date] = [:]
@@ -473,7 +473,7 @@ class TimerViewModel: ObservableObject {
         do {
             try context.save()
         } catch {
-            fatalError("Failed to save context after timer cleanup: \(error)")
+            print("Failed to save context after timer cleanup: \(error)")
         }
     }
     

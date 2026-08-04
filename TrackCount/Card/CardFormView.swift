@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 /// A view containing the form for creating or editing a card.
 struct CardFormView: View {

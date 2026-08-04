@@ -13,6 +13,7 @@ class AudioPlayerManager: ObservableObject {
     
     @Published private var audioPlayers: [UUID: AVQueuePlayer] = [:]
     @Published private var audioLoopers: [UUID: AVPlayerLooper] = [:]
+    private var tempFileURLs: [UUID: URL] = [:]
     
     // Add preview player for ringtone picker
     @Published var player: AVAudioPlayer?
@@ -69,6 +70,7 @@ class AudioPlayerManager: ObservableObject {
         // Create new audio player
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(ringtone)-\(cardUUID.uuidString).wav")
         try? asset.data.write(to: tempURL)
+        tempFileURLs[cardUUID] = tempURL
         let newPlayerItem = AVPlayerItem(url: tempURL)
         
         // Ensure we're on the main queue and force audio session setup
@@ -103,6 +105,12 @@ class AudioPlayerManager: ObservableObject {
         audioPlayers.removeValue(forKey: cardUUID)
         audioLoopers.removeValue(forKey: cardUUID)
         
+        // Clean up temporary audio file for this card
+        if let tempURL = tempFileURLs[cardUUID] {
+            try? FileManager.default.removeItem(at: tempURL)
+            tempFileURLs.removeValue(forKey: cardUUID)
+        }
+        
         // Only deactivate audio session if NO audio is playing (including preview)
         if audioPlayers.isEmpty && audioLoopers.isEmpty && player == nil {
             DispatchQueue.main.async {
@@ -126,6 +134,12 @@ class AudioPlayerManager: ObservableObject {
         }
         audioPlayers.removeAll()
         audioLoopers.removeAll()
+        
+        // Clean up all temporary audio files
+        for (_, url) in tempFileURLs {
+            try? FileManager.default.removeItem(at: url)
+        }
+        tempFileURLs.removeAll()
         
         // Only deactivate if no preview audio is playing
         if player == nil {
