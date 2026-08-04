@@ -137,9 +137,15 @@ struct GroupListView: View {
                         Button(action: { isPresentingFilePicker = true }) {
                             Label("Import Group", systemImage: "square.and.arrow.down")
                         }
+                        
                         Button(action: { isPresentingGroupOrder = true }) {
                             Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
                         }
+                        
+                        NavigationLink(
+                            destination: { SettingsView() },
+                            label: { Label("Settings", systemImage: "gearshape") }
+                        )
                     } label: {
                         Image(systemName: "ellipsis")
                     }

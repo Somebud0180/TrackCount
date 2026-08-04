@@ -36,18 +36,11 @@ struct HomeView: View {
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     var body: some View {
-        TabView {
-            // Home Tab
+        NavigationStack {
             GroupListView()
                 .environmentObject(ImportManager())
                 .tabItem {
                     Label("Home", systemImage: "house")
-                }
-            
-            // Settings Tab
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
                 }
         }
     }
