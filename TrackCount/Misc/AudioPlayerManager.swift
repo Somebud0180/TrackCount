@@ -11,23 +11,22 @@ import SwiftUI
 class AudioPlayerManager: ObservableObject {
     static let shared = AudioPlayerManager()
     
+    // Shared AVAudioSession instance
+    private let audioSession = AVAudioSession.sharedInstance()
+    
+    // Dedicated serial queue for non-blocking audio session setup and file operations
+    private let audioQueue = DispatchQueue(label: "com.trackcount.AudioPlayerManager", qos: .userInitiated)
+    
     @Published private var audioPlayers: [UUID: AVQueuePlayer] = [:]
     @Published private var audioLoopers: [UUID: AVPlayerLooper] = [:]
     private var tempFileURLs: [UUID: URL] = [:]
     
-    // Add preview player for ringtone picker
+    // Preview player for ringtone picker
     @Published var player: AVAudioPlayer?
     
     private init() {
-        // Initialize audio session immediately to prevent FigApplicationStateMonitor errors
-        // This "primes" the audio session so first timer completions work properly
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, options: .duckOthers)
-            print("AudioPlayerManager: Audio session category set successfully during init")
-        } catch {
-            print("AudioPlayerManager: Error setting initial audio session category: \(error)")
-        }
+        // Initial setup of AVAudioSession on manager initialization
+        configureAudioSession()
         
         // Remove timer completion notification listener since NotificationManager calls us directly
         // Only keep the stop audio notifications for cleanup purposes
@@ -47,6 +46,57 @@ class AudioPlayerManager: ObservableObject {
         )
     }
     
+    // MARK: - Audio Session Management
+    
+    /// Initial configuration for the shared AVAudioSession during manager initialization
+    private func configureAudioSession() {
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                try self.audioSession.setCategory(.playback, mode: .default, options: .duckOthers)
+                print("AudioPlayerManager: Audio session category set successfully during init")
+            } catch {
+                print("AudioPlayerManager: Error setting initial audio session category: \(error)")
+            }
+        }
+    }
+    
+    /// Activates the shared AVAudioSession asynchronously to prevent UI blocking
+    private func activateAudioSession(completion: (() -> Void)? = nil) {
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                try self.audioSession.setCategory(.playback, mode: .default, options: .duckOthers)
+                try self.audioSession.setActive(true)
+            } catch {
+                print("AudioPlayerManager: Error activating audio session: \(error)")
+            }
+            completion?()
+        }
+    }
+    
+    /// Deactivates the shared AVAudioSession off the main thread if no audio is playing
+    private func deactivateAudioSessionIfNeeded() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            let hasActiveTimerRingtones = !self.audioPlayers.isEmpty || !self.audioLoopers.isEmpty
+            let hasActivePreview = self.player != nil
+            
+            if !hasActiveTimerRingtones && !hasActivePreview {
+                self.audioQueue.async {
+                    do {
+                        try self.audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+                    } catch {
+                        print("AudioPlayerManager: Failed to deactivate AVAudioSession: \(error)")
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Notification Handlers
+    
     @objc private func handleStopTimerAudio(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
               let cardUUID = userInfo["cardUUID"] as? UUID else { return }
@@ -58,8 +108,10 @@ class AudioPlayerManager: ObservableObject {
         stopAllTimerRingtones()
     }
     
+    // MARK: - Timer Ringtone Methods
+    
     func playTimerRingtone(for cardUUID: UUID, ringtone: String) {
-        // Always clean up existing audio for this card first
+        // Clean up existing audio for this card first
         stopTimerRingtone(for: cardUUID)
         
         guard let asset = NSDataAsset(name: ringtone) else {
@@ -67,34 +119,38 @@ class AudioPlayerManager: ObservableObject {
             return
         }
         
-        // Create new audio player
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(ringtone)-\(cardUUID.uuidString).wav")
-        try? asset.data.write(to: tempURL)
-        tempFileURLs[cardUUID] = tempURL
-        let newPlayerItem = AVPlayerItem(url: tempURL)
-        
-        // Ensure we're on the main queue and force audio session setup
-        DispatchQueue.main.async {
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Perform file I/O off the main thread
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(ringtone)-\(cardUUID.uuidString).wav")
             do {
-                // Always set up audio session properly - don't check if it's already active
-                let session = AVAudioSession.sharedInstance()
-                try session.setCategory(.playback, mode: .default, options: .duckOthers)
-                try session.setActive(true)
-                
-                let player = AVQueuePlayer()
-                let looper = AVPlayerLooper(player: player, templateItem: newPlayerItem)
-                
-                self.audioPlayers[cardUUID] = player
-                self.audioLoopers[cardUUID] = looper
-                player.play()
+                try asset.data.write(to: tempURL)
             } catch {
-                print("AudioPlayerManager: Error setting up audio session: \(error)")
+                print("AudioPlayerManager: Error writing temp audio file: \(error)")
+                return
+            }
+            
+            // Activate audio session on background queue to avoid blocking UI
+            self.activateAudioSession {
+                let newPlayerItem = AVPlayerItem(url: tempURL)
+                
+                DispatchQueue.main.async {
+                    let player = AVQueuePlayer()
+                    let looper = AVPlayerLooper(player: player, templateItem: newPlayerItem)
+                    
+                    self.tempFileURLs[cardUUID] = tempURL
+                    self.audioPlayers[cardUUID] = player
+                    self.audioLoopers[cardUUID] = looper
+                    player.play()
+                }
             }
         }
     }
     
     func stopTimerRingtone(for cardUUID: UUID) {
-        // Clean up existing audio for this card
+        // Clean up existing players on main queue
         if let existingLooper = audioLoopers[cardUUID] {
             existingLooper.disableLooping()
         }
@@ -105,26 +161,19 @@ class AudioPlayerManager: ObservableObject {
         audioPlayers.removeValue(forKey: cardUUID)
         audioLoopers.removeValue(forKey: cardUUID)
         
-        // Clean up temporary audio file for this card
-        if let tempURL = tempFileURLs[cardUUID] {
-            try? FileManager.default.removeItem(at: tempURL)
-            tempFileURLs.removeValue(forKey: cardUUID)
-        }
-        
-        // Only deactivate audio session if NO audio is playing (including preview)
-        if audioPlayers.isEmpty && audioLoopers.isEmpty && player == nil {
-            DispatchQueue.main.async {
-                do {
-                    try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-                } catch {
-                    print("Failed to deactivate AVAudioSession: \(error)")
-                }
+        // Clean up temporary audio file off main thread and deactivate session if needed
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
+            if let tempURL = self.tempFileURLs[cardUUID] {
+                try? FileManager.default.removeItem(at: tempURL)
+                self.tempFileURLs.removeValue(forKey: cardUUID)
             }
+            self.deactivateAudioSessionIfNeeded()
         }
     }
     
     func stopAllTimerRingtones() {
-        // Clean up all audio players and loopers efficiently
+        // Clean up all audio players and loopers on main queue
         for (_, looper) in audioLoopers {
             looper.disableLooping()
         }
@@ -135,21 +184,14 @@ class AudioPlayerManager: ObservableObject {
         audioPlayers.removeAll()
         audioLoopers.removeAll()
         
-        // Clean up all temporary audio files
-        for (_, url) in tempFileURLs {
-            try? FileManager.default.removeItem(at: url)
-        }
-        tempFileURLs.removeAll()
-        
-        // Only deactivate if no preview audio is playing
-        if player == nil {
-            DispatchQueue.main.async {
-                do {
-                    try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-                } catch {
-                    print("Failed to deactivate AVAudioSession: \(error)")
-                }
+        // Clean up all temporary audio files off main thread and deactivate session
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
+            for (_, url) in self.tempFileURLs {
+                try? FileManager.default.removeItem(at: url)
             }
+            self.tempFileURLs.removeAll()
+            self.deactivateAudioSessionIfNeeded()
         }
     }
     
@@ -163,21 +205,27 @@ class AudioPlayerManager: ObservableObject {
         let ringtoneToPlay = audio.isEmpty ? "Code" : audio // Use default if empty
         
         guard let asset = NSDataAsset(name: ringtoneToPlay) else {
-            print("Data asset not found for preview: \(ringtoneToPlay)")
+            print("AudioPlayerManager: Data asset not found for preview: \(ringtoneToPlay)")
             return
         }
         
-        do {
-            // Set up audio session for preview
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .duckOthers)
-            try AVAudioSession.sharedInstance().setActive(true)
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
             
-            // Create preview player
-            player = try AVAudioPlayer(data: asset.data)
-            player?.numberOfLoops = 0 // Play once for preview
-            player?.play()
-        } catch {
-            print("Error playing preview audio: \(error)")
+            // Activate session off main thread
+            self.activateAudioSession {
+                do {
+                    let previewPlayer = try AVAudioPlayer(data: asset.data)
+                    previewPlayer.numberOfLoops = 0 // Play once for preview
+                    
+                    DispatchQueue.main.async {
+                        self.player = previewPlayer
+                        self.player?.play()
+                    }
+                } catch {
+                    print("AudioPlayerManager: Error playing preview audio: \(error)")
+                }
+            }
         }
     }
     
@@ -186,14 +234,7 @@ class AudioPlayerManager: ObservableObject {
         player?.stop()
         player = nil
         
-        // Only deactivate audio session if no timer ringtones are playing
-        if audioPlayers.isEmpty && audioLoopers.isEmpty {
-            do {
-                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-            } catch {
-                print("Failed to deactivate AVAudioSession: \(error)")
-            }
-        }
+        deactivateAudioSessionIfNeeded()
     }
     
     deinit {
