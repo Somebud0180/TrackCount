@@ -199,7 +199,6 @@ struct TrackView: View {
     /// Builds the inputted card into a visible card according to it's type.
     private func gridCard(_ card: DMStoredCard) -> some View {
         Group {
-            ZStack {
                 if #available(iOS 26.0, *) {
                     GlassEffectContainer {
                         baseCard(card)
@@ -207,12 +206,11 @@ struct TrackView: View {
                 } else {
                     baseCard(card)
                 }
-            }
         }
     }
     
     private func baseCard(_ card: DMStoredCard) -> some View {
-        Group {
+        ZStack {
             RoundedRectangle(cornerRadius: 25)
                 .foregroundStyle(.thickMaterial)
                 .shadow(radius: 5)
