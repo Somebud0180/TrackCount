@@ -24,10 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AAC3F3BA2E636A0D0082E057 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AAC5116C2D49EDA500BF52A5 /* TrackCount.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = TrackCount.xctestplan; path = ../TrackCount.xctestplan; sourceTree = "<group>"; };
-		AAE4CACB2D4B0F5600795A08 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AAE4CACC2D4B0F5600795A08 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAC3F3BA2E636A0D0082E057 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = TrackCount.app; path = "/Users/ethanlagera/Documents/XCode/TrackCount/build/Debug-iphoneos/TrackCount.app"; sourceTree = "<absolute>"; };
+		AAE4CACB2D4B0F5600795A08 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = TrackCountUITests.xctest; path = "/Users/ethanlagera/Documents/XCode/TrackCount/build/Debug-iphoneos/TrackCountUITests-Runner.app/PlugIns/TrackCountUITests.xctest"; sourceTree = "<absolute>"; };
+		AAE4CACC2D4B0F5600795A08 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = TrackCountTests.xctest; path = "/Users/ethanlagera/Documents/XCode/TrackCount/build/Debug-iphoneos/TrackCount.app/PlugIns/TrackCountTests.xctest"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -84,11 +83,6 @@
 			path = TrackCountUITests;
 			sourceTree = "<group>";
 		};
-		AAC5117B2D49EF5700BF52A5 /* TrackCountTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TrackCountTests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,13 +113,8 @@
 		AA4A52CD2CEDF57D00C79994 = {
 			isa = PBXGroup;
 			children = (
-				AAC5116C2D49EDA500BF52A5 /* TrackCount.xctestplan */,
 				AA4A52D82CEDF57D00C79994 /* TrackCount */,
-				AAC5117B2D49EF5700BF52A5 /* TrackCountTests */,
 				AAC5116A2D49ED4700BF52A5 /* TrackCountUITests */,
-				AAE4CACB2D4B0F5600795A08 /* TrackCountUITests.xctest */,
-				AAE4CACC2D4B0F5600795A08 /* TrackCountTests.xctest */,
-				AAC3F3BA2E636A0D0082E057 /* TrackCount.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -147,7 +136,6 @@
 			fileSystemSynchronizedGroups = (
 				AA4A52D82CEDF57D00C79994 /* TrackCount */,
 				AAC5116A2D49ED4700BF52A5 /* TrackCountUITests */,
-				AAC5117B2D49EF5700BF52A5 /* TrackCountTests */,
 			);
 			name = TrackCount;
 			packageProductDependencies = (
