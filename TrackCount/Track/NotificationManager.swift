@@ -15,7 +15,6 @@ class NotificationManager: NSObject, ObservableObject {
     override init() {
         super.init()
         UNUserNotificationCenter.current().delegate = self
-        requestNotificationPermission()
     }
     
     func requestNotificationPermission() {
@@ -77,8 +76,6 @@ class NotificationManager: NSObject, ObservableObject {
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("Error scheduling notification: \(error)")
-            } else {
-                print("Successfully scheduled notification for timer: \(groupTitle)'s \(cardTitle) in \(timeRemaining) seconds")
             }
         }
     }
@@ -104,8 +101,6 @@ class NotificationManager: NSObject, ObservableObject {
         UNUserNotificationCenter.current().setBadgeCount(0) { error in
             if let error = error {
                 print("Failed to clear badge count: \(error)")
-            } else {
-                print("Badge count cleared successfully.")
             }
         }
     }
@@ -137,7 +132,6 @@ class NotificationManager: NSObject, ObservableObject {
                 )
             }
         }
-        print("NotificationManager: Rescheduled notifications for group \(groupUUID) (left TrackView)")
     }
     
     func handleTimerCompletion(cardUUID: UUID, cardTitle: String, groupTitle: String, ringtone: String) {
@@ -152,17 +146,8 @@ class NotificationManager: NSObject, ObservableObject {
         let isViewingSameGroup = globalTimerManager.isInTrackView &&
         globalTimerManager.currentGroupUUID == timerGroupUUID
         
-        print("NotificationManager: Timer completion for \(cardTitle)")
-        print("NotificationManager: App state is \(appState.rawValue) (0=active, 1=inactive, 2=background)")
-        print("NotificationManager: Is in background: \(isInBackground)")
-        print("NotificationManager: Is in TrackView: \(globalTimerManager.isInTrackView)")
-        print("NotificationManager: Current group: \(globalTimerManager.currentGroupUUID?.uuidString ?? "none")")
-        print("NotificationManager: Timer group: \(timerGroupUUID?.uuidString ?? "none")")
-        print("NotificationManager: Is viewing same group: \(isViewingSameGroup)")
-        
         if isInBackground || !isViewingSameGroup {
             // Show notification if app is backgrounded OR if user is not viewing this timer's group
-            print("NotificationManager: Showing notification for \(cardTitle) (background: \(isInBackground), different group: \(!isViewingSameGroup))")
             let content = UNMutableNotificationContent()
             content.title = "Timer Complete"
             
@@ -193,15 +178,11 @@ class NotificationManager: NSObject, ObservableObject {
             UNUserNotificationCenter.current().add(request) { error in
                 if let error = error {
                     print("Error showing completion notification: \(error)")
-                } else {
-                    print("Timer completion notification sent for \(cardTitle)")
                 }
             }
         } else {
             // App is active and user is viewing the same group - directly play ringtone via AudioPlayerManager
-            print("NotificationManager: App is active and viewing same group, calling AudioPlayerManager for \(cardTitle)")
             AudioPlayerManager.shared.playTimerRingtone(for: cardUUID, ringtone: ringtone)
-            print("NotificationManager: Called AudioPlayerManager.playTimerRingtone for \(cardTitle)")
         }
     }
 }
@@ -227,20 +208,14 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
             let isViewingSameGroup = globalTimerManager.isInTrackView &&
             globalTimerManager.currentGroupUUID == timerGroupUUID
             
-            print("NotificationManager: willPresent - timer: \(cardUUIDString)")
-            print("NotificationManager: willPresent - in TrackView: \(globalTimerManager.isInTrackView)")
-            print("NotificationManager: willPresent - viewing same group: \(isViewingSameGroup)")
-            
             if isViewingSameGroup {
                 // User is viewing the same group - suppress the notification
-                print("NotificationManager: Suppressing notification for timer in currently viewed group")
                 completionHandler([])
                 return
             }
         }
         
         // Show notification for timers from other groups or non-timer notifications
-        print("NotificationManager: Showing notification")
         completionHandler([.banner, .list, .sound, .badge])
     }
     

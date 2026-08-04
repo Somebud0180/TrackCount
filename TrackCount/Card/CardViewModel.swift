@@ -13,7 +13,6 @@ import Combine
 
 class CardViewModel: ObservableObject {
     // Set variable defaults
-    @Query var storedCards: [DMStoredCard]
     @Published var selectedGroup: DMCardGroup
     @Published var selectedCard: DMStoredCard?
     @Published var newCardIndex: Int = 0
@@ -65,8 +64,6 @@ class CardViewModel: ObservableObject {
     init(selectedGroup: DMCardGroup, selectedCard: DMStoredCard? = nil) {
         self.selectedGroup = selectedGroup
         self.selectedCard = selectedCard
-        let groupID = selectedGroup.uuid
-        _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
     }
     
     /// A function that grabs the saved data from a selected card.
@@ -214,14 +211,22 @@ class CardViewModel: ObservableObject {
         }
         
         // Check if there are any existing cards
-        if storedCards.count == 0 {
+        if selectedGroup.cards?.count == 0 {
             newCardIndex = 0 // Set new index to 0 if there are no cards
         } else {
-            newCardIndex = storedCards.count // Set new index to the next highest number
+            newCardIndex = selectedGroup.cards?.count ?? 0 // Set new index to the next highest number
         }
         
         do {
             if let card = selectedCard {
+                // Notify timer system to cancel any running timers for this card BEFORE changes
+                if card.type == .timer || card.type == .timer_custom {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("TimerCardEdited"),
+                        object: nil,
+                        userInfo: ["cardUUID": card.uuid]
+                    )
+                }
                 // Update the existing card
                 card.title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
                 card.count = (newCardType == .counter && card.type != .counter) ? 0 : newCardCount // Check card count first due to type check, to avoid reseting an existing counter card
@@ -316,7 +321,7 @@ class CardViewModel: ObservableObject {
                 }
                 if !newCardModifier.contains(where: { $0 > 0 }) {
                     validationError.append("ModifierLessThanOne")
-                } 
+                }
             } else if newCardType == .toggle {
                 if newCardSymbol.trimmingCharacters(in: .whitespaces).isEmpty {
                     validationError.append("SymbolEmpty")

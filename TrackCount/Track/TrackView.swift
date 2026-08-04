@@ -13,6 +13,7 @@ import Combine
 struct TrackView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.modelContext) private var context
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @StateObject private var groupViewModel: GroupViewModel
     @StateObject private var timerViewModel: TimerViewModel
@@ -29,7 +30,9 @@ struct TrackView: View {
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var pressedStates: [String: Bool] = [:]
     
-    let gridColumns = [GridItem(.adaptive(minimum: 500), spacing: 8)]
+    @AppStorage("trackGridSize") var gridSizeOption: Int = DefaultSettings.trackGridSize  // 0 = compact, 1 = default, 2 = relaxed
+    @State private var gridSize: [CGFloat] = [350, 400, 450]
+    
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
     init(selectedGroup: DMCardGroup) {
@@ -37,6 +40,7 @@ struct TrackView: View {
         _timerViewModel = StateObject(wrappedValue: TimerViewModel())
         _cardViewModel = StateObject(wrappedValue: CardViewModel(selectedGroup: selectedGroup))
         _debouncedStateManager = StateObject(wrappedValue: DebouncedCardStateManager())
+        
         self.selectedGroup = selectedGroup
         let groupID = selectedGroup.uuid
         _storedCards = Query(filter: #Predicate<DMStoredCard> { $0.group?.uuid == groupID }, sort: \DMStoredCard.index, order: .forward)
@@ -45,6 +49,9 @@ struct TrackView: View {
     var body: some View {
         // Safely get a share URL for the group
         let shareURL = try? groupViewModel.shareGroup(selectedGroup)
+        
+        // Define grid layout with adaptive columns
+        let gridColumns = [GridItem(.adaptive(minimum: gridSize[gridSizeOption]), spacing: 16)]
         
         NavigationStack {
             ScrollView {
@@ -56,7 +63,7 @@ struct TrackView: View {
                             .multilineTextAlignment(.center)
                     } else {
                         // Define the grid layout
-                        LazyVGrid(columns: gridColumns) {
+                        LazyVGrid(columns: gridColumns, spacing: 16) {
                             // Display a message when there are no cards
                             // Iterate through the sorted cards and display each card
                             ForEach(storedCards, id: \.uuid) { card in
@@ -65,7 +72,7 @@ struct TrackView: View {
                         }
                     }
                 }
-                .padding(.vertical)
+                .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitleViewBuilder {
@@ -99,9 +106,30 @@ struct TrackView: View {
                         ShareLink(item: shareURL ?? URL(fileURLWithPath: "/")) {
                             Label("Share Group", systemImage: "square.and.arrow.up")
                         }.disabled(shareURL == nil)
-                        Button("Delete Group", systemImage: "trash", role: .destructive) {
-                            isPresentingDeleteDialog = true
-                        }
+                        
+                        Menu {
+                            Button(action: { withAnimation { gridSizeOption = 0 }}) {
+                                if gridSizeOption == 0 { Label("Compact", systemImage: "checkmark") } else {
+                                    Text("Compact")
+                                }
+                            }
+                            Button(action: { withAnimation { gridSizeOption = 1 }}) {
+                                if gridSizeOption == 1 { Label("Medium", systemImage: "checkmark") } else {
+                                    Text("Medium")
+                                }
+                            }
+                            Button(action: { withAnimation { gridSizeOption = 2 }}) {
+                                if gridSizeOption == 2 { Label("Large", systemImage: "checkmark") } else {
+                                    Text("Large")
+                                }
+                            }
+                        } label: {
+                                Label("Grid Size", systemImage: "square.grid.2x2")
+                            }
+                            
+                            Button("Delete Group", systemImage: "trash", role: .destructive) {
+                                isPresentingDeleteDialog = true
+                            }
                     } label: {
                         Label("Group Options", systemImage: "ellipsis.circle")
                     }
@@ -179,7 +207,7 @@ struct TrackView: View {
                 } else {
                     baseCard(card)
                 }
-            }.padding()
+            }
         }
     }
     
@@ -259,6 +287,7 @@ struct TrackView: View {
                         let willOverflow = operation(1, 1) == 2
                         ? card.count > Int.max - modifiers[index]
                         : card.count < Int.min + modifiers[index]
+                        let tint = willOverflow ? .gray : card.primaryColor?.color ?? .blue
                         
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.1)) {
@@ -288,8 +317,8 @@ struct TrackView: View {
                             .padding(6)
                         }
                         .disabled(willOverflow)
-                        .foregroundStyle(card.secondaryColor?.color ?? .white)
-                        .adaptiveGlassButton(interactive: !willOverflow, tintColor: willOverflow ? .gray : card.primaryColor?.color ?? .blue, externalPressed: isPressed)
+                        .foregroundStyle((card.secondaryColor?.color ?? .white).readableOn(tint, sensitivity: usesLiquidGlass ? 0.7 : 0.75))
+                        .adaptiveGlassButton(interactive: !willOverflow, tintColor: tint, externalPressed: isPressed)
                         .accessibilityLabel(accessibilityLabel)
                         .accessibilityHint("\(accessibilityHintPrefix) \(card.title) by \(modifiers[index])")
                     }
@@ -357,7 +386,7 @@ struct TrackView: View {
             }
             .padding(4)
             .frame(maxWidth: .infinity, minHeight: 20, maxHeight: .infinity)
-            .foregroundStyle(isActive ? card.secondaryColor?.color ?? .white : .black)
+            .foregroundStyle(isActive ? (card.secondaryColor?.color ?? .white).readableOn((card.primaryColor?.color ?? .blue)) : .black)
         }
         .customConditionalButtonModifier(
             condition: isActive,
@@ -365,14 +394,15 @@ struct TrackView: View {
             shape: RoundedRectangle(cornerRadius: 12),
             externalPressed: isPressed
         )
+        .scaleEffect(isActive ? 1.0 : 0.95)
     }
     
     /// Creates the timer card contents from the inputted card.
     private func timerCard(_ card: DMStoredCard) -> some View {
         @State var isStartButtonPressed: Bool = false
-        
+        let timerState = timerViewModel.timerStates[card.uuid] ?? .idle
         return Group {
-            if card.type == .timer_custom && card.state?[0].state == false  {
+            if card.type == .timer_custom && timerState == .idle  {
                 VStack {
                     Text("Set Timer")
                         .font(.headline)
@@ -401,7 +431,6 @@ struct TrackView: View {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
                             isStartButtonPressed = true
-                            card.state?[0] = CardState(state: true)
                             timerViewModel.startTimer(card)
                         }
                         
@@ -410,18 +439,17 @@ struct TrackView: View {
                         }
                     }) {
                         Text("Start")
-                            .foregroundStyle(card.secondaryColor?.color ?? .white)
+                            .foregroundStyle((card.secondaryColor?.color ?? .white).readable(in: colorScheme))
                             .frame(maxWidth: .infinity)
                             .padding()
                     }
                     .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: isStartButtonPressed)
                 }
-            } else if card.type == .timer && card.state?[0].state == false {
+            } else if card.type == .timer && timerState == .idle {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                     ForEach(0..<card.count, id: \.self) { index in
                         Button(action: {
                             timerViewModel.selectedTimerIndex[card.uuid] = index
-                            card.state?[0] = CardState(state: true)
                             timerViewModel.startTimer(card)
                         }) {
                             Circle()
@@ -431,7 +459,7 @@ struct TrackView: View {
                                 .overlay(
                                     Text((card.timer?[index].timerValue ?? 0).formatTime())
                                         .font(.system(.title2, weight: .bold))
-                                        .foregroundStyle(card.secondaryColor?.color ?? .white)
+                                        .foregroundStyle((card.secondaryColor?.color ?? .white).readable(in: colorScheme))
                                         .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
                                         .lineLimit(1)
                                         .minimumScaleFactor(0.3)
@@ -460,6 +488,108 @@ struct TrackView: View {
     }
 }
 
+extension Color {
+    /// Returns the relative luminance of this color, from 0 (black) to 1 (white).
+    func luminance() -> Double {
+        // Convert the color to UIColor/NSColor and extract components
+#if canImport(UIKit)
+        let uiColor = UIColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+#else
+        let nsColor = NSColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        nsColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+#endif
+        
+        // Calculate luminance (perceptual brightness)
+        func channel(_ c: CGFloat) -> Double {
+            let c = Double(c)
+            return (c <= 0.03928) ? (c/12.92) : pow((c+0.055)/1.055, 2.4)
+        }
+        return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+    }
+    
+    /// Determines if the color is considered "white" based on its luminance.
+    /// - Parameters:
+    /// - colorScheme: The current color scheme (light or dark).
+    /// - sensitivity: A value from 0 to 1 indicating how sensitive the readability check is. Default is 0.6.
+    func isColorUnreadable(_ colorScheme: ColorScheme, sensitivity: CGFloat = 0.60) -> Bool {
+        if colorScheme == .dark {
+            return self.luminance() <= (1 - sensitivity)
+        } else {
+            return self.luminance() >= sensitivity
+        }
+    }
+    
+    /// Returns a color that is guaranteed to be readable for the given color scheme.
+    /// If the color is unreadable, returns a contrasting color (black for light mode, white for dark mode). Otherwise returns self.
+    /// - Parameters:
+    ///  - colorScheme: The current color scheme (light or dark).
+    ///  - sensitivity: A value from 0 to 1 indicating how sensitive the readability check is. Default is 0.6.
+    func readable(in colorScheme: ColorScheme, sensitivity: CGFloat = 0.6) -> Color {
+        if isColorUnreadable(colorScheme, sensitivity: sensitivity) {
+            return colorScheme == .light ? self.darkened() : self.lightened()
+        } else {
+            return self
+        }
+    }
+    
+    /// Returns a version of the color that is readable against a background color, using luminance contrast.
+    /// If the contrast is insufficient, returns a darkened or lightened variant for readability.
+    /// - Parameters:
+    ///   - background: The background color to check against.
+    ///   - sensitivity: How strict the contrast check is (0 to 1). Default is 0.9.
+    func readableOn(_ background: Color, sensitivity: CGFloat = 0.75) -> Color {
+        // Calculate luminance of the background
+        let bgLuminance = background.luminance()
+        // Thresholds can be tweaked for your design preference.
+        return bgLuminance > sensitivity ? self.darkened(by: 0.6) : self.lightened(by: 0.6)
+    }
+    
+    /// Returns a darkened version of the color by blending it towards black.
+    /// - Parameter amount: A value from 0 (no change) to 1 (black). Default is 0.5.
+    func darkened(by amount: CGFloat = 0.5) -> Color {
+#if canImport(UIKit)
+        let uiColor = UIColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+#else
+        let nsColor = NSColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        nsColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+#endif
+        return Color(
+            .sRGB,
+            red: Double(max(r * (1 - amount), 0)),
+            green: Double(max(g * (1 - amount), 0)),
+            blue: Double(max(b * (1 - amount), 0)),
+            opacity: Double(a)
+        )
+    }
+    
+    /// Returns a lightened version of the color by blending it towards white.
+    /// - Parameter amount: A value from 0 (no change) to 1 (white). Default is 0.5.
+    func lightened(by amount: CGFloat = 0.5) -> Color {
+#if canImport(UIKit)
+        let uiColor = UIColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+#else
+        let nsColor = NSColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        nsColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+#endif
+        return Color(
+            .sRGB,
+            red: Double(min(r + (1 - r) * amount, 1)),
+            green: Double(min(g + (1 - g) * amount, 1)),
+            blue: Double(min(b + (1 - b) * amount, 1)),
+            opacity: Double(a)
+        )
+    }
+}
+
 #Preview {
     let exampleGroup = DMCardGroup(index: 0, groupTitle: "Test", groupSymbol: "", cards: [])
     let exampleCards: [DMStoredCard] = [
@@ -473,3 +603,4 @@ struct TrackView: View {
     
     return TrackView(selectedGroup: exampleGroup)
 }
+

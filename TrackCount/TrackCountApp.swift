@@ -11,7 +11,7 @@ import SwiftData
 @main
 struct TrackCountApp: App {
     // Initialize managers when app starts - order matters for dependencies
-    private let audioPlayerManager = AudioPlayerManager.shared // Initialize first
+    private let audioPlayerManager = AudioPlayerManager.shared
     private let notificationManager = NotificationManager.shared
     private let globalTimerManager = GlobalTimerManager.shared
     

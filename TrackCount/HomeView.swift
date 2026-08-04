@@ -14,8 +14,18 @@ struct DefaultSettings {
     static let gradientAnimated = true
     static let gradientInDarkHome = true
     static let gradientInDarkGroup = true
+    static let trackGridSize = 1
     static let primaryThemeColor = RawColor(color: Color.blue.light)
 }
+
+// Helper to determine if Liquid Glass design is available
+let usesLiquidGlass: Bool = {
+    if #available(iOS 26.0, *) {
+        return true
+    } else {
+        return false
+    }
+}()
 
 struct HomeView: View {
     @Environment(\.modelContext) private var context
