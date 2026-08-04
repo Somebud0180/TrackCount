@@ -2,7 +2,7 @@
 //  GlobalTimerManager.swift
 //  TrackCount
 //
-//  Manages timer persistence across the entire app
+//  Manages timer persistence across the entire app with absolute target date accuracy
 //
 
 import SwiftUI
@@ -18,17 +18,12 @@ class GlobalTimerManager: ObservableObject {
     @Published var currentGroupUUID: UUID?
     
     private var backgroundTimer: Timer?
-    private var lastUpdateTime: Date = Date()
     private let notificationManager = NotificationManager.shared
-    
-    // Background task identifier
-    private let backgroundTaskIdentifier = "com.trackcount.timerUpdate"
     
     // UserDefaults key for persisting timer states
     private let timerStatesKey = "com.trackcount.timerStates"
     
     struct PersistentTimerState: Codable {
-        var timeRemaining: Double
         var totalTime: Double
         var timerIndex: Int
         var isRunning: Bool
@@ -41,15 +36,36 @@ class GlobalTimerManager: ObservableObject {
         var groupTitle: String
         var ringtone: String
         
-        // Remove pauseReason since it's redundant with card state
+        /// Absolute target completion date (nil if paused or not running)
+        var targetEndDate: Date?
+        
+        /// Remaining duration saved when paused
+        var pausedRemainingTime: Double?
+        
+        /// Legacy property stored for backwards compatibility when decoding old persisted states
+        private var storedTimeRemaining: Double?
+        
         enum CodingKeys: String, CodingKey {
             case timeRemaining, totalTime, timerIndex, isRunning
             case cardUUID, groupUUID, pausedAt, startedAt, lastSavedAt
             case cardTitle, groupTitle, ringtone
+            case targetEndDate, pausedRemainingTime
         }
         
-        init(timeRemaining: Double, totalTime: Double, timerIndex: Int, isRunning: Bool, cardUUID: UUID, groupUUID: UUID, pausedAt: Date?, startedAt: Date, cardTitle: String, groupTitle: String, ringtone: String) {
-            self.timeRemaining = timeRemaining
+        /// Dynamically computed remaining time based on absolute target date
+        var timeRemaining: Double {
+            if isRunning, let targetEndDate = targetEndDate {
+                return max(0, targetEndDate.timeIntervalSinceNow)
+            } else if let pausedRemainingTime = pausedRemainingTime {
+                return max(0, pausedRemainingTime)
+            } else if let stored = storedTimeRemaining {
+                return max(0, stored)
+            } else {
+                return 0
+            }
+        }
+        
+        init(timeRemaining: Double, totalTime: Double, timerIndex: Int, isRunning: Bool, cardUUID: UUID, groupUUID: UUID, pausedAt: Date?, startedAt: Date, cardTitle: String, groupTitle: String, ringtone: String, targetEndDate: Date? = nil, pausedRemainingTime: Double? = nil) {
             self.totalTime = totalTime
             self.timerIndex = timerIndex
             self.isRunning = isRunning
@@ -61,30 +77,75 @@ class GlobalTimerManager: ObservableObject {
             self.cardTitle = cardTitle
             self.groupTitle = groupTitle
             self.ringtone = ringtone
+            self.targetEndDate = targetEndDate
+            self.pausedRemainingTime = pausedRemainingTime
+            self.storedTimeRemaining = timeRemaining
         }
         
-        // Handle decoding with fallback for missing properties
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            timeRemaining = try container.decode(Double.self, forKey: .timeRemaining)
-            totalTime = try container.decode(Double.self, forKey: .totalTime)
-            timerIndex = try container.decode(Int.self, forKey: .timerIndex)
-            isRunning = try container.decode(Bool.self, forKey: .isRunning)
+            let decodedTimeRemaining = try? container.decode(Double.self, forKey: .timeRemaining)
+            totalTime = (try? container.decode(Double.self, forKey: .totalTime)) ?? 0
+            timerIndex = (try? container.decode(Int.self, forKey: .timerIndex)) ?? 0
+            isRunning = (try? container.decode(Bool.self, forKey: .isRunning)) ?? false
             cardUUID = try container.decode(UUID.self, forKey: .cardUUID)
             groupUUID = try container.decode(UUID.self, forKey: .groupUUID)
-            pausedAt = try container.decodeIfPresent(Date.self, forKey: .pausedAt)
-            startedAt = try container.decode(Date.self, forKey: .startedAt)
-            lastSavedAt = try container.decodeIfPresent(Date.self, forKey: .lastSavedAt) ?? Date()
-            cardTitle = try container.decodeIfPresent(String.self, forKey: .cardTitle) ?? "Timer"
-            groupTitle = try container.decodeIfPresent(String.self, forKey: .groupTitle) ?? "Group"
-            ringtone = try container.decodeIfPresent(String.self, forKey: .ringtone) ?? "Code"
+            pausedAt = try? container.decodeIfPresent(Date.self, forKey: .pausedAt)
+            startedAt = (try? container.decode(Date.self, forKey: .startedAt)) ?? Date()
+            lastSavedAt = (try? container.decodeIfPresent(Date.self, forKey: .lastSavedAt)) ?? Date()
+            cardTitle = (try? container.decodeIfPresent(String.self, forKey: .cardTitle)) ?? "Timer"
+            groupTitle = (try? container.decodeIfPresent(String.self, forKey: .groupTitle)) ?? "Group"
+            ringtone = (try? container.decodeIfPresent(String.self, forKey: .ringtone)) ?? "Code"
+            
+            targetEndDate = try? container.decodeIfPresent(Date.self, forKey: .targetEndDate)
+            pausedRemainingTime = try? container.decodeIfPresent(Double.self, forKey: .pausedRemainingTime)
+            
+            // Migration logic for old format persisted states
+            if targetEndDate == nil && isRunning && pausedAt == nil {
+                let remaining = decodedTimeRemaining ?? totalTime
+                if remaining > 0 {
+                    let elapsedSinceLastSave = Date().timeIntervalSince(lastSavedAt)
+                    let actualRemaining = max(0, remaining - elapsedSinceLastSave)
+                    if actualRemaining > 0 {
+                        targetEndDate = Date().addingTimeInterval(actualRemaining)
+                    } else {
+                        isRunning = false
+                        storedTimeRemaining = 0
+                    }
+                } else {
+                    isRunning = false
+                    storedTimeRemaining = 0
+                }
+            } else if pausedAt != nil {
+                pausedRemainingTime = pausedRemainingTime ?? decodedTimeRemaining
+            } else {
+                storedTimeRemaining = decodedTimeRemaining
+            }
+        }
+        
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(timeRemaining, forKey: .timeRemaining)
+            try container.encode(totalTime, forKey: .totalTime)
+            try container.encode(timerIndex, forKey: .timerIndex)
+            try container.encode(isRunning, forKey: .isRunning)
+            try container.encode(cardUUID, forKey: .cardUUID)
+            try container.encode(groupUUID, forKey: .groupUUID)
+            try container.encodeIfPresent(pausedAt, forKey: .pausedAt)
+            try container.encode(startedAt, forKey: .startedAt)
+            try container.encode(lastSavedAt, forKey: .lastSavedAt)
+            try container.encode(cardTitle, forKey: .cardTitle)
+            try container.encode(groupTitle, forKey: .groupTitle)
+            try container.encode(ringtone, forKey: .ringtone)
+            try container.encodeIfPresent(targetEndDate, forKey: .targetEndDate)
+            try container.encodeIfPresent(pausedRemainingTime, forKey: .pausedRemainingTime)
         }
     }
     
     private init() {
         loadPersistedStates()
         updateTimersAfterAppLaunch()
-        startBackgroundTimer()
+        checkAndManageTimer()
         
         // Save states when app goes to background
         NotificationCenter.default.addObserver(
@@ -103,34 +164,46 @@ class GlobalTimerManager: ObservableObject {
         )
     }
     
-    private func startBackgroundTimer() {
-        backgroundTimer = Timer.scheduledTimer(withTimeInterval: 1/30.0, repeats: true) { [weak self] _ in
-            self?.updateBackgroundTimers()
+    /// Starts or stops the lightweight background timer based on active running timers
+    private func checkAndManageTimer() {
+        let hasRunningTimers = persistentTimerStates.values.contains { $0.isRunning && $0.timeRemaining > 0 }
+        
+        if hasRunningTimers {
+            if backgroundTimer == nil {
+                // 10 Hz (0.1s) is visually smooth for UI updates while reducing CPU timer wakeups by 67%
+                backgroundTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+                    self?.updateBackgroundTimers()
+                }
+            }
+        } else {
+            backgroundTimer?.invalidate()
+            backgroundTimer = nil
         }
     }
     
     private func updateBackgroundTimers() {
-        let currentTime = Date()
-        var completedTimers = 0
+        var completedUUIDs: [UUID] = []
         
         for (uuid, state) in persistentTimerStates {
-            guard state.isRunning && state.pausedAt == nil else { continue }
+            guard state.isRunning else { continue }
             
-            let elapsed = currentTime.timeIntervalSince(lastUpdateTime)
-            let newTimeRemaining = max(0, state.timeRemaining - elapsed)
-            
-            persistentTimerStates[uuid]?.timeRemaining = newTimeRemaining
-            
-            if newTimeRemaining <= 0 && state.timeRemaining > 0 {
-                // Timer just completed
+            if state.timeRemaining <= 0 {
+                completedUUIDs.append(uuid)
+            }
+        }
+        
+        if !completedUUIDs.isEmpty {
+            for uuid in completedUUIDs {
                 persistentTimerStates[uuid]?.isRunning = false
-                completedTimers += 1
+                persistentTimerStates[uuid]?.targetEndDate = nil
+                persistentTimerStates[uuid]?.pausedRemainingTime = 0
                 
-                // Cancel any scheduled notification since timer has completed
+                guard let state = persistentTimerStates[uuid] else { continue }
+                
+                // Cancel scheduled notification since timer completed
                 notificationManager.cancelTimerNotification(for: uuid)
                 
-                // Always trigger completion notification - GlobalTimerManager handles ALL completions
-                // This ensures ringtones play regardless of which view you're in
+                // Trigger completion notification/audio
                 notificationManager.handleTimerCompletion(
                     cardUUID: uuid,
                     cardTitle: state.cardTitle,
@@ -138,19 +211,20 @@ class GlobalTimerManager: ObservableObject {
                     ringtone: state.ringtone
                 )
             }
+            
+            persistTimerStates()
+            checkAndManageTimer()
         }
         
-        lastUpdateTime = currentTime
-    }
-    
-    // Helper method to get card info for notifications
-    private func getCardInfo(for cardUUID: UUID) -> (title: String, ringtone: String)? {
-        // Since we don't store card info in persistent state, we'll use defaults
-        // In a real implementation, you might want to store title and ringtone in PersistentTimerState
-        return ("Timer", "Code") // Default values
+        // Notify subscribers (UI views) of current time remaining without disk I/O
+        objectWillChange.send()
     }
     
     func saveTimerState(cardUUID: UUID, groupUUID: UUID, timeRemaining: Double, totalTime: Double, timerIndex: Int, isRunning: Bool, cardTitle: String? = nil, groupTitle: String? = nil, ringtone: String? = nil) {
+        let now = Date()
+        let targetEnd = isRunning ? now.addingTimeInterval(timeRemaining) : nil
+        let pausedTime = isRunning ? nil : timeRemaining
+        
         persistentTimerStates[cardUUID] = PersistentTimerState(
             timeRemaining: timeRemaining,
             totalTime: totalTime,
@@ -158,14 +232,15 @@ class GlobalTimerManager: ObservableObject {
             isRunning: isRunning,
             cardUUID: cardUUID,
             groupUUID: groupUUID,
-            pausedAt: nil,
-            startedAt: Date(),
+            pausedAt: isRunning ? nil : now,
+            startedAt: now,
             cardTitle: cardTitle ?? "Timer",
             groupTitle: groupTitle ?? "Group",
-            ringtone: ringtone ?? "Code"
+            ringtone: ringtone ?? "Code",
+            targetEndDate: targetEnd,
+            pausedRemainingTime: pausedTime
         )
         
-        // Schedule notification for when this timer should complete
         if isRunning && timeRemaining > 0 {
             notificationManager.scheduleTimerNotification(
                 for: cardUUID,
@@ -174,75 +249,120 @@ class GlobalTimerManager: ObservableObject {
                 timeRemaining: timeRemaining,
                 ringtone: ringtone ?? "Code"
             )
+        } else {
+            notificationManager.cancelTimerNotification(for: cardUUID)
         }
         
-        persistTimerStates() // Persist state after saving
+        persistTimerStates()
+        checkAndManageTimer()
     }
     
     func pauseTimer(cardUUID: UUID) {
-        persistentTimerStates[cardUUID]?.pausedAt = Date()
-        persistentTimerStates[cardUUID]?.isRunning = false
+        guard var state = persistentTimerStates[cardUUID], state.isRunning else { return }
+        let remaining = state.timeRemaining
+        let now = Date()
         
-        // Cancel scheduled notification since timer is paused
+        state.pausedAt = now
+        state.isRunning = false
+        state.targetEndDate = nil
+        state.pausedRemainingTime = remaining
+        
+        persistentTimerStates[cardUUID] = state
         notificationManager.cancelTimerNotification(for: cardUUID)
         
-        persistTimerStates() // Persist state after pausing
+        persistTimerStates()
+        checkAndManageTimer()
     }
     
     func resumeTimer(cardUUID: UUID, cardTitle: String? = nil, groupTitle: String? = nil, ringtone: String? = nil) {
-        guard let state = persistentTimerStates[cardUUID] else { return }
+        guard var state = persistentTimerStates[cardUUID] else { return }
+        let remaining = state.timeRemaining
+        guard remaining > 0 else { return }
         
-        persistentTimerStates[cardUUID]?.pausedAt = nil
-        persistentTimerStates[cardUUID]?.isRunning = true
+        let now = Date()
+        let targetEnd = now.addingTimeInterval(remaining)
         
-        // Reschedule notification with remaining time
-        if state.timeRemaining > 0 {
-            if let cardTitle = cardTitle, let groupTitle = groupTitle, let ringtone = ringtone {
-                notificationManager.scheduleTimerNotification(
-                    for: cardUUID,
-                    cardTitle: cardTitle,
-                    groupTitle: groupTitle,
-                    timeRemaining: state.timeRemaining,
-                    ringtone: ringtone
-                )
-            }
-        }
+        if let cardTitle = cardTitle { state.cardTitle = cardTitle }
+        if let groupTitle = groupTitle { state.groupTitle = groupTitle }
+        if let ringtone = ringtone { state.ringtone = ringtone }
         
-        persistTimerStates() // Persist state after resuming
+        state.pausedAt = nil
+        state.isRunning = true
+        state.targetEndDate = targetEnd
+        state.pausedRemainingTime = nil
+        
+        persistentTimerStates[cardUUID] = state
+        
+        notificationManager.scheduleTimerNotification(
+            for: cardUUID,
+            cardTitle: state.cardTitle,
+            groupTitle: state.groupTitle,
+            timeRemaining: remaining,
+            ringtone: state.ringtone
+        )
+        
+        persistTimerStates()
+        checkAndManageTimer()
     }
     
     func stopTimer(cardUUID: UUID) {
-        // Cancel any scheduled notifications
         notificationManager.cancelTimerNotification(for: cardUUID)
-        
         persistentTimerStates.removeValue(forKey: cardUUID)
         
-        // Clear badge if no more active timers
         if persistentTimerStates.isEmpty {
             notificationManager.clearBadgeCount()
         }
         
-        persistTimerStates() // Persist state after stopping
+        persistTimerStates()
+        checkAndManageTimer()
     }
     
     func pauseAllTimersInGroup(groupUUID: UUID) {
+        let now = Date()
+        var changed = false
         for (uuid, state) in persistentTimerStates {
             if state.groupUUID == groupUUID && state.isRunning {
-                persistentTimerStates[uuid]?.pausedAt = Date()
+                let remaining = state.timeRemaining
+                persistentTimerStates[uuid]?.pausedAt = now
                 persistentTimerStates[uuid]?.isRunning = false
+                persistentTimerStates[uuid]?.targetEndDate = nil
+                persistentTimerStates[uuid]?.pausedRemainingTime = remaining
+                notificationManager.cancelTimerNotification(for: uuid)
+                changed = true
             }
         }
-        persistTimerStates() // Persist state after pausing all timers in group
+        if changed {
+            persistTimerStates()
+            checkAndManageTimer()
+        }
     }
     
     func resumeAllTimersInGroup(groupUUID: UUID) {
+        let now = Date()
+        var changed = false
         for (uuid, state) in persistentTimerStates {
-            if state.groupUUID == groupUUID && state.pausedAt != nil {
-                persistentTimerStates[uuid]?.pausedAt = nil
-                persistentTimerStates[uuid]?.isRunning = true
+            if state.groupUUID == groupUUID && !state.isRunning && (state.pausedAt != nil || (state.pausedRemainingTime ?? 0) > 0) {
+                let remaining = state.timeRemaining
+                if remaining > 0 {
+                    persistentTimerStates[uuid]?.pausedAt = nil
+                    persistentTimerStates[uuid]?.isRunning = true
+                    persistentTimerStates[uuid]?.targetEndDate = now.addingTimeInterval(remaining)
+                    persistentTimerStates[uuid]?.pausedRemainingTime = nil
+                    notificationManager.scheduleTimerNotification(
+                        for: uuid,
+                        cardTitle: state.cardTitle,
+                        groupTitle: state.groupTitle,
+                        timeRemaining: remaining,
+                        ringtone: state.ringtone
+                    )
+                    changed = true
+                }
             }
         }
-        persistTimerStates() // Persist state after resuming all timers in group
+        if changed {
+            persistTimerStates()
+            checkAndManageTimer()
+        }
     }
     
     func getTimerState(cardUUID: UUID) -> PersistentTimerState? {
@@ -255,7 +375,6 @@ class GlobalTimerManager: ObservableObject {
     }
     
     private func persistTimerStates() {
-        // Convert the timer states to Data and save to UserDefaults
         do {
             let data = try JSONEncoder().encode(persistentTimerStates.map { $0.value })
             UserDefaults.standard.set(data, forKey: timerStatesKey)
@@ -265,7 +384,6 @@ class GlobalTimerManager: ObservableObject {
     }
     
     private func loadPersistedStates() {
-        // Load timer states from UserDefaults
         guard let data = UserDefaults.standard.data(forKey: timerStatesKey) else { return }
         
         do {
@@ -277,23 +395,21 @@ class GlobalTimerManager: ObservableObject {
     }
     
     private func updateTimersAfterAppLaunch() {
-        let currentTime = Date()
-        
+        var completedUUIDs: [UUID] = []
         for (uuid, state) in persistentTimerStates {
-            // Check if the timer was running and not paused at app launch
             if state.isRunning && state.pausedAt == nil {
-                let elapsed = currentTime.timeIntervalSince(state.lastSavedAt)
-                let newTimeRemaining = max(0, state.timeRemaining - elapsed)
-                
-                persistentTimerStates[uuid]?.timeRemaining = newTimeRemaining
-                persistentTimerStates[uuid]?.lastSavedAt = currentTime
-                
-                if newTimeRemaining <= 0 {
+                if state.timeRemaining <= 0 {
                     persistentTimerStates[uuid]?.isRunning = false
-                    // Timer completed - could trigger notification here
+                    persistentTimerStates[uuid]?.targetEndDate = nil
+                    persistentTimerStates[uuid]?.pausedRemainingTime = 0
+                    completedUUIDs.append(uuid)
                 }
             }
         }
+        if !completedUUIDs.isEmpty {
+            persistTimerStates()
+        }
+        checkAndManageTimer()
     }
     
     @objc private func appWillResignActive() {
@@ -301,21 +417,19 @@ class GlobalTimerManager: ObservableObject {
         for uuid in persistentTimerStates.keys {
             persistentTimerStates[uuid]?.lastSavedAt = now
         }
-        // Update all timer states and schedule notifications for background
         scheduleBackgroundNotifications()
-        // Save states when app goes to background
         persistTimerStates()
+        // Pause tick timer while backgrounded to save CPU & battery
+        backgroundTimer?.invalidate()
+        backgroundTimer = nil
     }
     
     @objc private func appDidBecomeActive() {
-        // Update timers when app becomes active
         updateTimersAfterAppLaunch()
-        // Cancel scheduled notifications since we're back in foreground
         cancelScheduledNotifications()
-        // Clear badge when app becomes active (handled in TrackCountApp now)
+        checkAndManageTimer()
     }
     
-    /// Schedule notifications for all running timers when app goes to background
     private func scheduleBackgroundNotifications() {
         for (uuid, state) in persistentTimerStates {
             if state.isRunning && state.pausedAt == nil && state.timeRemaining > 0 {
@@ -330,18 +444,17 @@ class GlobalTimerManager: ObservableObject {
         }
     }
     
-    /// Cancel all scheduled timer notifications when app becomes active
     private func cancelScheduledNotifications() {
         for uuid in persistentTimerStates.keys {
             notificationManager.cancelTimerNotification(for: uuid)
         }
     }
     
-    /// Clears all timer states and notifications - useful for cleanup
     func clearAllTimers() {
         persistentTimerStates.removeAll()
         notificationManager.cancelAllTimerNotifications()
         persistTimerStates()
+        checkAndManageTimer()
     }
     
     deinit {
