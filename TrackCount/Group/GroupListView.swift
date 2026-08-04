@@ -127,14 +127,12 @@ struct GroupListView: View {
             .navigationBarTitleDisplayMode(.large)
             .navigationTitle("Your Groups")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button(action: { isPresentingGroupForm = true }) {
-                        Label("Add Group", systemImage: "plus.circle")
+                        Label("Add Group", systemImage: "plus.rectangle.portrait")
                     }
                     .legacyDarkTint()
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    
                     Menu {
                         Button(action: { isPresentingFilePicker = true }) {
                             Label("Import Group", systemImage: "square.and.arrow.down")
@@ -143,10 +141,10 @@ struct GroupListView: View {
                             Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
                         }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "ellipsis")
                     }
                     .legacyDarkTint()
-                    .accessibilityIdentifier("Ellipsis Button")
+                    .accessibilityIdentifier("More Options")
                 }
             }
             .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
