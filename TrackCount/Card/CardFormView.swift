@@ -258,10 +258,8 @@ struct CardFormView: View {
     
     private func formView() -> some View {
         Form {
-            pickerFormView()
-            
-            // Text field for card title
             Section {
+                // Text field for card title
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("Set card title", text: $viewModel.newCardTitle)
                         .autocapitalization(.words)
@@ -271,6 +269,8 @@ struct CardFormView: View {
                     // Error message with animation
                     errorMessageView("CardTitleEmpty", with: viewModel.validationError, message: "Card title cannot be empty")
                 }
+                
+                typePickerView()
             }
             
             Section(header: Text("Colors")) {
@@ -292,36 +292,34 @@ struct CardFormView: View {
         }
     }
     
-    private func pickerFormView() -> some View {
-        Section {
-            // Picker for card type
-            VStack(alignment: .leading, spacing: 8) {
-                if horizontalSizeClass == .regular {
-                    Picker(selection: $viewModel.newCardType) {
-                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                            Text(type.formattedName).tag(type)
-                                .padding(.vertical)
-                        }
-                    } label: {
-                        Text("Type")
+    private func typePickerView() -> some View {
+        // Picker for card type
+        VStack(alignment: .leading, spacing: 8) {
+            if horizontalSizeClass == .regular {
+                Picker(selection: $viewModel.newCardType) {
+                    ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                        Text(type.formattedName).tag(type)
+                            .padding(.vertical)
                     }
-                    .pickerStyle(.segmented)
-                } else {
-                    Picker(selection: $viewModel.newCardType) {
-                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                            Text(type.formattedName).tag(type)
-                        }
-                    } label: {
-                        Text("Type")
-                    }
-                    .pickerStyle(.menu)
+                } label: {
+                    Text("Type")
                 }
-                
-                // Definition for selected card type
-                Text(viewModel.newCardType.typeDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .pickerStyle(.segmented)
+            } else {
+                Picker(selection: $viewModel.newCardType) {
+                    ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                        Text(type.formattedName).tag(type)
+                    }
+                } label: {
+                    Text("Type")
+                }
+                .pickerStyle(.menu)
             }
+            
+            // Definition for selected card type
+            Text(viewModel.newCardType.typeDescription)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
     
