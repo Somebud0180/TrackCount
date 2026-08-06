@@ -548,8 +548,6 @@ struct CardFormView: View {
                     }
                 }
             }
-            
-            Spacer(minLength: 64)
         }
     }
     
