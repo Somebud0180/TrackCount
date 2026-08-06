@@ -20,7 +20,11 @@ class CardViewModel: ObservableObject {
     @Published var newCardTitle: String = ""
     @Published var newCardCount: Int = 1
     @Published var newCardModifier: [Int] = [1, 0, 0]
-    @Published var newCardModifierText: [String] = ["1", "0", "0"]
+    @Published var newCardModifierItems: [ModifierItem] = [
+        ModifierItem(text: "1"),
+        ModifierItem(text: "0"),
+        ModifierItem(text: "0")
+    ]
     @Published var newButtonText: [String] = Array(repeating: "", count: 1)
     @Published var newCardState: [Bool] = Array(repeating: true, count: 1)
     @Published var newTimerValues: [Int : [Int]] = [0 : [0, 0 ,0]]
@@ -31,6 +35,11 @@ class CardViewModel: ObservableObject {
     @Published var newCardSecondary: Color = .white
     @Published var validationError: [String] = []
     @Published var warnError: [String] = []
+    
+    struct ModifierItem: Identifiable, Equatable {
+        let id = UUID()
+        var text: String
+    }
     
     enum resetFor {
         case viewModel
@@ -74,8 +83,12 @@ class CardViewModel: ObservableObject {
         self.newCardTitle = card.title
         self.newCardCount = card.count
         self.newCardState = card.state?.isEmpty == false ? card.state!.map { $0.state } : Array(repeating: true, count: 1)
-        self.newCardModifier = card.modifier?.isEmpty == false ? card.modifier!.map { $0.modifier } : [1]
-        self.newCardModifierText = card.modifier?.isEmpty == false ? card.modifier!.map { String($0.modifier) } : ["1", "0", "0"]
+        self.newCardModifier = card.modifier?.isEmpty == false
+        ? card.modifier!.map { $0.modifier }
+        : [1, 0, 0]
+        self.newCardModifierItems = card.modifier?.isEmpty == false
+        ? card.modifier!.map { ModifierItem(text: String($0.modifier)) }
+        : [ModifierItem(text: "1"), ModifierItem(text: "0"), ModifierItem(text: "0")]
         self.newButtonText = card.buttonText?.isEmpty == false ? card.buttonText!.map { $0.buttonText } : Array(repeating: "", count: 1)
         self.newCardSymbol = card.symbol ?? ""
         self.newCardTimer = card.timer?.isEmpty == false ? card.timer!.map { $0.timerValue } : Array(repeating: 0, count: 1)
@@ -84,7 +97,6 @@ class CardViewModel: ObservableObject {
         self.newCardSecondary = card.secondaryColor?.color ?? .white
         
         if card.type == .timer || card.type == .timer_custom {
-            // Convert timer values back to [h,m,s] format for each timer
             for i in 0..<(card.timer?.count ?? 0) {
                 if let seconds = card.timer?[i].timerValue {
                     let h = seconds / 3600
@@ -114,15 +126,9 @@ class CardViewModel: ObservableObject {
     }
     
     func initCounter() {
-        for i in 0..<newCardModifier.count {
-            // Convert the string to an integer and then validate
-            if let value = Int(newCardModifierText[i]) {
-                newCardModifier[i] = max(value, 0)
-            } else {
-                // Reset to a default value 1 if conversion fails
-                newCardModifier[i] = 0
-                newCardModifierText[i] = "0"
-            }
+        newCardModifier = newCardModifierItems.map { item in
+            let value = Int(item.text) ?? 0
+            return max(value, 0)
         }
     }
     
@@ -175,6 +181,13 @@ class CardViewModel: ObservableObject {
         if newCardTimer.isEmpty {
             newCardTimer = Array(repeating: 0, count: newCardCount)
         }
+    }
+    
+    /// A function that handles the movement of modifiers in the list.
+    func moveModifier(from source: IndexSet, to destination: Int) {
+        newCardModifierItems.move(fromOffsets: source, toOffset: destination)
+        newCardModifier.move(fromOffsets: source, toOffset: destination)
+        validateForm()
     }
     
     /// A function that converts the timer values [hour, minute, second] into total seconds.
@@ -358,6 +371,7 @@ class CardViewModel: ObservableObject {
         newCardTitle = ""
         newCardCount = 1
         newCardModifier = [1, 0, 0]
+        newCardModifierItems = [ModifierItem(text: "1"), ModifierItem(text: "0"), ModifierItem(text: "0")]
         newButtonText = Array(repeating: "", count: 1)
         newCardState = Array(repeating: true, count: 1)
         newCardSymbol = ""

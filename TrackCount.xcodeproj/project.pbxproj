@@ -24,9 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AA060E6B3024BE1A0051DFB3 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA060E6C3024BE1A0051DFB3 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA601E333021EB6700CF1EB3 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AAE4CACB2D4B0F5600795A08 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = TrackCountUITests.xctest; path = "/Users/ethanlagera/Documents/XCode/TrackCount/build/Debug-iphoneos/TrackCountUITests-Runner.app/PlugIns/TrackCountUITests.xctest"; sourceTree = "<absolute>"; };
-		AAE4CACC2D4B0F5600795A08 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = TrackCountTests.xctest; path = "/Users/ethanlagera/Documents/XCode/TrackCount/build/Debug-iphoneos/TrackCount.app/PlugIns/TrackCountTests.xctest"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -116,6 +116,8 @@
 				AA4A52D82CEDF57D00C79994 /* TrackCount */,
 				AAC5116A2D49ED4700BF52A5 /* TrackCountUITests */,
 				AA601E333021EB6700CF1EB3 /* TrackCount.app */,
+				AA060E6B3024BE1A0051DFB3 /* TrackCountUITests.xctest */,
+				AA060E6C3024BE1A0051DFB3 /* TrackCountTests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -162,7 +164,7 @@
 			packageProductDependencies = (
 			);
 			productName = CtrlPanelTests;
-			productReference = AAE4CACC2D4B0F5600795A08 /* TrackCountTests.xctest */;
+			productReference = AA060E6C3024BE1A0051DFB3 /* TrackCountTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		AA4A52EF2CEDF57E00C79994 /* TrackCountUITests */ = {
@@ -182,7 +184,7 @@
 			packageProductDependencies = (
 			);
 			productName = CtrlPanelUITests;
-			productReference = AAE4CACB2D4B0F5600795A08 /* TrackCountUITests.xctest */;
+			productReference = AA060E6B3024BE1A0051DFB3 /* TrackCountUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -423,7 +425,7 @@
 				CODE_SIGN_ENTITLEMENTS = TrackCount/TrackCount.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -460,7 +462,7 @@
 				CODE_SIGN_ENTITLEMENTS = TrackCount/TrackCount.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

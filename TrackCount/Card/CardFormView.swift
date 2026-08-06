@@ -262,14 +262,15 @@ struct CardFormView: View {
             
             // Text field for card title
             Section {
-                TextField("Set card title", text: $viewModel.newCardTitle)
-                    .autocapitalization(.words)
-                    .disableAutocorrection(true)
-                    .errorOverlay("CardTitleEmpty", with: viewModel.validationError)
-                    .accessibilityIdentifier("Card Title Field")
-                
-                // Error message with animation
-                errorMessageView("CardTitleEmpty", with: viewModel.validationError, message: "Card title cannot be empty")
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Set card title", text: $viewModel.newCardTitle)
+                        .autocapitalization(.words)
+                        .disableAutocorrection(true)
+                        .accessibilityIdentifier("Card Title Field")
+                    
+                    // Error message with animation
+                    errorMessageView("CardTitleEmpty", with: viewModel.validationError, message: "Card title cannot be empty")
+                }
             }
             
             Section(header: Text("Colors")) {
@@ -280,9 +281,7 @@ struct CardFormView: View {
             
             // Check for type and add specific fields for that type
             if viewModel.newCardType == .counter {
-                Section {
-                    counterFormView()
-                }
+                counterFormView()
             } else if viewModel.newCardType == .toggle {
                 toggleFormView()
             } else if viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom {
@@ -327,30 +326,38 @@ struct CardFormView: View {
     }
     
     private func counterFormView() -> some View {
-        Group {
-            VStack(alignment: .leading) {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Set the button increments:")
                 
                 Text("Leave at 0 to disable")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                
-                
-                ForEach(0..<3, id: \.self) { index in
+            }
+            
+            ForEach($viewModel.newCardModifierItems) { $item in
+                let index = viewModel.newCardModifierItems.firstIndex(where: { $0.id == item.id }) ?? 0
+                HStack {
                     VStack(alignment: .leading) {
-                        TextField("Modifier \(index + 1)", text: $viewModel.newCardModifierText[index])
+                        TextField("Modifier \(index + 1)", text: $item.text)
                             .errorOverlay("Modifier\(index)Negative", with: viewModel.validationError, warn: true)
                             .errorOverlay("Modifier\(index)MoreThanMax", with: viewModel.validationError, warn: true)
                             .keyboardType(.numberPad)
+                            .onChange(of: item.text) {
+                                viewModel.initCounter()
+                            }
                             .onSubmit {
                                 viewModel.initCounter()
                             }
                         errorMessageView("Modifier\(index)Negative", with: viewModel.validationError, message: "Modifier cannot be negative", warn: true)
                         errorMessageView("Modifier\(index)MoreThanMax", with: viewModel.validationError, message: "Modifier cannot exceed 100,000", warn: true)
                     }
+                    
+                    Image(systemName: "line.horizontal.3")
+                        .foregroundStyle(.secondary)
                 }
-            }.errorOverlay("ModifierLessThanOne", with: viewModel.validationError, isRectangle: true)
-            
+            }
+            .onMove(perform: viewModel.moveModifier)
             
             errorMessageView("ModifierLessThanOne", with: viewModel.validationError, message: "At least one modifier must be set")
         }
@@ -561,10 +568,11 @@ struct CardFormView: View {
             viewModel.saveCard(with: context)
             
             // When attempting save, perform counter card increment min max application
-            for (i, value) in viewModel.newCardModifierText.enumerated() {
+            for i in 0..<viewModel.newCardModifierItems.count {
+                let value = viewModel.newCardModifierItems[i].text
                 let intValue = Int(value) ?? 0
                 let clamped = min(max(intValue, 0), viewModel.maxModifierLimit)
-                viewModel.newCardModifierText[i] = "\(clamped)"
+                viewModel.newCardModifierItems[i].text = "\(clamped)"
             }
             
             if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
