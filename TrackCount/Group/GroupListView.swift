@@ -99,26 +99,53 @@ struct GroupListView: View {
                             .padding()
                         }
                         
-                        LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
-                            ForEach(filteredGroups) { group in
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
-                                    NavigationLink(destination: TrackView(selectedGroup: group)) {
-                                        GroupCardView(group: group)
-                                            .frame(height: 200)
+                        if #available(anyAppleOS 27.0, *) {
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                                ForEach(filteredGroups) { group in
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
+                                        NavigationLink(destination: TrackView(selectedGroup: group)) {
+                                            GroupCardView(group: group)
+                                                .frame(height: 200)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                        .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
+                                        .contextMenu {
+                                            contextMenu(for: group)
+                                        }
                                     }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
-                                    .contextMenu {
-                                        contextMenu(for: group)
-                                    }
+                                    .groupCardModifier()
                                 }
-                                .groupCardModifier()
+                                .reorderable()
                             }
+                            .reorderContainer(for: DMCardGroup.self) { difference in
+                                applyReorderDifference(difference)
+                            }
+                            .padding()
+                            .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
+                        } else {
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                                ForEach(filteredGroups) { group in
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
+                                        NavigationLink(destination: TrackView(selectedGroup: group)) {
+                                            GroupCardView(group: group)
+                                                .frame(height: 200)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                        .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
+                                        .contextMenu {
+                                            contextMenu(for: group)
+                                        }
+                                    }
+                                    .groupCardModifier()
+                                }
+                            }
+                            .padding()
+                            .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         }
-                        .padding()
-                        .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                     }
                 }
             }
@@ -269,6 +296,55 @@ struct GroupListView: View {
             Button("Delete Group", systemImage: "trash", role: .destructive) {
                 selectedGroup = group
                 isPresentingDeleteDialog = true
+            }
+        }
+    }
+    
+    /// Applies a `ReorderDifference` produced by `reorderContainer` to update group indices.
+    @available(anyAppleOS 27.0, *)
+    private func applyReorderDifference<Destination>(_ difference: ReorderDifference<DMCardGroup.ID, Destination>) {
+        // 1. Create a working copy sorted by index
+        var mutableGroups = savedGroups.sorted { ($0.index ?? 0) < ($1.index ?? 0) }
+        
+        // 2. Locate elements referenced by difference.sources
+        var movedGroups: [DMCardGroup] = []
+        for sourceID in difference.sources {
+            if let group = mutableGroups.first(where: { $0.id == sourceID }) {
+                movedGroups.append(group)
+            }
+        }
+        
+        guard !movedGroups.isEmpty else { return }
+        
+        // 3. Remove moved elements from their original positions
+        mutableGroups.removeAll { group in
+            difference.sources.contains(group.id)
+        }
+        
+        // 4. Insert moved elements at target destination
+        switch difference.destination.position {
+        case .before(let targetID):
+            if let targetIndex = mutableGroups.firstIndex(where: { $0.id == targetID }) {
+                mutableGroups.insert(contentsOf: movedGroups, at: targetIndex)
+            } else {
+                mutableGroups.append(contentsOf: movedGroups)
+            }
+        case .end:
+            mutableGroups.append(contentsOf: movedGroups)
+        @unknown default:
+            mutableGroups.append(contentsOf: movedGroups)
+        }
+        
+        // 5. Reassign indices and persist
+        withAnimation {
+            for (newIndex, group) in mutableGroups.enumerated() {
+                group.index = newIndex
+            }
+            
+            do {
+                try context.save()
+            } catch {
+                viewModel.warnError.append("Failed to save reordered groups: \(error.localizedDescription)")
             }
         }
     }
