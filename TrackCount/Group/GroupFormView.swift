@@ -34,7 +34,7 @@ struct GroupFormView: View {
         
         NavigationStack {
             VStack {
-                if #available(iOS 26.0, *) {
+                if #available(anyAppleOS 26.0, *) {
                     GlassEffectContainer {
                         formView()
                     }
@@ -79,7 +79,7 @@ struct GroupFormView: View {
             TextField("Set group title", text: $viewModel.newGroupTitle)
                 .autocapitalization(.words)
                 .disableAutocorrection(true)
-                .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
+                .customRoundedGlass(tint: colorScheme == . dark ? .gray : .white)
                 .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 .onChange(of: viewModel.newGroupTitle) {
                     if viewModel.newGroupTitle.count > characterLimit {
@@ -106,7 +106,7 @@ struct GroupFormView: View {
                     }
                 }
                 .foregroundStyle(.foreground)
-                .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
+                .customRoundedGlass(tint: colorScheme == . dark ? .gray : .white)
                 .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
                 .accessibilityIdentifier("Group Smybol Picker")
                 
@@ -140,7 +140,7 @@ struct GroupFormView: View {
                     .frame(maxWidth: .infinity)
                     .foregroundStyle(.white)
             }
-            .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
+            .customRoundedGlass(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
         }
     }
 }

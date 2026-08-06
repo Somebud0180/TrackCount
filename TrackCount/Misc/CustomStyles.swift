@@ -9,7 +9,7 @@
 import SwiftUI
 
 func defaultShape() -> some Shape {
-    if #available(iOS 26.0, *) {
+    if #available(anyAppleOS 26.0, *) {
         return Capsule()
     } else {
         return RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -19,7 +19,7 @@ func defaultShape() -> some Shape {
 /// A rounded style with a thin material background and padding.
 struct CustomRoundedStyle: ViewModifier {
     let isInteractive: Bool
-    let tint: Color
+    let tint: Color?
     let padding: CGFloat
     let cornerRadius: CGFloat
     let externalPressed: Bool
@@ -28,7 +28,7 @@ struct CustomRoundedStyle: ViewModifier {
     @State private var isPressed = false
     
     var pressedSize: CGFloat {
-        if #available(iOS 26.0, *) {
+        if #available(anyAppleOS 26.0, *) {
             return 1.1
         } else {
             return 0.95
@@ -47,7 +47,66 @@ struct CustomRoundedStyle: ViewModifier {
     }
     
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
+        if isInteractive {
+            content
+                .padding(padding)
+                .background(
+                    Capsule()
+                        .foregroundStyle(tint ?? .secondary)
+                )
+                .scaleEffect(isInteractive ? finalScale : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: finalScale)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
+                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { isPressing in
+                    isPressed = isPressing
+                } perform: {
+                    // Empty perform block - we only want the pressing state, not to intercept the tap
+                }
+        } else {
+            content
+                .padding(padding)
+                .background(
+                    Capsule()
+                        .foregroundStyle(tint ?? .secondary)
+                )
+        }
+    }
+}
+
+/// A rounded style with a thin material background and padding.
+struct CustomRoundedGlass: ViewModifier {
+    let isInteractive: Bool
+    let tint: Color?
+    let padding: CGFloat
+    let cornerRadius: CGFloat
+    let externalPressed: Bool
+    
+    @State private var isHovering = false
+    @State private var isPressed = false
+    
+    var pressedSize: CGFloat {
+        if #available(anyAppleOS 26.0, *) {
+            return 1.1
+        } else {
+            return 0.95
+        }
+    }
+    
+    // Calculate the final scale based on all states
+    private var finalScale: CGFloat {
+        if externalPressed || isPressed {
+            return pressedSize
+        } else if isHovering {
+            return 1.05
+        } else {
+            return 1.0
+        }
+    }
+    
+    func body(content: Content) -> some View {
+        if #available(anyAppleOS 26.0, *) {
             if isInteractive {
                 content
                     .padding(padding)
@@ -87,7 +146,7 @@ struct CustomConditionalButtonModifier<S: Shape>: ViewModifier {
     @State private var isPressed = false
     
     var pressedSize: CGFloat {
-        if #available(iOS 26.0, *) {
+        if #available(anyAppleOS 26.0, *) {
             return 1.1
         } else {
             return 0.95
@@ -134,7 +193,7 @@ struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
     @State private var isPressed = false
     
     var pressedSize: CGFloat {
-        if #available(iOS 26.0, *) {
+        if #available(anyAppleOS 26.0, *) {
             return 1.1
         } else {
             return 0.95
@@ -153,7 +212,7 @@ struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
     }
     
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(anyAppleOS 26.0, *) {
             let tintColor = colorScheme == .dark ? tint.opacity(0.2) : tint.opacity(tintStrength)
             if isInteractive {
                 content.glassEffect(
@@ -193,7 +252,7 @@ struct GroupCardModifier: ViewModifier {
     @State private var isPressed = false
     
     var pressedSize: CGFloat {
-        if #available(iOS 26.0, *) {
+        if #available(anyAppleOS 26.0, *) {
             return 1.04
         } else {
             return 0.98
@@ -235,7 +294,7 @@ struct LegacyDarkTint: ViewModifier {
     @Environment(\.colorScheme) var colorScheme
     
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(anyAppleOS 26.0, *) {
             content
         } else {
             content
@@ -245,13 +304,15 @@ struct LegacyDarkTint: ViewModifier {
 }
 
 struct AdaptiveBackgroundMaterial: ViewModifier {
-    let tint: Color
+    let tint: Color?
     
     func body(content: Content) -> some View {
-        if (tint == .gray || tint == .white) {
-            content.background(.thickMaterial)
-        } else {
-            content.background(tint)
+        if let tint {
+            if (tint == .gray || tint == .white) {
+                content.background(.thickMaterial)
+            } else {
+                content.background(tint)
+            }
         }
     }
 }
@@ -260,9 +321,14 @@ struct AdaptiveBackgroundMaterial: ViewModifier {
 // MARK: - View Extensions
 // Extend View for easier usage
 extension View {
-    /// A rounded style with a thin material background and padding.
-    func customRoundedStyle(interactive: Bool = false, tint: Color = .gray, padding: CGFloat = 12, cornerRadius: CGFloat = 8, externalPressed: Bool = false) -> some View {
+    /// A rounded style with a glass/thin material background and padding.
+    func customRoundedStyle(interactive: Bool = false, tint: Color? = nil, padding: CGFloat = 12, cornerRadius: CGFloat = 8, externalPressed: Bool = false) -> some View {
         self.modifier(CustomRoundedStyle(isInteractive: interactive, tint: tint, padding: padding, cornerRadius: cornerRadius, externalPressed: externalPressed))
+    }
+    
+    /// A rounded style with a glass/thin material background and padding.
+    func customRoundedGlass(interactive: Bool = false, tint: Color? = nil, padding: CGFloat = 12, cornerRadius: CGFloat = 8, externalPressed: Bool = false) -> some View {
+        self.modifier(CustomRoundedGlass(isInteractive: interactive, tint: tint, padding: padding, cornerRadius: cornerRadius, externalPressed: externalPressed))
     }
     
     /// A button style with a liquid glass / tinted background that changes based on a condition.
@@ -285,7 +351,7 @@ extension View {
         self.modifier(LegacyDarkTint())
     }
     
-    func adaptiveBackgroundMaterial(_ tint: Color) -> some View {
+    func adaptiveBackgroundMaterial(_ tint: Color?) -> some View {
         self.modifier(AdaptiveBackgroundMaterial(tint: tint))
     }
 }

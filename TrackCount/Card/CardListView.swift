@@ -115,7 +115,7 @@ struct CardListView: View {
                         .frame(maxWidth: .infinity)
                         .foregroundStyle(.white)
                 }
-                .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isNewCardButtonPressed)
+                .customRoundedGlass(interactive: true, tint: .blue, externalPressed: isNewCardButtonPressed)
                 .padding()
                 
             }

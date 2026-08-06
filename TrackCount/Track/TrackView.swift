@@ -199,7 +199,7 @@ struct TrackView: View {
     /// Builds the inputted card into a visible card according to it's type.
     private func gridCard(_ card: DMStoredCard) -> some View {
         Group {
-                if #available(iOS 26.0, *) {
+                if #available(anyAppleOS 26.0, *) {
                     GlassEffectContainer {
                         baseCard(card)
                     }
