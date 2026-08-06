@@ -33,17 +33,10 @@ struct GroupFormView: View {
         }
         
         NavigationStack {
-            VStack {
-                if #available(anyAppleOS 26.0, *) {
-                    GlassEffectContainer {
-                        formView()
-                    }
-                } else {
-                    formView()
-                }
+            VStack(alignment: .leading, spacing: 16) {
+                formView()
             }
-            .padding(.horizontal)
-            .padding(.bottom)
+            .padding(.top, -24)
             .navigationBarTitle(viewModel.selectedGroup != nil ? "Create Group" : "Edit Group", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -76,49 +69,55 @@ struct GroupFormView: View {
         let characterLimit = viewModel.titleCharacterLimit
         
         return Group {
-            TextField("Set group title", text: $viewModel.newGroupTitle)
-                .autocapitalization(.words)
-                .disableAutocorrection(true)
-                .customRoundedGlass(tint: colorScheme == . dark ? .gray : .white)
-                .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
-                .onChange(of: viewModel.newGroupTitle) {
-                    if viewModel.newGroupTitle.count > characterLimit {
-                        viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespacesAndNewlines))
-                        viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
+            Form {
+                VStack(alignment: .leading, spacing: 12) {
+                    TextField("Set group title", text: $viewModel.newGroupTitle)
+                        .autocapitalization(.words)
+                        .disableAutocorrection(true)
+                        .onChange(of: viewModel.newGroupTitle) {
+                            if viewModel.newGroupTitle.count > characterLimit {
+                                viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespacesAndNewlines))
+                                viewModel.newGroupTitle = String(viewModel.newGroupTitle.prefix(characterLimit))
+                            }
+                        }
+                        .onSubmit {
+                            viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespacesAndNewlines))
+                        }
+                    
+                    Divider()
+                    
+                    // A symbol preview/picker
+                    Button(action: {
+                        isPickerPresented = true
+                    }) {
+                        HStack {
+                            Text("Group Symbol:")
+                            
+                            Spacer()
+                            
+                            if viewModel.newGroupSymbol.isEmpty {
+                                Text("Select")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Image(systemName: viewModel.newGroupSymbol)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 24, height: 24)
+                            }
+                        }
                     }
+                    .foregroundStyle(.foreground)
+                    .padding(.vertical, 4)
+                    .accessibilityIdentifier("Group Smybol Picker")
+                    
+                    errorMessageView("TitleSymbolEmpty", with: viewModel.validationError, message: "A title or symbol is required")
                 }
-                .onSubmit {
-                    viewModel.newGroupTitle = String(viewModel.newGroupTitle.trimmingCharacters(in: .whitespacesAndNewlines))
-                }
-            
-            // A symbol preview/picker
-            VStack(alignment: .leading, spacing: 4) {
-                Button(action: {
-                    isPickerPresented = true
-                }) {
-                    HStack {
-                        Text("Group Symbol:")
-                        Spacer()
-                        Image(systemName: viewModel.newGroupSymbol)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 24, height: 24)
-                    }
-                }
-                .foregroundStyle(.foreground)
-                .customRoundedGlass(tint: colorScheme == . dark ? .gray : .white)
-                .errorOverlay("TitleSymbolEmpty", with: viewModel.validationError)
-                .accessibilityIdentifier("Group Smybol Picker")
                 
-                errorMessageView("TitleSymbolEmpty", with: viewModel.validationError, message: "A title or symbol is required")
-            }
-            
-            Spacer()
-            
-            if !viewModel.warnError.isEmpty {
-                Text(viewModel.warnError.joined(separator: ", "))
-                    .foregroundStyle(.red)
-                    .padding(.horizontal)
+                if !viewModel.warnError.isEmpty {
+                    Text(viewModel.warnError.joined(separator: ", "))
+                        .foregroundStyle(.red)
+                        .padding(.horizontal)
+                }
             }
             
             Button(action : {
@@ -141,6 +140,7 @@ struct GroupFormView: View {
                     .foregroundStyle(.white)
             }
             .customRoundedGlass(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
+            .padding()
         }
     }
 }
