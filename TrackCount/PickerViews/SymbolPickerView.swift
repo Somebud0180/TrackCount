@@ -24,11 +24,11 @@ struct SymbolPickerView: View {
     /// The set of pickable symbols.
     private let symbols: [String: [String]] = [
         "objects": ["hammer.fill", "wrench.fill", "screwdriver.fill", "paintbrush.fill", "scissors", "pencil", "list.clipboard.fill", "archivebox.fill", "tray.2.fill", "bag.fill", "cart.fill", "gift.fill", "lightbulb.fill", "fanblades.fill", "microwave.fill", "oven.fill", "fork.knife", "cup.and.saucer.fill", "book.fill", "umbrella.fill", "balloon.fill", "party.popper.fill"],
-        "math": ["plus", "minus", "multiply", "divide", "number"],
-        "transport": ["car.fill", "car.2.fill", "bolt.car.fill", "bus.fill", "bus.doubledecker.fill", "tram.fill", "airplane", "fuelpump.fill", "bicycle", "figure.walk"],
-        "nature": ["clock.fill", "alarm.fill", "stopwatch.fill", "timer", "hourglass"],
+        "math": ["plus", "minus", "plusminus", "multiply", "divide", "equal", "lessthan", "greaterthan", "pi", "number"],
+        "transport": ["car.fill", "car.2.fill", "bolt.car.fill", "bus.fill", "bus.doubledecker.fill", "tram.fill", "airplane", "fuelpump.fill", "bicycle", "figure.walk", "location.fill", "location.north.fill", "mappin", "map.fill"],
+        "Time": ["clock.fill", "alarm.fill", "stopwatch.fill", "timer", "hourglass", "clock.fill", "deskclock.fill"],
         "technology": ["laptopcomputer", "iphone", "ipad", "desktopcomputer", "applewatch", "watch.analog", "tv.fill", "printer.fill", "network", "antenna.radiowaves.left.and.right"],
-        "people": ["person.fill", "person.2.fill", "person.circle", "person.crop.circle.badge.checkmark", "person.crop.circle.badge.xmark", "figure.wave", "figure.run", "figure.walk", "figure.stand"],
+        "people": ["person.fill", "person.2.fill", "person.circle", "person.crop.circle.badge.checkmark", "person.crop.circle.badge.xmark", "figure.wave", "figure.run", "figure.walk", "figure.stand", "eyes.inverse", "brain.head.profile", "ear", "hand.raised", "hand.wave"],
         "food": ["fork.knife", "cup.and.saucer.fill", "mug.fill", "wineglass.fill", "waterbottle.fill", "leaf.fill", "cart.fill", "takeoutbag.and.cup.and.straw.fill"],
         "animals": ["hare.fill", "tortoise.fill", "cat.fill", "dog.fill", "lizard.fill", "bird.fill", "ant.fill", "ladybug.fill", "fish.fill", "pawprint.fill"],
         "fitness": ["gamecontroller.fill", "trophy.fill", "figure.roll", "figure.dance", "figure.strengthtraining.traditional", "figure.surfing", "figure.pool.swim", "figure.boxing", "figure.badminton", "figure.hiking", "figure.walk", "figure.run", "figure.golf", "sportscourt.fill", "soccerball", "basketball.fill", "volleyball.fill", "football.fill", "tennis.racket", "tennisball.fill", "hockey.puck.fill"]
