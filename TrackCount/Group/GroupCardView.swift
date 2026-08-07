@@ -63,6 +63,10 @@ struct GroupCardView: View {
                     .padding(.horizontal)
             }
         }
+        .transaction { tx in
+            // Prevent animating the content
+            tx.animation = nil
+        }
         .minimumScaleFactor(0.5)
         .foregroundStyle(.primary.opacity(0.8))
         .padding(2)
