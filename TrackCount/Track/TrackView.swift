@@ -83,21 +83,19 @@ struct TrackView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button(action: { isPresentingCardFormView = true }) {
                         Label("Add Card", systemImage: "plus.circle")
                             .labelStyle(.iconOnly)
                     }
                     .legacyDarkTint()
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    
                     Button(action: { isPresentingCardListView = true }) {
                         Label("Manage Cards", systemImage: "tablecells.badge.ellipsis")
                             .labelStyle(.iconOnly)
                     }
                     .legacyDarkTint()
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    
                     Menu {
                         Button("Edit Group", systemImage: "pencil") {
                             groupViewModel.fetchGroup()
@@ -124,12 +122,12 @@ struct TrackView: View {
                                 }
                             }
                         } label: {
-                                Label("Grid Size", systemImage: "square.grid.2x2")
-                            }
-                            
-                            Button("Delete Group", systemImage: "trash", role: .destructive) {
-                                isPresentingDeleteDialog = true
-                            }
+                            Label("Grid Size", systemImage: "square.grid.2x2")
+                        }
+                        
+                        Button("Delete Group", systemImage: "trash", role: .destructive) {
+                            isPresentingDeleteDialog = true
+                        }
                     } label: {
                         Label("Group Options", systemImage: "ellipsis.circle")
                     }
