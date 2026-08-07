@@ -20,7 +20,6 @@ struct GroupListView: View {
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
-    @State private var groupSheetHeight: CGFloat = .zero
     @State private var isPresentingFilePicker = false
     @State private var isPresentingGroupForm: Bool = false
     @State private var isPresentingGroupOrder: Bool = false
@@ -30,6 +29,7 @@ struct GroupListView: View {
     @State private var cardFormGroup: DMCardGroup?
     @State private var animateGradient: Bool = false
     @State private var searchText: String = ""
+    @Namespace private var namespace
     
     private var filteredGroups: [DMCardGroup] {
         if searchText.isEmpty {
@@ -39,14 +39,6 @@ struct GroupListView: View {
                 (group.groupTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
                 (preprocess(group.groupSymbol ?? "").localizedCaseInsensitiveContains(searchText))
             }
-        }
-    }
-    
-    private var columnLayout: [GridItem] {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return [GridItem(.adaptive(minimum: 220, maximum: 600), spacing: 16)]
-        } else {
-            return [GridItem(.adaptive(minimum: 110, maximum: 400), spacing: 16)]
         }
     }
     
@@ -102,20 +94,7 @@ struct GroupListView: View {
                         if #available(anyAppleOS 27.0, *) {
                             LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
                                 ForEach(filteredGroups) { group in
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
-                                        NavigationLink(destination: TrackView(selectedGroup: group)) {
-                                            GroupCardView(group: group)
-                                                .frame(height: 200)
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
-                                        .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
-                                        .contextMenu {
-                                            contextMenu(for: group)
-                                        }
-                                    }
-                                    .groupCardModifier()
+                                    groupCard(group)
                                 }
                                 .reorderable()
                             }
@@ -127,20 +106,7 @@ struct GroupListView: View {
                         } else {
                             LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
                                 ForEach(filteredGroups) { group in
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
-                                        NavigationLink(destination: TrackView(selectedGroup: group)) {
-                                            GroupCardView(group: group)
-                                                .frame(height: 200)
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
-                                        .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
-                                        .contextMenu {
-                                            contextMenu(for: group)
-                                        }
-                                    }
-                                    .groupCardModifier()
+                                    groupCard(group)
                                 }
                             }
                             .padding()
@@ -262,6 +228,40 @@ struct GroupListView: View {
         // Compute how many columns fit, but never exceed maxColumns
         let count = max(1, min(maxColumns, Int(totalWidth / (minWidth + spacing))))
         return Array(repeating: GridItem(.flexible()), count: count)
+    }
+    
+    private func groupCard(_ group: DMCardGroup) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
+            
+            if #available(iOS 18.0, *) {
+                NavigationLink(
+                    destination: TrackView(selectedGroup: group)
+                        .navigationTransition(.zoom(sourceID: group.id, in: namespace))
+                ) {
+                    GroupCardView(group: group)
+                        .frame(height: 200)
+                        .matchedTransitionSource(id: group.id, in: namespace)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
+                .contextMenu {
+                    contextMenu(for: group)
+                }
+            } else {
+                NavigationLink(destination: TrackView(selectedGroup: group)) {
+                    GroupCardView(group: group)
+                        .frame(height: 200)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
+                .contextMenu {
+                    contextMenu(for: group)
+                }
+            }
+        }
+        .groupCardModifier()
     }
     
     /// Computed property for alert title.
