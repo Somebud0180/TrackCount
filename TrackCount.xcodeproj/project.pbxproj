@@ -24,9 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AA0401B23025D6960009CA78 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA060E6B3024BE1A0051DFB3 /* TrackCountUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA060E6C3024BE1A0051DFB3 /* TrackCountTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackCountTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA601E333021EB6700CF1EB3 /* TrackCount.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackCount.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -115,9 +115,9 @@
 			children = (
 				AA4A52D82CEDF57D00C79994 /* TrackCount */,
 				AAC5116A2D49ED4700BF52A5 /* TrackCountUITests */,
-				AA601E333021EB6700CF1EB3 /* TrackCount.app */,
 				AA060E6B3024BE1A0051DFB3 /* TrackCountUITests.xctest */,
 				AA060E6C3024BE1A0051DFB3 /* TrackCountTests.xctest */,
+				AA0401B23025D6960009CA78 /* TrackCount.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -144,7 +144,7 @@
 			packageProductDependencies = (
 			);
 			productName = CtrlPanel;
-			productReference = AA601E333021EB6700CF1EB3 /* TrackCount.app */;
+			productReference = AA0401B23025D6960009CA78 /* TrackCount.app */;
 			productType = "com.apple.product-type.application";
 		};
 		AA4A52E52CEDF57E00C79994 /* TrackCountTests */ = {
@@ -425,7 +425,7 @@
 				CODE_SIGN_ENTITLEMENTS = TrackCount/TrackCount.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -462,7 +462,7 @@
 				CODE_SIGN_ENTITLEMENTS = TrackCount/TrackCount.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
