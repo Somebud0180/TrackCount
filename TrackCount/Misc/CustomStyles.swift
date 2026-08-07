@@ -267,6 +267,7 @@ struct GroupCardModifier: ViewModifier {
             .onHover { hovering in
                 isHovering = hovering
             }
+            .contentShape([.dragPreview], RoundedRectangle(cornerRadius: 12))
     }
 }
 

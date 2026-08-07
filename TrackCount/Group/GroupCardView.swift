@@ -73,8 +73,34 @@ struct GroupCardView: View {
         
         // Card stack without outer ZStack alignment wrapper; badge applied via .if overlay
         ZStack {
+            // Translucent Outline
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
+                .foregroundStyle(.secondary.opacity(0.25))
+            
+            // Timer Progress Ring
+            if hasRunningTimer {
+                RoundedRectangle(cornerRadius: 12)
+                    .trim(from: clearValue, to: progressValue)
+                    .stroke(
+                        primaryThemeColor.color,
+                        style: StrokeStyle(
+                            lineWidth: 2,
+                            lineCap: .round
+                        )
+                    )
+                    .padding(1)
+                    .onAppear { startProgressAnimation() }
+                    .onChange(of: hasRunningTimer) { _, newValue in
+                        if newValue { startProgressAnimation() } else {
+                            animationTask?.cancel()
+                            withAnimation(.easeOut(duration: 0.5)) {
+                                progressValue = 0.0
+                                clearValue = 0.0
+                                isClearing = false
+                            }
+                        }
+                    }
+            }
             
             // Background Gradient
             RoundedRectangle(cornerRadius: 12)
@@ -88,30 +114,7 @@ struct GroupCardView: View {
                     clearValue = 0.0
                     animationTask?.cancel()
                 }
-            
-            // Timer Progress Ring
-            if hasRunningTimer {
-                RoundedRectangle(cornerRadius: 12)
-                    .trim(from: clearValue, to: progressValue)
-                    .stroke(
-                        primaryThemeColor.color,
-                        style: StrokeStyle(
-                            lineWidth: 3,
-                            lineCap: .round
-                        )
-                    )
-                    .onAppear { startProgressAnimation() }
-                    .onChange(of: hasRunningTimer) { _, newValue in
-                        if newValue { startProgressAnimation() } else {
-                            animationTask?.cancel()
-                            withAnimation(.easeOut(duration: 0.5)) {
-                                progressValue = 0.0
-                                clearValue = 0.0
-                                isClearing = false
-                            }
-                        }
-                    }
-            }
+                .padding(2)
             
             // Background Glass
             RoundedRectangle(cornerRadius: 12)
@@ -127,11 +130,12 @@ struct GroupCardView: View {
                                     .foregroundStyle(Color.white.readableOn(primaryThemeColor.color))
                             )
                             .frame(width: 24, height: 24)
-                            .offset(x: 10, y: -10) // Exceed outside top-right corner
+                            .padding(2)
                             .accessibilityLabel(Text("Completed timer"))
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
+                .padding(2)
             
             // Content
             VStack {
@@ -151,6 +155,7 @@ struct GroupCardView: View {
                         .padding(.horizontal)
                 }
             }
+            .padding(2)
         }
     }
     
