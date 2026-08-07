@@ -118,7 +118,7 @@ struct GroupCardView: View {
                     .foregroundStyle(Color.white.readableOn(primaryThemeColor.color))
             )
             .frame(width: 24, height: 24)
-            .padding(4)
+            .padding(5)
             .accessibilityLabel(Text("Completed timer"))
             .transition(.scale.combined(with: .opacity))
     }
