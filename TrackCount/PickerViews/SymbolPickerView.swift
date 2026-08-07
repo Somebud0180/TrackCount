@@ -24,7 +24,7 @@ struct SymbolPickerView: View {
     /// The set of pickable symbols.
     private let symbols: [String: [String]] = [
         "objects": ["hammer.fill", "wrench.fill", "screwdriver.fill", "paintbrush.fill", "scissors", "pencil", "list.clipboard.fill", "archivebox.fill", "tray.2.fill", "bag.fill", "cart.fill", "gift.fill", "lightbulb.fill", "fanblades.fill", "microwave.fill", "oven.fill", "fork.knife", "cup.and.saucer.fill", "book.fill", "umbrella.fill", "balloon.fill", "party.popper.fill"],
-        "math": ["plus", "minus", "plusminus", "multiply", "divide", "equal", "lessthan", "greaterthan", "pi", "number"],
+        "math": ["plus", "minus", "plusminus", "multiply", "divide", "equal", "lessthan", "greaterthan", "number"],
         "transport": ["car.fill", "car.2.fill", "bolt.car.fill", "bus.fill", "bus.doubledecker.fill", "tram.fill", "airplane", "fuelpump.fill", "bicycle", "figure.walk", "location.fill", "location.north.fill", "mappin", "map.fill"],
         "time": ["clock.fill", "alarm.fill", "stopwatch.fill", "timer", "hourglass", "deskclock.fill", "calendar"],
         "technology": ["laptopcomputer", "iphone", "ipad", "desktopcomputer", "applewatch", "watch.analog", "tv.fill", "printer.fill", "network", "antenna.radiowaves.left.and.right"],
