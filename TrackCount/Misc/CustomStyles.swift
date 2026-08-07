@@ -251,19 +251,9 @@ struct GroupCardModifier: ViewModifier {
     @State private var isHovering = false
     @State private var isPressed = false
     
-    var pressedSize: CGFloat {
-        if #available(anyAppleOS 26.0, *) {
-            return 1.04
-        } else {
-            return 0.98
-        }
-    }
-    
     // Calculate the final scale based on all states
     private var finalScale: CGFloat {
-        if isPressed {
-            return pressedSize
-        } else if isHovering {
+        if isHovering {
             return 1.02
         } else {
             return 1.0
@@ -276,15 +266,6 @@ struct GroupCardModifier: ViewModifier {
             .animation(.easeInOut(duration: 0.15), value: finalScale)
             .onHover { hovering in
                 isHovering = hovering
-            }
-            .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    isPressed = true
-                }
-                
-                withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                    isPressed = false
-                }
             }
     }
 }

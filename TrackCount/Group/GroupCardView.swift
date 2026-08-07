@@ -73,6 +73,9 @@ struct GroupCardView: View {
         
         // Card stack without outer ZStack alignment wrapper; badge applied via .if overlay
         ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
+            
             // Background Gradient
             RoundedRectangle(cornerRadius: 12)
                 .fill(backgroundGradient)

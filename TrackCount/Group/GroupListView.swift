@@ -232,36 +232,33 @@ struct GroupListView: View {
     
     private func groupCard(_ group: DMCardGroup) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
-            
-            if #available(iOS 18.0, *) {
-                NavigationLink(
-                    destination: TrackView(selectedGroup: group)
-                        .navigationTransition(.zoom(sourceID: group.id, in: namespace))
-                ) {
-                    GroupCardView(group: group)
-                        .frame(height: 200)
-                        .matchedTransitionSource(id: group.id, in: namespace)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
-                .contextMenu {
-                    contextMenu(for: group)
-                }
-            } else {
-                NavigationLink(destination: TrackView(selectedGroup: group)) {
-                    GroupCardView(group: group)
-                        .frame(height: 200)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
-                .contextMenu {
-                    contextMenu(for: group)
+            Group {
+                if #available(iOS 18.0, *) {
+                    NavigationLink(
+                        destination: TrackView(selectedGroup: group)
+                            .navigationTransition(.zoom(sourceID: group.id, in: namespace))
+                    ) {
+                        GroupCardView(group: group)
+                            .frame(height: 200)
+                            .groupCardModifier()
+                            .matchedTransitionSource(id: group.id, in: namespace)
+                    }
+                } else {
+                    NavigationLink(destination: TrackView(selectedGroup: group)) {
+                        GroupCardView(group: group)
+                            .frame(height: 200)
+                            .groupCardModifier()
+                    }
                 }
             }
+            .buttonStyle(.plain)
+            .contextMenu {
+                contextMenu(for: group)
+            }
         }
-        .groupCardModifier()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
+        .accessibilityHint("Double-tap to open")
     }
     
     /// Computed property for alert title.
