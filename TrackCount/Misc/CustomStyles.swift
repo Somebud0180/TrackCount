@@ -246,31 +246,6 @@ struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
     }
 }
 
-/// Group Card Interactive Modifier with press and hover effects
-struct GroupCardModifier: ViewModifier {
-    @State private var isHovering = false
-    @State private var isPressed = false
-    
-    // Calculate the final scale based on all states
-    private var finalScale: CGFloat {
-        if isHovering {
-            return 1.02
-        } else {
-            return 1.0
-        }
-    }
-    
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(finalScale)
-            .animation(.easeInOut(duration: 0.15), value: finalScale)
-            .onHover { hovering in
-                isHovering = hovering
-            }
-            .contentShape([.dragPreview], RoundedRectangle(cornerRadius: 12))
-    }
-}
-
 /// Legacy Dark Foreground Modifier for iOS versions below 26
 struct LegacyDarkTint: ViewModifier {
     @Environment(\.colorScheme) var colorScheme
@@ -321,11 +296,6 @@ extension View {
     /// A button style with a liquid glass / tinted background.
     func adaptiveGlassButton<S: Shape>(interactive: Bool = true, tintStrength: CGFloat = 0.8, tintColor: Color = Color.white, shape: S = defaultShape(), externalPressed: Bool = false) -> some View {
         self.modifier(AdaptiveGlassButtonModifier(isInteractive: interactive, tintStrength: tintStrength, tint: tintColor, shape: shape, externalPressed: externalPressed))
-    }
-    
-    /// A modifier that adds interactive effects for group cards, with subtle scaling on press and hover.
-    func groupCardModifier() -> some View {
-        self.modifier(GroupCardModifier())
     }
     
     /// A foreground style that ensures readability for iOS versions below 26.

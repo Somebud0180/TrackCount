@@ -240,14 +240,12 @@ struct GroupListView: View {
                     ) {
                         GroupCardView(group: group)
                             .frame(height: 200)
-                            .groupCardModifier()
                             .matchedTransitionSource(id: group.id, in: namespace)
                     }
                 } else {
                     NavigationLink(destination: TrackView(selectedGroup: group)) {
                         GroupCardView(group: group)
                             .frame(height: 200)
-                            .groupCardModifier()
                     }
                 }
             }
