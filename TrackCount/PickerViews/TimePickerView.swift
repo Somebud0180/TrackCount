@@ -32,14 +32,16 @@ struct TimePickerView: View {
                             .multilineTextAlignment(.trailing)
                     }
                     .padding(.trailing, 2)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(timeIncrement) \(title)")
                 }
             }
             .pickerStyle(InlinePickerStyle())
             .frame(minWidth: 45, maxWidth: 80)
-            .accessibilityLabel(title)
 
             Text(title)
                 .fontWeight(.bold)
+                .accessibilityHidden(true)
         }
     }
 }

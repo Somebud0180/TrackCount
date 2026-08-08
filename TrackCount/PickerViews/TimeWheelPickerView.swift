@@ -26,36 +26,39 @@ struct TimeWheelPickerView: View {
     @State private var hours: Int = 0
     @State private var minutes: Int = 0
     @State private var seconds: Int = 0
-    @State private var debounceTimer: Timer?
-    @State private var hoursMoving: Bool = false
-    @State private var minutesMoving: Bool = false
-    @State private var secondsMoving: Bool = false
     
     let hoursRange = 0...23
     let minutesRange = 0...59
     let secondsRange = 0...59
     
     var body: some View {
-        let isOneHour = timerArray[0] == 1
+        let isOneHour = hours == 1
         
         HStack() {
             TimePickerView(title: isOneHour ? "hour" : "hours",
                            range: hoursRange,
                            binding: $hours)
+            .onChange(of: hours) { _, newValue in
+                timerArray[0] = newValue
+            }
+            
             TimePickerView(title: "min",
                            range: minutesRange,
                            binding: $minutes)
+            .onChange(of: minutes) { _, newValue in
+                timerArray[1] = newValue
+            }
+            
             TimePickerView(title: "sec",
                            range: secondsRange,
                            binding: $seconds)
+            .onChange(of: seconds) { _, newValue in
+                timerArray[2] = newValue
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: 300)
         .onAppear {
             initializeFromTimerArray()
-        }
-        .onDisappear {
-            debounceTimer?.invalidate()
-            debounceTimer = nil
         }
     }
     
