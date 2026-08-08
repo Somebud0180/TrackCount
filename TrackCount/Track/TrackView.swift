@@ -446,25 +446,31 @@ struct TrackView: View {
             } else if card.type == .timer && timerState == .idle {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                     ForEach(0..<card.count, id: \.self) { index in
-                        Button(action: {
-                            timerViewModel.selectedTimerIndex[card.uuid] = index
-                            timerViewModel.startTimer(card)
-                        }) {
-                            Circle()
-                                .stroke(lineWidth: 10)
-                                .opacity(0.3)
-                                .foregroundColor(card.primaryColor?.color ?? .blue)
-                                .overlay(
-                                    Text((card.timer?[index].timerValue ?? 0).formatTime())
-                                        .font(.system(.title2, weight: .bold))
-                                        .foregroundStyle((card.secondaryColor?.color ?? .white).readable(in: colorScheme))
-                                        .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.3)
-                                        .padding(.horizontal)
-                                )
-                                .frame(height: 100)
-                                .padding(10)
+                        if let timerValue = card.timer?[index].timerValue {
+                            Button(action: {
+                                timerViewModel.selectedTimerIndex[card.uuid] = index
+                                timerViewModel.startTimer(card)
+                            }) {
+                                Circle()
+                                    .stroke(lineWidth: 10)
+                                    .opacity(0.3)
+                                    .foregroundColor(card.primaryColor?.color ?? .blue)
+                                    .overlay(
+                                        Text(timerValue.formatTime())
+                                            .font(.system(.title2, weight: .bold))
+                                            .foregroundStyle((card.secondaryColor?.color ?? .white).readable(in: colorScheme))
+                                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.3)
+                                            .padding(.horizontal)
+                                    )
+                                    .frame(height: 100)
+                                    .padding(10)
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Timer Preset")
+                            .accessibilityValue(accessibleTimeFormat(Double(timerValue)))
+                            .accessibilityHint("Double-tap to start timer")
                         }
                     }
                 }

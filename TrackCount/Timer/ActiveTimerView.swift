@@ -67,21 +67,4 @@ struct ActiveTimerView: View {
             .accessibilityAddTraits(.updatesFrequently)
         }
     }
-    
-    private func accessibleTimeFormat(_ seconds: TimeInterval) -> String {
-        let total = Int(seconds)
-        let hours = total / 3600
-        let minutes = (total % 3600) / 60
-        let secs = total % 60
-        
-        let minuteString = "\(minutes) minute\(minutes == 1 ? "" : "s")"
-        let secondString = "\(secs) second\(secs == 1 ? "" : "s")"
-        
-        if hours > 0 {
-            let hourString = "\(hours) hour\(hours == 1 ? "" : "s")"
-            return "\(hourString), \(minuteString), and \(secondString)"
-        } else {
-            return "\(minuteString) and \(secondString)"
-        }
-    }
 }
