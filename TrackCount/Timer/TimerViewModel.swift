@@ -99,94 +99,109 @@ class TimerViewModel: ObservableObject {
     /// Creates the timer countdown view
     func activeTimerView(_ card: DMStoredCard) -> some View {
         let state = timerStates[card.uuid] ?? .idle
-        let timerIndex = selectedTimerIndex[card.uuid] ?? 0
-        let initialTime = card.type == .timer ?
-        card.timer?[timerIndex].timerValue ?? 1 :
-        card.timer?[0].timerValue ?? 1
-        let displayValue = displayValues[card.uuid] ?? activeTimerValues[card.uuid] ?? 0
-        let progress = Float(displayValue) / Float(max(1, initialTime))
+        let persistentState = globalTimerManager.getTimerState(cardUUID: card.uuid)
+        
+        let totalTime = persistentState?.totalTime ?? 1.0
+        let targetEndDate = persistentState?.targetEndDate
+        let pausedRemaining = persistentState?.pausedRemainingTime ?? displayValues[card.uuid] ?? totalTime
         let isPaused = state == .paused
+        let isCompleted = state == .completed
         
         return VStack {
-            ZStack(alignment: .center) {
-                Circle()
-                    .stroke(lineWidth: 16)
-                    .opacity(0.3)
-                    .foregroundColor(card.primaryColor?.color ?? .white)
-                
-                Circle()
-                    .trim(from: 0.0, to: CGFloat(progress))
-                    .stroke(style: StrokeStyle(lineWidth: 16, lineCap: .round))
-                    .foregroundColor(card.primaryColor?.color ?? .blue)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.linear(duration: 0.1), value: progress)
-                
-                if state == .completed {
-                    Text("Time's Up!")
-                        .font(.system(.title, weight: .bold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.3)
-                        .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                } else {
-                    let formatted = displayValue.formatTime()
-                    if formatted.count == 7 {
-                        Text(formatted)
-                            .font(.system(.title, weight: .bold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.3)
-                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                            .frame(width: 130, alignment: .leading)
-                    } else {
-                        Text(formatted)
-                            .font(.system(.largeTitle, weight: .bold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.3)
-                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                            .frame(width: 100, alignment: .leading)
-                    }
-                }
-            }
+            ActiveTimerView(
+                targetEndDate: targetEndDate,
+                totalTime: totalTime,
+                isPaused: isPaused,
+                pausedRemaining: pausedRemaining,
+                primaryColor: card.primaryColor?.color ?? .blue,
+                secondaryColor: card.secondaryColor?.color ?? .white,
+                isCompleted: isCompleted
+            )
             .frame(height: 200)
             .padding()
             
             HStack {
                 switch state {
                 case .running, .paused:
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            self.isCancelButtonPressed = true
-                            self.stopTimer(card)
+                    Button(
+                        action: {
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                self.isCancelButtonPressed = true
+                                self.stopTimer(card)
+                            }
+                            withAnimation(.easeInOut(duration: 0.1).delay(0.1))
+                            { self.isCancelButtonPressed = false }
+                        },
+                        label: {
+                            Text("Cancel").foregroundStyle(
+                                card.secondaryColor?.color ?? .white
+                            )
                         }
-                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) { self.isCancelButtonPressed = false }
-                    }) { Text("Cancel").foregroundStyle(card.secondaryColor?.color ?? .white) }
-                        .padding()
-                        .adaptiveGlassButton(tintColor: .secondary, externalPressed: self.isCancelButtonPressed)
+                    )
+                    .padding()
+                    .adaptiveGlassButton(
+                        tintColor: .secondary,
+                        externalPressed: self.isCancelButtonPressed
+                    )
+                    
                     Spacer()
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            self.isPauseButtonPressed = true
-                            if isPaused { self.resumeTimer(card) } else { self.pauseTimer(card) }
+                    
+                    Button(
+                        action: {
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                self.isPauseButtonPressed = true
+                                if isPaused {
+                                    self.resumeTimer(card)
+                                } else {
+                                    self.pauseTimer(card)
+                                }
+                            }
+                            withAnimation(.easeInOut(duration: 0.1).delay(0.1))
+                            { self.isPauseButtonPressed = false }
+                        },
+                        label: {
+                            Text(isPaused ? "Resume" : "Pause").foregroundStyle(
+                                card.secondaryColor?.color ?? .white
+                            )
                         }
-                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) { self.isPauseButtonPressed = false }
-                    }) { Text(isPaused ? "Resume" : "Pause").foregroundStyle(card.secondaryColor?.color ?? .white) }
-                        .padding()
-                        .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: self.isPauseButtonPressed)
+                    )
+                    .padding()
+                    .adaptiveGlassButton(
+                        tintColor: card.primaryColor?.color ?? .blue,
+                        externalPressed: self.isPauseButtonPressed
+                    )
+                    
                 case .completed:
                     Spacer()
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            self.isPauseButtonPressed = true
-                            self.stopTimer(card) // Reset to idle & stop audio
-                            NotificationManager.shared.cancelTimerNotification(for: card.uuid)
+                    
+                    Button(
+                        action: {
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                self.isPauseButtonPressed = true
+                                self.stopTimer(card)
+                                NotificationManager.shared
+                                    .cancelTimerNotification(for: card.uuid)
+                            }
+                            withAnimation(.easeInOut(duration: 0.1).delay(0.1))
+                            { self.isPauseButtonPressed = false }
+                        },
+                        label: {
+                            Text("End").foregroundStyle(
+                                card.secondaryColor?.color ?? .white
+                            )
                         }
-                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) { self.isPauseButtonPressed = false }
-                    }) { Text("End").foregroundStyle(card.secondaryColor?.color ?? .white) }
-                        .padding()
-                        .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: self.isPauseButtonPressed)
+                    )
+                    .padding()
+                    .adaptiveGlassButton(
+                        tintColor: card.primaryColor?.color ?? .blue,
+                        externalPressed: self.isPauseButtonPressed
+                    )
+                    
                 default:
                     EmptyView()
                 }
-            }.padding(.horizontal)
+            }
+            .padding(.horizontal)
         }
     }
     

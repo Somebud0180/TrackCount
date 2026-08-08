@@ -170,8 +170,7 @@ class GlobalTimerManager: ObservableObject {
         
         if hasRunningTimers {
             if backgroundTimer == nil {
-                // 10 Hz (0.1s) is visually smooth for UI updates while reducing CPU timer wakeups by 67%
-                backgroundTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+                backgroundTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
                     self?.updateBackgroundTimers()
                 }
             }
@@ -180,6 +179,7 @@ class GlobalTimerManager: ObservableObject {
             backgroundTimer = nil
         }
     }
+
     
     private func updateBackgroundTimers() {
         var completedUUIDs: [UUID] = []
