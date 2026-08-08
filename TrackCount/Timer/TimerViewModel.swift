@@ -109,6 +109,7 @@ class TimerViewModel: ObservableObject {
         
         return VStack {
             ActiveTimerView(
+                cardTitle: card.title,
                 targetEndDate: targetEndDate,
                 totalTime: totalTime,
                 isPaused: isPaused,
