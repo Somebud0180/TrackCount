@@ -7,21 +7,34 @@
 
 import Foundation
 
-func accessibleTimeFormat(_ seconds: TimeInterval) -> String {
+func accessibleTimeFormat(_ seconds: TimeInterval, secondsOnZero: Bool = false) -> String {
     let total = Int(seconds)
     let hours = total / 3600
     let minutes = (total % 3600) / 60
     let secs = total % 60
     
-    let minuteString = "\(minutes) minute\(minutes == 1 ? "" : "s")"
-    let secondString = "\(secs) second\(secs == 1 ? "" : "s")"
+    var components: [String] = []
     
     if hours > 0 {
-        let hourString = "\(hours) hour\(hours == 1 ? "" : "s")"
-        return "\(hourString), \(minuteString), and \(secondString)"
-    } else {
-        return "\(minuteString) and \(secondString)"
+        components.append("\(hours) hour\(hours == 1 ? "" : "s")")
     }
+    if minutes > 0 {
+        components.append("\(minutes) minute\(minutes == 1 ? "" : "s")")
+    }
+    if secs > 0 {
+        components.append("\(secs) second\(secs == 1 ? "" : "s")")
+    }
+    
+    if components.isEmpty {
+        return secondsOnZero ? "0 seconds" : "0"
+    }
+    
+    if components.count == 1 {
+        return components[0]
+    }
+    
+    let last = components.removeLast()
+    return components.joined(separator: ", ") + " and " + last
 }
 
 protocol TimeFormattable {
