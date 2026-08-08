@@ -46,6 +46,12 @@ Keep track of your slideshow ice breakers with toggle buttons to keep track of w
 
 
 ##### AI Discloure
-<sup>A large chunk of this code was AI generated, both in the pre-release and post-release codebase.
+AI was heavily used in the early development of this project. Code completion was used throughout the app's development, initially with Github Copilot, and later with Xcode Predictive Code Completion post V1.1 (App Store Release). Some features of the app involved heavy AI use such as the timer management. Later AI use, after V1.1 (ASR), involved targeted AI code assistance. Both with feature refinement/implementation and bug fixes.
+
+**Images and any other art was, is, and will never be generated with AI.**
+
+<sup>
+Previously:
+A large chunk of this code was AI generated, both in the pre-release and post-release codebase.
 Promotional images, icons and other such artful works will never be AI generated.
 </sup>
