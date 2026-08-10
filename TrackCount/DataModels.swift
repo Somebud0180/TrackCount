@@ -226,7 +226,7 @@ extension DMStoredCard.Types {
         case .timer_custom:
             return "Contains a single customizable timer."
         case .note:
-            return "A rich-text text field."
+            return "A rich-text note that can be edited from the track screen."
         }
     }
 }
