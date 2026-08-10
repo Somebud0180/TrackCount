@@ -275,8 +275,20 @@ struct CardFormView: View {
             
             Section(header: Text("Colors")) {
                 let isTimer = (viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom)
-                ColorPicker(isTimer ? "Progress Color" : "Button Color:", selection: $viewModel.newCardPrimary, supportsOpacity: false)
-                ColorPicker(isTimer ? "Text Color" : "Button Content Color:", selection: $viewModel.newCardSecondary, supportsOpacity: false)
+                let isNote = viewModel.newCardType == .note
+                var primaryColorText: String {
+                    if isTimer { return "Progress Color" }
+                    else if isNote { return "Text Color" }
+                    else { return "Button Color" }
+                }
+                var secondaryColorText: String {
+                    if isTimer { return "Text Color" }
+                    else if isNote { return "Background Color" }
+                    else { return "Button Content Color" }
+                }
+                
+                ColorPicker(primaryColorText, selection: $viewModel.newCardPrimary, supportsOpacity: false)
+                ColorPicker(secondaryColorText, selection: $viewModel.newCardSecondary, supportsOpacity: false)
             }
             
             // Check for type and add specific fields for that type
