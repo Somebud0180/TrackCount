@@ -80,11 +80,11 @@ struct GroupListView: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                 +
-                                Text(Image(systemName: "ellipsis.circle"))
+                                Text(Image(systemName: "plus.rectangle.portrait"))
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                 +
-                                Text(" in the top-right corner")
+                                Text(" in the top-right toolbar")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             )

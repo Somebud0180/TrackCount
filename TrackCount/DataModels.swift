@@ -91,7 +91,7 @@ class DMStoredCard: Identifiable {
     var timerRingtone: String?
     
     // Note specific
-    var note: String?
+    var noteData: Data?
     
     // Colors
     /// The color used for buttons or progress bars.
@@ -115,7 +115,7 @@ class DMStoredCard: Identifiable {
          symbol: String? = "",
          timer: [Int]? = [],
          timerRingtone: String? = "",
-         note: String? = "",
+         noteData: Data? = nil,
          primaryColor: Color,
          secondaryColor: Color,
          group: DMCardGroup)
@@ -131,7 +131,7 @@ class DMStoredCard: Identifiable {
         self.symbol = symbol
         self.timer = timer?.map { TimerValue(timerValue: $0) }
         self.timerRingtone = timerRingtone
-        self.note = note
+        self.noteData = noteData
         self.primaryColor = CodableColor(color: primaryColor)
         self.secondaryColor = CodableColor(color: secondaryColor)
         self.group = group
@@ -155,7 +155,7 @@ extension DMCardGroup {
                     symbol: card.symbol,
                     timer: card.timer?.map { $0.timerValue },
                     timerRingtone: card.timerRingtone,
-                    note: card.note,
+                    noteData: card.noteData,
                     primaryColor: card.primaryColor,
                     secondaryColor: card.secondaryColor
                 )
@@ -180,7 +180,7 @@ extension DMCardGroup {
                 symbol: cardData.symbol,
                 timer: cardData.timer,
                 timerRingtone: cardData.timerRingtone,
-                note: cardData.note,
+                noteData: cardData.noteData,
                 primaryColor: cardData.primaryColor,
                 secondaryColor: cardData.secondaryColor
             )
@@ -249,7 +249,7 @@ struct ShareableCard: Codable {
     let symbol: String?
     let timer: [Int]?
     let timerRingtone: String?
-    let note: String?
+    let noteData: Data?
     let primaryColor: CodableColor?
     let secondaryColor: CodableColor?
 }
@@ -279,13 +279,13 @@ class PreviewCard: ObservableObject, Identifiable {
     let symbol: String?
     let timer: [Int]?
     let timerRingtone: String?
-    let note: String?
+    let noteData: Data?
     let primaryColor: CodableColor?
     let secondaryColor: CodableColor?
     
     init(type: DMStoredCard.Types, title: String, count: Int, modifier: [Int]? = nil,
          buttonText: [String]? = nil, symbol: String? = nil, timer: [Int]? = nil,
-         timerRingtone: String? = nil, note: String? = nil, primaryColor: CodableColor? = nil,
+         timerRingtone: String? = nil, noteData: Data? = nil, primaryColor: CodableColor? = nil,
          secondaryColor: CodableColor? = nil) {
         self.type = type
         self.title = title
@@ -295,7 +295,7 @@ class PreviewCard: ObservableObject, Identifiable {
         self.symbol = symbol
         self.timer = timer
         self.timerRingtone = timerRingtone
-        self.note = note
+        self.noteData = noteData
         self.primaryColor = primaryColor
         self.secondaryColor = secondaryColor
     }
@@ -346,7 +346,7 @@ extension PreviewCard {
             symbol: symbol,
             timer: timer,
             timerRingtone: timerRingtone,
-            note: note,
+            noteData: noteData,
             primaryColor: primaryColor?.color ?? .blue,
             secondaryColor: secondaryColor?.color ?? .white,
             group: group
