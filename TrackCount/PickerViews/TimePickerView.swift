@@ -24,7 +24,6 @@ struct TimePickerView: View {
                         // right-aligned
                         Spacer()
                         Text("\(timeIncrement)")
-                            .foregroundColor(.white)
                             .multilineTextAlignment(.trailing)
                             .padding(.trailing, 4)
                     }
