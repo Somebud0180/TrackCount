@@ -49,6 +49,7 @@ class DMStoredCard: Identifiable {
         case toggle // A toggle button
         case timer // A predefined timer
         case timer_custom // A timer set on the fly
+        case note // A text field
     }
     
     /// Allows referencing the card without conflicts.
@@ -89,6 +90,9 @@ class DMStoredCard: Identifiable {
     /// The timer card custom ringtone
     var timerRingtone: String?
     
+    // Note specific
+    var note: String?
+    
     // Colors
     /// The color used for buttons or progress bars.
     var primaryColor: CodableColor?
@@ -111,6 +115,7 @@ class DMStoredCard: Identifiable {
          symbol: String? = "",
          timer: [Int]? = [],
          timerRingtone: String? = "",
+         note: String? = "",
          primaryColor: Color,
          secondaryColor: Color,
          group: DMCardGroup)
@@ -126,6 +131,7 @@ class DMStoredCard: Identifiable {
         self.symbol = symbol
         self.timer = timer?.map { TimerValue(timerValue: $0) }
         self.timerRingtone = timerRingtone
+        self.note = note
         self.primaryColor = CodableColor(color: primaryColor)
         self.secondaryColor = CodableColor(color: secondaryColor)
         self.group = group
@@ -149,6 +155,7 @@ extension DMCardGroup {
                     symbol: card.symbol,
                     timer: card.timer?.map { $0.timerValue },
                     timerRingtone: card.timerRingtone,
+                    note: card.note,
                     primaryColor: card.primaryColor,
                     secondaryColor: card.secondaryColor
                 )
@@ -173,6 +180,7 @@ extension DMCardGroup {
                 symbol: cardData.symbol,
                 timer: cardData.timer,
                 timerRingtone: cardData.timerRingtone,
+                note: cardData.note,
                 primaryColor: cardData.primaryColor,
                 secondaryColor: cardData.secondaryColor
             )
@@ -217,6 +225,8 @@ extension DMStoredCard.Types {
             return "Contains up to 4 preset timers that can be started with a tap."
         case .timer_custom:
             return "Contains a single customizable timer."
+        case .note:
+            return "A rich-text text field."
         }
     }
 }
@@ -239,6 +249,7 @@ struct ShareableCard: Codable {
     let symbol: String?
     let timer: [Int]?
     let timerRingtone: String?
+    let note: String?
     let primaryColor: CodableColor?
     let secondaryColor: CodableColor?
 }
@@ -268,12 +279,13 @@ class PreviewCard: ObservableObject, Identifiable {
     let symbol: String?
     let timer: [Int]?
     let timerRingtone: String?
+    let note: String?
     let primaryColor: CodableColor?
     let secondaryColor: CodableColor?
     
     init(type: DMStoredCard.Types, title: String, count: Int, modifier: [Int]? = nil,
          buttonText: [String]? = nil, symbol: String? = nil, timer: [Int]? = nil,
-         timerRingtone: String? = nil, primaryColor: CodableColor? = nil,
+         timerRingtone: String? = nil, note: String? = nil, primaryColor: CodableColor? = nil,
          secondaryColor: CodableColor? = nil) {
         self.type = type
         self.title = title
@@ -283,6 +295,7 @@ class PreviewCard: ObservableObject, Identifiable {
         self.symbol = symbol
         self.timer = timer
         self.timerRingtone = timerRingtone
+        self.note = note
         self.primaryColor = primaryColor
         self.secondaryColor = secondaryColor
     }
@@ -333,6 +346,7 @@ extension PreviewCard {
             symbol: symbol,
             timer: timer,
             timerRingtone: timerRingtone,
+            note: note,
             primaryColor: primaryColor?.color ?? .blue,
             secondaryColor: secondaryColor?.color ?? .white,
             group: group
