@@ -343,7 +343,7 @@ struct TrackView: View {
         let symbolName = card.symbol ?? "questionmark.circle"
         let buttonKey = "\(card.uuid)_\(id)"
         let isPressed = pressedStates[buttonKey] ?? false
-        
+        let tint = card.primaryColor?.color ?? .blue
         return Button(action: {
             withAnimation(.easeInOut(duration: 0.1)) {
                 pressedStates[buttonKey] = true
@@ -383,11 +383,11 @@ struct TrackView: View {
             }
             .padding(4)
             .frame(maxWidth: .infinity, minHeight: 20, maxHeight: .infinity)
-            .foregroundStyle(isActive ? (card.secondaryColor?.color ?? .white).readableOn((card.primaryColor?.color ?? .blue)) : .black)
+            .foregroundStyle(isActive ? (card.secondaryColor?.color ?? .white).readableOn(tint, sensitivity: usesLiquidGlass ? 0.7 : 0.75) : .black)
         }
         .customConditionalButtonModifier(
             condition: isActive,
-            tint: card.primaryColor?.color ?? .blue,
+            tint: tint,
             shape: RoundedRectangle(cornerRadius: 12),
             externalPressed: isPressed
         )
