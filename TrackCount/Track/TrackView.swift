@@ -399,6 +399,7 @@ struct TrackView: View {
         let startButtonKey = "\(card.uuid)_start"
         let isStartButtonPressed = pressedStates[startButtonKey] ?? false
         let timerState = timerViewModel.timerStates[card.uuid] ?? .idle
+        let tint = card.primaryColor?.color ?? .blue
         return Group {
             if card.type == .timer_custom && timerState == .idle  {
                 VStack {
@@ -437,11 +438,11 @@ struct TrackView: View {
                         }
                     }) {
                         Text("Start")
-                            .foregroundStyle((card.secondaryColor?.color ?? .white).readable(in: colorScheme))
+                            .foregroundStyle((card.secondaryColor?.color ?? .white).readableOn(tint, sensitivity: usesLiquidGlass ? 0.7 : 0.75))
                             .frame(maxWidth: .infinity)
                             .padding()
                     }
-                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: isStartButtonPressed)
+                    .adaptiveGlassButton(tintColor: tint, externalPressed: isStartButtonPressed)
                 }
             } else if card.type == .timer && timerState == .idle {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
