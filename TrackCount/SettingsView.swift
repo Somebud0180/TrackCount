@@ -19,28 +19,28 @@ struct SettingsView: View {
     
     @State private var isPresentingRingtonePickerView: Bool = false
     @State private var primaryThemeSwiftColor: Color = .blue
+    
     let version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     let build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     
     var body: some View {
         NavigationStack {
             Form {
-                VStack(alignment: .center, spacing: 10) {
+                VStack(alignment: usesLiquidGlass ? .leading : .center, spacing: 10) {
                     Image("AppIcon")
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(minWidth: 50, maxWidth: 100, alignment: .center)
+                        .scaledToFit()
+                        .frame(width: 64, height: 64)
                     Text("TrackCount")
-                        .font(.system(.title, weight: .bold))
+                        .font(.system(.title2, weight: .bold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                         .foregroundStyle(.primary)
                     Text("Manage preferences and view details about the app")
-                        .multilineTextAlignment(.center)
-                        .font(.caption)
+                        .multilineTextAlignment(usesLiquidGlass ? .leading : .center)
+                        .foregroundStyle(usesLiquidGlass ? .secondary : .primary)
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding()
+                .frame(maxWidth: usesLiquidGlass ? nil : .infinity)
                 
                 Section(header: Text("Theme")) {
                     Toggle("Animate Gradient", isOn: $isGradientAnimated)
