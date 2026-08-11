@@ -26,7 +26,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 VStack(alignment: .center, spacing: 10) {
-                    Image(colorScheme == .light ? "TrackCountIconLight" : "TrackCountIconDark")
+                    Image("AppIcon")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(minWidth: 50, maxWidth: 100, alignment: .center)
