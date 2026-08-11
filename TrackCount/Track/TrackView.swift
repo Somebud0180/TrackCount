@@ -494,62 +494,38 @@ struct TrackView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             
             VStack(spacing: 2) {
-                if #available(iOS 26.0, *) {
-                    TextEditor(
-                        text: Binding(
-                            get: {
-                                guard let data = card.noteData else { return "" }
-                                do {
-                                    let attr = try NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil)
-                                    return AttributedString(attr)
-                                } catch {
-                                    return ""
-                                }
-                            },
-                            set: { newValue in
-                                do {
-                                    let nsAttr = NSAttributedString(newValue)
-                                    card.noteData = try nsAttr.data(from: NSRange(location: 0, length: nsAttr.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
-                                } catch {
-                                    card.noteData = nil
-                                }
-                            }
-                        )
-                    )
-                    .foregroundStyle(textColor.readableOn(backgroundColor))
-                    .textEditorStyle(.automatic)
-                    .textInputFormattingControlVisibility(.visible, for: .all)
-                    .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
-                    .padding()
-                } else {
-                    AttributedTextEditor(
-                        attributedText: Binding(
-                            get: {
-                                guard let data = card.noteData else { return AttributedString("") }
-                                do {
-                                    let attr = try NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil)
-                                    return AttributedString(attr)
-                                } catch {
-                                    return AttributedString("")
-                                }
-                            },
-                            set: { newValue in
-                                do {
-                                    let nsAttr = NSAttributedString(newValue)
-                                    card.noteData = try nsAttr.data(from: NSRange(location: 0, length: nsAttr.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
-                                } catch {
-                                    card.noteData = nil
-                                }
-                            }
-                        ),
-                        textColor: UIColor(textColor.readableOn(backgroundColor))
-                    )
-                    .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
-                    .padding()
-                }
+                AttributedTextEditor(
+                    attributedText: noteTextBinding(for: card),
+                    textColor: UIColor(textColor.readableOn(backgroundColor))
+                )
+                .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
+                .padding()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func noteTextBinding(for card: DMStoredCard) -> Binding<AttributedString> {
+        Binding(
+            get: {
+                guard let data = card.noteData,
+                      let text = try? NSAttributedString(
+                        data: data,
+                        options: [.documentType: NSAttributedString.DocumentType.rtf],
+                        documentAttributes: nil
+                      ) else {
+                    return AttributedString("")
+                }
+                return AttributedString(text)
+            },
+            set: { newValue in
+                let text = NSAttributedString(newValue)
+                card.noteData = try? text.data(
+                    from: NSRange(location: 0, length: text.length),
+                    documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
+                )
+            }
+        )
     }
     
     /// Computed property for alert title.
