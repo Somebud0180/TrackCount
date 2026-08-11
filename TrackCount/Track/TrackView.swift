@@ -19,6 +19,7 @@ struct TrackView: View {
     @StateObject private var timerViewModel: TimerViewModel
     @StateObject private var cardViewModel: CardViewModel
     @StateObject private var debouncedStateManager: DebouncedCardStateManager
+    @StateObject private var noteEditorController = NoteTextEditorController()
     @Namespace private var toggleButtonNamespace
     
     var selectedGroup: DMCardGroup
@@ -135,6 +136,14 @@ struct TrackView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if noteEditorController.isEditing {
+                NoteFormattingToolbar(editor: noteEditorController)
+                    .padding(.bottom, 8)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: noteEditorController.isEditing)
         .sheet(isPresented: $isPresentingGroupForm) {
             GroupFormView(viewModel: groupViewModel)
                 .presentationDetents([.fraction(0.4)])
@@ -496,6 +505,7 @@ struct TrackView: View {
             VStack(spacing: 2) {
                 AttributedTextEditor(
                     attributedText: noteTextBinding(for: card),
+                    controller: noteEditorController,
                     textColor: UIColor(textColor.readableOn(backgroundColor))
                 )
                 .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
