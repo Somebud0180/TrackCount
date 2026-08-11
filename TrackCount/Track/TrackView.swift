@@ -504,7 +504,7 @@ struct TrackView: View {
             
             VStack(spacing: 2) {
                 AttributedTextEditor(
-                    attributedText: noteTextBinding(for: card),
+                    noteData: noteDataBinding(for: card),
                     controller: noteEditorController,
                     textColor: UIColor(textColor.readableOn(backgroundColor))
                 )
@@ -515,26 +515,10 @@ struct TrackView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func noteTextBinding(for card: DMStoredCard) -> Binding<AttributedString> {
+    private func noteDataBinding(for card: DMStoredCard) -> Binding<Data?> {
         Binding(
-            get: {
-                guard let data = card.noteData,
-                      let text = try? NSAttributedString(
-                        data: data,
-                        options: [.documentType: NSAttributedString.DocumentType.rtf],
-                        documentAttributes: nil
-                      ) else {
-                    return AttributedString("")
-                }
-                return AttributedString(text)
-            },
-            set: { newValue in
-                let text = NSAttributedString(newValue)
-                card.noteData = try? text.data(
-                    from: NSRange(location: 0, length: text.length),
-                    documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
-                )
-            }
+            get: { card.noteData },
+            set: { card.noteData = $0 }
         )
     }
     

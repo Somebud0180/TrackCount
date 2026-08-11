@@ -2,14 +2,16 @@
 //  AttributedTextEditor.swift
 //  TrackCount
 //
-//  Created by Ethan John Lagera on 8/10/26.
-//
 
 import SwiftUI
 import UIKit
 
+/// A transparent UIKit editor that keeps RTF data as its source of truth.
+///
+/// Keeping the exact RTF bytes avoids rebuilding a UITextView's attributed text
+/// during unrelated SwiftUI renders, which would otherwise cancel a selection.
 struct AttributedTextEditor: UIViewRepresentable {
-    @Binding var attributedText: AttributedString
+    @Binding var noteData: Data?
     let controller: NoteTextEditorController
     var textColor: UIColor = .label
 
@@ -17,69 +19,96 @@ struct AttributedTextEditor: UIViewRepresentable {
         let textView = UITextView()
         textView.delegate = context.coordinator
         textView.isScrollEnabled = true
+        textView.allowsEditingTextAttributes = true
         textView.backgroundColor = .clear
         textView.isOpaque = false
         textView.font = .preferredFont(forTextStyle: .body)
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
-        controller.attach(textView) { [weak coordinator = context.coordinator] textView in
-            coordinator?.syncAttributedText(from: textView)
-        }
         return textView
     }
 
-    func updateUIView(_ uiView: UITextView, context: Context) {
-        // Convert Swift AttributedString to NSAttributedString for UITextView
-        let newText: NSAttributedString
-        if let nsAttr = try? NSAttributedString(attributedText, including: \.uiKit) {
-            newText = nsAttr
-        } else {
-            newText = NSAttributedString(attributedText)
-        }
+    func updateUIView(_ textView: UITextView, context: Context) {
+        context.coordinator.parent = self
+        textView.textColor = textColor
 
-        // Avoid resetting the insertion point and selection while the user types.
-        if !uiView.attributedText.isEqual(to: newText) {
-            uiView.attributedText = newText
-        }
-        uiView.textColor = textColor
+        // Changes made by UITextView have already been applied locally. Do not
+        // assign attributedText again for those changes: it resets its selection.
+        guard context.coordinator.shouldApplyModelData(noteData) else { return }
+
+        textView.attributedText = attributedText(from: noteData)
+        context.coordinator.didApplyModelData(noteData)
     }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
 
-    class Coordinator: NSObject, UITextViewDelegate {
+    private func attributedText(from data: Data?) -> NSAttributedString {
+        guard let data,
+              let text = try? NSAttributedString(
+                data: data,
+                options: [.documentType: NSAttributedString.DocumentType.rtf],
+                documentAttributes: nil
+              ) else {
+            return NSAttributedString()
+        }
+        return text
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
         var parent: AttributedTextEditor
+        private var hasAppliedModelData = false
+        private var lastAppliedModelData: Data?
 
         init(_ parent: AttributedTextEditor) {
             self.parent = parent
         }
 
+        func shouldApplyModelData(_ data: Data?) -> Bool {
+            !hasAppliedModelData || data != lastAppliedModelData
+        }
+
+        func didApplyModelData(_ data: Data?) {
+            hasAppliedModelData = true
+            lastAppliedModelData = data
+        }
+
         func textViewDidBeginEditing(_ textView: UITextView) {
-            parent.controller.isEditing = true
-            parent.controller.updateActiveTraits()
+            parent.controller.beginEditing(textView) { [weak self] textView in
+                self?.syncRTFData(from: textView)
+            }
         }
 
         func textViewDidEndEditing(_ textView: UITextView) {
-            parent.controller.isEditing = false
+            parent.controller.endEditing(textView)
         }
 
         func textViewDidChange(_ textView: UITextView) {
-            syncAttributedText(from: textView)
+            syncRTFData(from: textView)
             parent.controller.updateActiveTraits()
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
-            parent.controller.updateActiveTraits()
+            // This can fire for inactive editors while SwiftUI lays out the grid.
+            // Only the active editor is allowed to drive the floating toolbar.
+            parent.controller.selectionDidChange(in: textView)
         }
 
-        func syncAttributedText(from textView: UITextView) {
-            // Sync user edits back to the SwiftUI AttributedString binding
-            if let updated = try? AttributedString(textView.attributedText, including: \.uiKit) {
-                parent.attributedText = updated
-            } else {
-                parent.attributedText = AttributedString(textView.text)
+        func syncRTFData(from textView: UITextView) {
+            let text = textView.attributedText ?? NSAttributedString()
+            guard let data = try? text.data(
+                from: NSRange(location: 0, length: text.length),
+                documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
+            ) else {
+                return
             }
+
+            // Set the snapshot before changing SwiftUI state. The following update
+            // will then recognize this as the editor's own change and preserve its
+            // current caret/selection.
+            didApplyModelData(data)
+            parent.noteData = data
         }
     }
 }
