@@ -1,5 +1,5 @@
 //
-//  Color+Extensions.swift
+//  ColorExtensions.swift
 //  TrackCount
 //
 //  Extensions for Color readability and manipulation
