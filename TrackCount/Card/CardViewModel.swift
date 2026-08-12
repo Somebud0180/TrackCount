@@ -242,16 +242,49 @@ class CardViewModel: ObservableObject {
                 }
                 // Update the existing card
                 card.title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                card.count = (newCardType == .counter && card.type != .counter) ? 0 : newCardCount // Check card count first due to type check, to avoid reseting an existing counter card
+                
+                // Check card count first due to type check, to avoid reseting an existing counter card
+                card.count =
+                    (newCardType == .counter && card.type != .counter)
+                    ? 0 : newCardCount
+                
                 card.type = newCardType
-                card.state = newCardType == .toggle ? newCardState.prefix(newCardCount).map { CardState(state: $0) } : (newCardType == .timer || newCardType == .timer_custom) ? [CardState(state: false)] : nil
-                card.modifier = newCardType == .counter ? newCardModifier.map { CounterModifier(modifier: $0) } : nil
-                card.buttonText = newCardType == .toggle ? newButtonText.prefix(newCardCount).map { ButtonText(buttonText: $0) } : nil
+                
+                card.state =
+                    newCardType == .toggle
+                    ? newCardState.prefix(newCardCount).map {
+                        CardState(state: $0)
+                    }
+                    : (newCardType == .timer || newCardType == .timer_custom)
+                        ? [CardState(state: false)]
+                        : newCardType == .note ? [CardState(state: false)] : nil
+                
+                card.modifier =
+                    newCardType == .counter
+                    ? newCardModifier.map { CounterModifier(modifier: $0) }
+                    : nil
+                
+                card.buttonText =
+                    newCardType == .toggle
+                    ? newButtonText.prefix(newCardCount).map {
+                        ButtonText(buttonText: $0)
+                    } : nil
+                
                 card.symbol = newCardType == .toggle ? newCardSymbol : nil
-                card.timer = (newCardType == .timer || newCardType == .timer_custom) ? newCardTimer.map { TimerValue(timerValue: $0) } : nil
-                card.timerRingtone = (newCardType == .timer || newCardType == .timer_custom) ? newCardRingtone : nil
+                
+                card.timer =
+                    (newCardType == .timer || newCardType == .timer_custom)
+                    ? newCardTimer.map { TimerValue(timerValue: $0) } : nil
+                
+                card.timerRingtone =
+                    (newCardType == .timer || newCardType == .timer_custom)
+                    ? newCardRingtone
+                    : nil
+                
                 card.primaryColor = CodableColor(color: newCardPrimary)
+                
                 card.secondaryColor = CodableColor(color: newCardSecondary)
+                
                 card.group = selectedGroup
             } else {
                 // Create a new card

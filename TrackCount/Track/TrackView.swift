@@ -495,6 +495,7 @@ struct TrackView: View {
     private func noteCard(_ card: DMStoredCard) -> some View {
         let textColor = card.primaryColor?.color ?? .primary
         let backgroundColor = card.secondaryColor?.color ?? .secondary
+        let lockState = card.state?[0].state ?? false
         
         return ZStack {
             RoundedRectangle(cornerRadius: 13)
@@ -506,9 +507,26 @@ struct TrackView: View {
                 AttributedTextEditor(
                     noteData: noteDataBinding(for: card),
                     controller: noteEditorController,
-                    textColor: UIColor(textColor.readableOn(backgroundColor))
+                    textColor: UIColor(textColor.readableOn(backgroundColor)),
+                    locked: lockState
                 )
                 .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
+                .overlay(alignment: .bottomTrailing, content: {
+                    Button(action: {
+                        if lockState {
+                            card.state?[0].state = false
+                        } else {
+                            card.state?[0].state = true
+                        }
+                    }, label: {
+                        Image(systemName: lockState ? "lock.fill" : "lock.open.fill")
+                            .imageScale(.small)
+                            .foregroundStyle(textColor.readableOn(backgroundColor))
+                    })
+                    .padding()
+                    .aspectRatio(1, contentMode: .fit)
+                    .adaptiveGlassButton()
+                })
                 .padding()
             }
         }

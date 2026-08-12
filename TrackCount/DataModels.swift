@@ -68,7 +68,7 @@ class DMStoredCard: Identifiable {
     /// The amount counted (counter), amount of buttons (toggle) or amount of timers stored (timer).
     var count: Int = 1
     
-    /// The state of the button, either pressed or not (toggle) or the state of the timer, either paused or counting (timer).
+    /// The state of the button, either pressed or not (toggle) or the state of the timer, either paused, counting (timer), or note state (locked).
     var state: [CardState]?
     
     // Counter-Specific

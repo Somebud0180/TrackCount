@@ -14,6 +14,7 @@ struct AttributedTextEditor: UIViewRepresentable {
     @Binding var noteData: Data?
     let controller: NoteTextEditorController
     var textColor: UIColor = .label
+    var locked: Bool
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -25,12 +26,14 @@ struct AttributedTextEditor: UIViewRepresentable {
         textView.font = .preferredFont(forTextStyle: .body)
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
+        textView.isEditable = !locked
         return textView
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
         context.coordinator.parent = self
         textView.textColor = textColor
+        textView.isEditable = !locked
 
         // Changes made by UITextView have already been applied locally. Do not
         // assign attributedText again for those changes: it resets its selection.
