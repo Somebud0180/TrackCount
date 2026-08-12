@@ -15,6 +15,7 @@ struct AttributedTextEditor: UIViewRepresentable {
     let controller: NoteTextEditorController
     var textColor: UIColor = .label
     var locked: Bool
+    var cardUUID: UUID
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -78,7 +79,7 @@ struct AttributedTextEditor: UIViewRepresentable {
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
-            parent.controller.beginEditing(textView) { [weak self] textView in
+            parent.controller.beginEditing(textView, cardUUID: parent.cardUUID) { [weak self] textView in
                 self?.syncRTFData(from: textView)
             }
         }

@@ -16,7 +16,8 @@ enum NoteTextTrait: Hashable {
 final class NoteTextEditorController: ObservableObject {
     @Published private(set) var isEditing = false
     @Published private(set) var activeTraits: Set<NoteTextTrait> = []
-
+    @Published var editingCardUUID: UUID? = nil
+    
     private weak var activeTextView: UITextView?
     private var onTextChanged: ((UITextView) -> Void)?
     private var traitUpdateIsScheduled = false
@@ -24,13 +25,15 @@ final class NoteTextEditorController: ObservableObject {
     private var pendingInsertionLocation: Int?
     private var pendingTextLength: Int?
 
-    func beginEditing(_ textView: UITextView, onTextChanged: @escaping (UITextView) -> Void) {
+    func beginEditing(_ textView: UITextView, cardUUID: UUID, onTextChanged: @escaping (UITextView) -> Void) {
+        self.editingCardUUID = cardUUID
         activate(textView, onTextChanged: onTextChanged)
         publishEditingState(true)
     }
 
     func endEditing(_ textView: UITextView) {
         guard activeTextView === textView else { return }
+        self.editingCardUUID = nil
         clearPendingInsertionTraits()
         publishEditingState(false)
     }

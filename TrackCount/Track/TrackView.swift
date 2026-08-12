@@ -70,12 +70,29 @@ struct TrackView: View {
                                 // Iterate through the sorted cards and display each card
                                 ForEach(storedCards, id: \.uuid) { card in
                                     gridCard(card)
-                                        .id(card.id)
+                                        .id(card.uuid)
                                 }
                             }
                         }
                     }
                     .padding()
+                }
+                .onChange(of: noteEditorController.editingCardUUID) {
+                    if let uuid = noteEditorController.editingCardUUID {
+                        // Delay slightly to let the scroll view resize for the keyboard
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo(uuid, anchor: .center)
+                            }
+                        }
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                    if let uuid = noteEditorController.editingCardUUID {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(uuid, anchor: .center)
+                        }
+                    }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -511,7 +528,8 @@ struct TrackView: View {
                     noteData: noteDataBinding(for: card),
                     controller: noteEditorController,
                     textColor: UIColor(textColor.readableOn(backgroundColor)),
-                    locked: lockState
+                    locked: lockState,
+                    cardUUID: card.uuid
                 )
                 .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
                 .overlay(alignment: .bottomTrailing, content: {
