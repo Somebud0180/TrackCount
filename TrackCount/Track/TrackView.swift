@@ -55,25 +55,28 @@ struct TrackView: View {
         let gridColumns = [GridItem(.adaptive(minimum: gridSize[gridSizeOption]), spacing: 16)]
         
         NavigationStack {
-            ScrollView {
-                Group {
-                    if storedCards.isEmpty {
-                        Text("You have no cards yet")
-                            .font(.title)
-                            .foregroundStyle(.gray)
-                            .multilineTextAlignment(.center)
-                    } else {
-                        // Define the grid layout
-                        LazyVGrid(columns: gridColumns, spacing: 16) {
-                            // Display a message when there are no cards
-                            // Iterate through the sorted cards and display each card
-                            ForEach(storedCards, id: \.uuid) { card in
-                                gridCard(card)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    Group {
+                        if storedCards.isEmpty {
+                            Text("You have no cards yet")
+                                .font(.title)
+                                .foregroundStyle(.gray)
+                                .multilineTextAlignment(.center)
+                        } else {
+                            // Define the grid layout
+                            LazyVGrid(columns: gridColumns, spacing: 16) {
+                                // Display a message when there are no cards
+                                // Iterate through the sorted cards and display each card
+                                ForEach(storedCards, id: \.uuid) { card in
+                                    gridCard(card)
+                                        .id(card.id)
+                                }
                             }
                         }
                     }
+                    .padding()
                 }
-                .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitleViewBuilder {
