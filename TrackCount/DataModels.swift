@@ -229,6 +229,21 @@ extension DMStoredCard.Types {
             return "A rich-text note that can be edited from within the card."
         }
     }
+    
+    var typeSmybol: String {
+        switch self {
+        case .counter:
+            return "numbers"
+        case .toggle:
+            return "button.horizontal.top.press"
+        case .timer:
+            return "timer.circle"
+        case .timer_custom:
+            return "timer"
+        case .note:
+            return "text.pad.header"
+        }
+    }
 }
 
 // MARK: - Sharing Structures

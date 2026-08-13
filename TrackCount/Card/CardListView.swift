@@ -61,6 +61,13 @@ struct CardListView: View {
                                 HStack {
                                     Image(systemName: "line.horizontal.3")
                                         .foregroundStyle(.gray)
+                                    
+                                    if let type = card.type {
+                                        Image(systemName: type.typeSmybol)
+                                            .foregroundStyle(Color(.label))
+                                            .fontWeight(.semibold)
+                                    }
+                                    
                                     Text(card.title)
                                         .foregroundStyle(Color(.label))
                                 }
