@@ -529,7 +529,8 @@ struct TrackView: View {
                     controller: noteEditorController,
                     textColor: UIColor(textColor.readableOn(backgroundColor)),
                     locked: lockState,
-                    cardUUID: card.uuid
+                    cardUUID: card.uuid,
+                    bottomPadding: 52
                 )
                 .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
                 .overlay(alignment: .bottomTrailing, content: {
@@ -540,11 +541,17 @@ struct TrackView: View {
                             card.state?[0].state = true
                         }
                     }, label: {
-                        Image(systemName: lockState ? "lock.fill" : "lock.open.fill")
-                            .imageScale(.small)
-                            .foregroundStyle(textColor.readableOn(backgroundColor))
+                        if #available(iOS 18.0, *) {
+                            Image(systemName: lockState ? "lock.fill" : "lock.open.fill")
+                                .imageScale(.medium)
+                                .contentTransition(.symbolEffect(.replace.magic(fallback: .downUp.byLayer), options: .nonRepeating))
+                        } else {
+                            Image(systemName: lockState ? "lock.fill" : "lock.open.fill")
+                                .imageScale(.medium)
+                        }
                     })
-                    .padding()
+                    .foregroundStyle(textColor.readableOn(backgroundColor))
+                    .frame(maxWidth: 44, maxHeight: 44)
                     .aspectRatio(1, contentMode: .fit)
                     .adaptiveGlassButton()
                 })

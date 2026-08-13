@@ -16,6 +16,7 @@ struct AttributedTextEditor: UIViewRepresentable {
     var textColor: UIColor = .label
     var locked: Bool
     var cardUUID: UUID
+    var bottomPadding: CGFloat
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -25,7 +26,7 @@ struct AttributedTextEditor: UIViewRepresentable {
         textView.backgroundColor = .clear
         textView.isOpaque = false
         textView.font = .preferredFont(forTextStyle: .body)
-        textView.textContainerInset = .zero
+        textView.textContainerInset = UIEdgeInsets(top: 0, left: 0, bottom: bottomPadding, right: 0)
         textView.textContainer.lineFragmentPadding = 0
         textView.isEditable = !locked
         return textView
@@ -35,6 +36,7 @@ struct AttributedTextEditor: UIViewRepresentable {
         context.coordinator.parent = self
         textView.textColor = textColor
         textView.isEditable = !locked
+        textView.textContainerInset = UIEdgeInsets(top: 0, left: 0, bottom: bottomPadding, right: 0)
 
         // Changes made by UITextView have already been applied locally. Do not
         // assign attributedText again for those changes: it resets its selection.
