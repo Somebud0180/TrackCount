@@ -32,7 +32,7 @@ struct TrackView: View {
     @State private var pressedStates: [String: Bool] = [:]
     
     @AppStorage("trackGridSize") var gridSizeOption: Int = DefaultSettings.trackGridSize  // 0 = compact, 1 = default, 2 = relaxed
-    @State private var gridSize: [CGFloat] = [350, 400, 450]
+    @State private var gridSize: [CGFloat] = [320, 400, 450]
     
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
