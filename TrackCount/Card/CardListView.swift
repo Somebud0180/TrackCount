@@ -73,6 +73,7 @@ struct CardListView: View {
                                 }
                             }
                             .listRowSeparator(.hidden)
+                            .accessibilityLabel("\(card.title) - \(card.type?.formattedName ?? "") card")
                             .swipeActions {
                                 Button(role: .destructive) {
                                     viewModel.removeCard(card, with: context)
