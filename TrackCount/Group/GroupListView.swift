@@ -31,6 +31,11 @@ struct GroupListView: View {
     @State private var searchText: String = ""
     @Namespace private var namespace
     
+    // Grid Sizing
+    let minGridWidth: CGFloat = 110
+    let maxGridColumns: Int = 8
+    let gridSpacing: CGFloat = 10
+    
     private var filteredGroups: [DMCardGroup] {
         if searchText.isEmpty {
             return savedGroups
@@ -92,7 +97,7 @@ struct GroupListView: View {
                         }
                         
                         if #available(anyAppleOS 27.0, *) {
-                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: gridSpacing) {
                                 ForEach(filteredGroups) { group in
                                     groupCard(group)
                                 }
@@ -104,7 +109,7 @@ struct GroupListView: View {
                             .padding()
                             .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         } else {
-                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: gridSpacing) {
                                 ForEach(filteredGroups) { group in
                                     groupCard(group)
                                 }
@@ -222,12 +227,9 @@ struct GroupListView: View {
     }
     
     private func columns(for totalWidth: CGFloat) -> [GridItem] {
-        let minWidth: CGFloat = 110
-        let spacing: CGFloat = 16
-        let maxColumns: Int = 8
         // Compute how many columns fit, but never exceed maxColumns
-        let count = max(1, min(maxColumns, Int(totalWidth / (minWidth + spacing))))
-        return Array(repeating: GridItem(.flexible()), count: count)
+        let count = max(1, min(maxGridColumns, Int(totalWidth / (minGridWidth + gridSpacing))))
+        return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
     }
     
     private func groupCard(_ group: DMCardGroup) -> some View {
