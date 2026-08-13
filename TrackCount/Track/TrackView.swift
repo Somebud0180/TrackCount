@@ -274,8 +274,7 @@ struct TrackView: View {
                 card: card,
                 operation: +,
                 symbol: "plus",
-                accessibilityLabel: "Increase counter",
-                accessibilityHintPrefix: "Increase"
+                accessibilityLabelPrefix: "Increase"
             )
             
             // Current Count
@@ -289,8 +288,7 @@ struct TrackView: View {
                 card: card,
                 operation: -,
                 symbol: "minus",
-                accessibilityLabel: "Reduce counter",
-                accessibilityHintPrefix: "Reduce"
+                accessibilityLabelPrefix: "Reduce"
             )
         }
         .frame(maxWidth: 450)
@@ -301,8 +299,7 @@ struct TrackView: View {
         card: DMStoredCard,
         operation: @escaping (Int, Int) -> Int,
         symbol: String,
-        accessibilityLabel: String,
-        accessibilityHintPrefix: String
+        accessibilityLabelPrefix: String
     ) -> some View {
         HStack {
             if let modifiers = card.modifier?.map({ $0.modifier }) {
@@ -345,8 +342,7 @@ struct TrackView: View {
                         .disabled(willOverflow)
                         .foregroundStyle((card.secondaryColor?.color ?? .white).readableOn(tint, sensitivity: usesLiquidGlass ? 0.7 : 0.75))
                         .adaptiveGlassButton(interactive: !willOverflow, tintColor: tint, externalPressed: isPressed)
-                        .accessibilityLabel(accessibilityLabel)
-                        .accessibilityHint("\(accessibilityHintPrefix) \(card.title) by \(modifiers[index])")
+                        .accessibilityLabel("\(accessibilityLabelPrefix) \(card.title) by \(modifiers[index])")
                     }
                 }
             }
