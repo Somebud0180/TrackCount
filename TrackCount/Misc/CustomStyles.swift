@@ -215,18 +215,19 @@ struct AdaptiveGlassButtonModifier<S: Shape>: ViewModifier {
         if #available(anyAppleOS 26.0, *) {
             let tintColor = colorScheme == .dark ? tint.opacity(0.2) : tint.opacity(tintStrength)
             if isInteractive {
-                content.glassEffect(
-                    .regular
-                    .tint(tintStrength == 0.0 ? nil : tintColor)
-                    .interactive()
-                    , in: shape
-                )
+                content
+                    .glassEffect(
+                        .regular.interactive()
+                        .tint(tintStrength == 0.0 ? nil : tintColor),
+                        in: shape
+                    )
             } else {
-                content.glassEffect(
-                    .regular
-                    .tint(tintColor)
-                    , in: shape
-                )
+                content
+                    .glassEffect(
+                        .regular
+                        .tint(tintColor),
+                        in: shape
+                    )
             }
         } else {
             let tintColor = colorScheme == .dark ? tint.opacity(0.2) : tint.opacity(tintStrength)

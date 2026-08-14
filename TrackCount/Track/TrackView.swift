@@ -31,6 +31,11 @@ struct TrackView: View {
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var pressedStates: [String: Bool] = [:]
     
+    @State private var searchText: String = ""
+    @State private var isSearchActive: Bool = false
+    @State private var currentMatchIndex: Int = 0
+    @FocusState private var focusSearch
+    
     @AppStorage("trackGridSize") var gridSizeOption: Int = DefaultSettings.trackGridSize  // 0 = compact, 1 = default, 2 = relaxed
     @State private var gridSize: [CGFloat] = [320, 400, 450]
     
@@ -77,6 +82,18 @@ struct TrackView: View {
                     }
                     .padding()
                 }
+                .safeAreaInset(edge: .bottom) {
+                    if isSearchActive {
+                        if #available(anyAppleOS 26.0, *) {
+                            GlassEffectContainer {
+                                searchBar(proxy: proxy)
+                            }
+                        } else {
+                            searchBar(proxy: proxy)
+                                .background(.bar)
+                        }
+                    }
+                }
                 .onChange(of: noteEditorController.editingCardUUID) {
                     if let uuid = noteEditorController.editingCardUUID {
                         // Delay slightly to let the scroll view resize for the keyboard
@@ -105,6 +122,21 @@ struct TrackView: View {
             }
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button(action: { 
+                        withAnimation {
+                            isSearchActive.toggle()
+                            focusSearch = isSearchActive
+                            if !isSearchActive {
+                                searchText = ""
+                                currentMatchIndex = 0
+                            }
+                        }
+                    }) {
+                        Label("Search", systemImage: "magnifyingglass")
+                            .labelStyle(.iconOnly)
+                    }
+                    .legacyDarkTint()
+                    
                     Button(action: { isPresentingCardFormView = true }) {
                         Label("Add Card", systemImage: "plus.circle")
                             .labelStyle(.iconOnly)
@@ -225,13 +257,26 @@ struct TrackView: View {
     
     /// Builds the inputted card into a visible card according to it's type.
     private func gridCard(_ card: DMStoredCard) -> some View {
-        Group {
+        let isMatch = matchUUIDs.indices.contains(currentMatchIndex) && matchUUIDs[currentMatchIndex] == card.uuid
+        return Group {
                 if #available(anyAppleOS 26.0, *) {
                     GlassEffectContainer {
                         baseCard(card)
+                            .overlay {
+                                if isMatch {
+                                    RoundedRectangle(cornerRadius: 25)
+                                        .stroke(Color.blue, lineWidth: 2)
+                                }
+                            }
                     }
                 } else {
                     baseCard(card)
+                        .overlay {
+                            if isMatch {
+                                RoundedRectangle(cornerRadius: 25)
+                                    .stroke(Color.blue, lineWidth: 2)
+                            }
+                        }
                 }
         }
     }
@@ -567,5 +612,176 @@ struct TrackView: View {
     /// Computed property for alert title.
     private var alertTitle: Text {
         return Text("Delete \(selectedGroup.groupTitle ?? "This Group")?")
+    }
+    
+    private func searchBar(proxy: ScrollViewProxy) -> some View {
+        let matches = matchUUIDs
+        
+        if #available(anyAppleOS 26.0, *) {
+            return HStack {
+                Button(action: {
+                    withAnimation {
+                        isSearchActive = false
+                        searchText = ""
+                        currentMatchIndex = 0
+                    }
+                }, label: {
+                    Label("Done", systemImage: "xmark")
+                        .labelStyle(.iconOnly)
+                })
+                .foregroundStyle(.primary)
+                .frame(minWidth: 24, minHeight: 24)
+                .padding(12)
+                .adaptiveGlassButton(tintStrength: 0)
+                
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    
+                    TextField("Search cards...", text: $searchText)
+                        .focused($focusSearch)
+                        .textFieldStyle(.plain)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: searchText) {
+                            currentMatchIndex = 0
+                            if !matchUUIDs.isEmpty {
+                                scrollToCurrentMatch(proxy: proxy)
+                            }
+                        }
+                    
+                    if !searchText.isEmpty {
+                        Text("\(matches.isEmpty ? 0 : currentMatchIndex + 1) of \(matches.count)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 4)
+                        
+                        Button(action: {
+                            searchText = ""
+                            currentMatchIndex = 0
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .frame(minHeight: 24)
+                .customRoundedGlass()
+                
+                HStack(spacing: 12) {
+                    Button(action: { previousMatch(proxy: proxy) }) {
+                        Image(systemName: "chevron.up")
+                            .fontWeight(.medium)
+                    }
+                    .disabled(matches.isEmpty)
+                    
+                    Button(action: { nextMatch(proxy: proxy) }) {
+                        Image(systemName: "chevron.down")
+                            .fontWeight(.medium)
+                    }
+                    .disabled(matches.isEmpty)
+                }
+                .frame(minHeight: 24)
+                .customRoundedGlass()
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal)
+        } else {
+            return HStack(spacing: 18) {
+                Button(action: {
+                    withAnimation {
+                        isSearchActive = false
+                        searchText = ""
+                        currentMatchIndex = 0
+                    }
+                }, label: {
+                    Label("Done", systemImage: "xmark")
+                        .labelStyle(.titleOnly)
+                        .font(.headline)
+                })
+                .foregroundStyle(.primary)
+                
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    
+                    TextField("Search cards...", text: $searchText)
+                        .focused($focusSearch)
+                        .textFieldStyle(.plain)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: searchText) {
+                            currentMatchIndex = 0
+                            if !matchUUIDs.isEmpty {
+                                scrollToCurrentMatch(proxy: proxy)
+                            }
+                        }
+                    
+                    if !searchText.isEmpty {
+                        Text("\(matches.isEmpty ? 0 : currentMatchIndex + 1) of \(matches.count)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 4)
+                        
+                        Button(action: {
+                            searchText = ""
+                            currentMatchIndex = 0
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .foregroundStyle(Color(UIColor.systemGray4))
+                )
+                
+                HStack(spacing: 12) {
+                    Group {
+                        Button(action: { previousMatch(proxy: proxy) }) {
+                            Image(systemName: "chevron.up")
+                        }
+                        
+                        Button(action: { nextMatch(proxy: proxy) }) {
+                            Image(systemName: "chevron.down")
+                        }
+                    }
+                    .foregroundStyle(.secondary)
+                    .fontWeight(.medium)
+                    .disabled(matches.isEmpty)
+                }
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal)
+        }
+    }
+    
+    private var matchUUIDs: [UUID] {
+        guard !searchText.isEmpty else { return [] }
+        return storedCards.filter { $0.title.localizedCaseInsensitiveContains(searchText) }.map { $0.uuid }
+    }
+    
+    private func nextMatch(proxy: ScrollViewProxy) {
+        let matches = matchUUIDs
+        guard !matches.isEmpty else { return }
+        currentMatchIndex = (currentMatchIndex + 1) % matches.count
+        scrollToCurrentMatch(proxy: proxy)
+    }
+
+    private func previousMatch(proxy: ScrollViewProxy) {
+        let matches = matchUUIDs
+        guard !matches.isEmpty else { return }
+        currentMatchIndex = (currentMatchIndex - 1 + matches.count) % matches.count
+        scrollToCurrentMatch(proxy: proxy)
+    }
+
+    private func scrollToCurrentMatch(proxy: ScrollViewProxy) {
+        let matches = matchUUIDs
+        guard !matches.isEmpty && currentMatchIndex < matches.count else { return }
+        withAnimation {
+            proxy.scrollTo(matches[currentMatchIndex], anchor: .center)
+        }
     }
 }
