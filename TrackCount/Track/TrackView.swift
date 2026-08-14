@@ -92,8 +92,13 @@ struct TrackView: View {
                             searchBar(proxy: proxy)
                                 .background(.bar)
                         }
+                    } else if noteEditorController.isEditing {
+                        NoteFormattingToolbar(editor: noteEditorController)
+                            .padding(.bottom, 8)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
+                .animation(.easeInOut(duration: 0.2), value: noteEditorController.isEditing)
                 .onChange(of: noteEditorController.editingCardUUID) {
                     if let uuid = noteEditorController.editingCardUUID {
                         // Delay slightly to let the scroll view resize for the keyboard
@@ -188,14 +193,6 @@ struct TrackView: View {
                 }
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if noteEditorController.isEditing {
-                NoteFormattingToolbar(editor: noteEditorController)
-                    .padding(.bottom, 8)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: noteEditorController.isEditing)
         .sheet(isPresented: $isPresentingGroupForm) {
             GroupFormView(viewModel: groupViewModel)
                 .presentationDetents([.fraction(0.4)])
