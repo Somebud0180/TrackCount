@@ -297,9 +297,7 @@ struct CardFormView: View {
             } else if viewModel.newCardType == .toggle {
                 toggleFormView()
             } else if viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom {
-                Section {
-                    timerFormView()
-                }
+                timerFormView()
             }
         }
     }
@@ -493,7 +491,7 @@ struct CardFormView: View {
             return formatter
         }()
         
-        return Group {
+        return Section {
             Button(action: {
                 isPresentingRingtonePickerView = true
             }) {
@@ -507,7 +505,6 @@ struct CardFormView: View {
                 }
             }
             .buttonStyle(PlainButtonStyle())
-            
             .sheet(isPresented: $isPresentingRingtonePickerView) {
                 RingtonePickerView(setVariable: $viewModel.newCardRingtone, fromSettings: false)
             }
@@ -531,33 +528,30 @@ struct CardFormView: View {
                 
                 ForEach(0..<viewModel.newCardCount, id: \.self) { index in
                     VStack(alignment: .leading) {
-                        HStack {
-                            Text("Timer \(index + 1): ")
-                                .padding(.leading)
-                            TimeWheelPickerView(
-                                timerArray: Binding(
-                                    get: { viewModel.newTimerValues[index] ?? [0, 0, 0] },
-                                    set: { newValue in
-                                        viewModel.updateTimerValue(
-                                            index: index,
-                                            hours: newValue[0],
-                                            minutes: newValue[1],
-                                            seconds: newValue[2]
-                                        )
-                                    }
-                                )
+                        Text("Timer \(index + 1): ")
+                        
+                        TimeWheelPickerView(
+                            timerArray: Binding(
+                                get: { viewModel.newTimerValues[index] ?? [0, 0, 0] },
+                                set: { newValue in
+                                    viewModel.updateTimerValue(
+                                        index: index,
+                                        hours: newValue[0],
+                                        minutes: newValue[1],
+                                        seconds: newValue[2]
+                                    )
+                                }
                             )
-                            .padding(.horizontal)
-                            .frame(maxHeight: 150)
-                        }
-                        .errorOverlay("Timer\(index)LessThanMin", with: viewModel.validationError, isRectangle: true)
-                        .errorOverlay("Timer\(index)MoreThanMax", with: viewModel.validationError, isRectangle: true)
+                        )
+                        .frame(height: 150)
                         
                         ZStack(alignment: .leading) {
                             errorMessageView("Timer\(index)LessThanMin", with: viewModel.validationError, message: "Timer must be greater than a second")
                             errorMessageView("Timer\(index)MoreThanMax", with: viewModel.validationError, message: "Timer must be less than a day")
                         }
                     }
+                    .errorOverlay("Timer\(index)LessThanMin", with: viewModel.validationError, isRectangle: true)
+                    .errorOverlay("Timer\(index)MoreThanMax", with: viewModel.validationError, isRectangle: true)
                 }
             }
         }

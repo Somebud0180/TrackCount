@@ -56,7 +56,6 @@ struct TimeWheelPickerView: View {
                 timerArray[2] = newValue
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: 300)
         .onAppear {
             initializeFromTimerArray()
         }

@@ -31,7 +31,7 @@ struct TimePickerView: View {
                     .accessibilityLabel("\(timeIncrement) \(title)")
                 }
             }
-            .pickerStyle(InlinePickerStyle())
+            .pickerStyle(.wheel)
             .frame(maxWidth: 80)
 
             Text(title)
