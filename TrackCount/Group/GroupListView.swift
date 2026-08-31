@@ -153,7 +153,7 @@ struct GroupListView: View {
             }
             .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
                 GroupFormView(viewModel: viewModel)
-                    .presentationDetents([.fraction(0.4)])
+                    .presentationDetents([.fraction(0.3)])
                     .onDisappear {
                         viewModel.validationError.removeAll()
                         viewModel.selectedGroup = nil

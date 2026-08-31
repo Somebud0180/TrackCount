@@ -37,7 +37,7 @@ struct GroupFormView: View {
                 formView()
             }
             .padding(.top, -24)
-            .navigationBarTitle(viewModel.selectedGroup != nil ? "Create Group" : "Edit Group", displayMode: .inline)
+            .navigationBarTitle(viewModel.selectedGroup != nil ? "Edit Group" : "Create Group", displayMode: .inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Dismiss") {
@@ -119,28 +119,6 @@ struct GroupFormView: View {
                         .padding(.horizontal)
                 }
             }
-            
-            Button(action : {
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    isSaveButtonPressed = true
-                    viewModel.saveGroup(with: context)
-                    
-                    if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {
-                        dismiss()
-                    }
-                }
-                
-                withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                    isSaveButtonPressed = false
-                }
-            }) {
-                Text(viewModel.selectedGroup != nil ? "Add Group" : "Save Changes")
-                    .font(.title2)
-                    .frame(maxWidth: .infinity)
-                    .foregroundStyle(.white)
-            }
-            .customRoundedGlass(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
-            .padding()
         }
     }
 }

@@ -195,7 +195,7 @@ struct TrackView: View {
         }
         .sheet(isPresented: $isPresentingGroupForm) {
             GroupFormView(viewModel: groupViewModel)
-                .presentationDetents([.fraction(0.4)])
+                .presentationDetents([.fraction(0.3)])
                 .onDisappear {
                     groupViewModel.validationError.removeAll()
                     groupViewModel.selectedGroup = nil
