@@ -355,7 +355,7 @@ extension PreviewCard {
             title: title,
             count: count,
             state: type == .toggle ? Array(repeating: true, count: count) :
-                (type == .timer || type == .timer_custom ? Array(repeating: false, count: 1) : []),
+                (type == .timer || type == .timer_custom || type == .note ? Array(repeating: false, count: 1) : []),
             modifier: modifier,
             buttonText: buttonText,
             symbol: symbol,
