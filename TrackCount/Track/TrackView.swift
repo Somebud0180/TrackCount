@@ -254,7 +254,8 @@ struct TrackView: View {
     
     /// Builds the inputted card into a visible card according to it's type.
     private func gridCard(_ card: DMStoredCard) -> some View {
-        let isMatch = matchUUIDs.indices.contains(currentMatchIndex) && matchUUIDs[currentMatchIndex] == card.uuid
+        let matches = matchUUIDs
+        let isMatch = matches.indices.contains(currentMatchIndex) && matches[currentMatchIndex] == card.uuid
         return Group {
                 if #available(anyAppleOS 26.0, *) {
                     GlassEffectContainer {
