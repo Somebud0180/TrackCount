@@ -596,10 +596,11 @@ struct TrackView: View {
                     .frame(maxWidth: 44, maxHeight: 44)
                     .aspectRatio(1, contentMode: .fit)
                     .adaptiveGlassButton()
-                .padding()
+                    .padding()
+                })
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func noteDataBinding(for card: DMStoredCard) -> Binding<Data?> {
