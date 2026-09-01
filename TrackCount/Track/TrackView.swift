@@ -610,11 +610,12 @@ private var alertTitle: Text {
     return Text("Delete \(resolvedTitle)?")
 }
     
+    @ViewBuilder
     private func searchBar(proxy: ScrollViewProxy) -> some View {
         let matches = matchUUIDs
         
         if #available(anyAppleOS 26.0, *) {
-            return HStack {
+            HStack {
                 Button(action: {
                     withAnimation {
                         isSearchActive = false
@@ -683,7 +684,7 @@ private var alertTitle: Text {
             .padding(.vertical, 4)
             .padding(.horizontal)
         } else {
-            return HStack(spacing: 18) {
+            HStack(spacing: 18) {
                 Button(action: {
                     withAnimation {
                         isSearchActive = false
