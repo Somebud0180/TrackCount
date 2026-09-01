@@ -260,9 +260,14 @@ class CardViewModel: ObservableObject {
             )
         }
         
-        card.title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        card.type = newCardType
-        card.count = (newCardType == .counter && card.type != .counter) ? 0 : newCardCount
+let previousType = card.type
+card.title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+card.type = newCardType
+if newCardType == .counter {
+    if previousType != .counter { card.count = 0 }
+} else {
+    card.count = newCardCount
+}
         card.primaryColor = CodableColor(color: newCardPrimary)
         card.secondaryColor = CodableColor(color: newCardSecondary)
         card.group = selectedGroup
