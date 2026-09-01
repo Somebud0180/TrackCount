@@ -39,9 +39,6 @@ struct HomeView: View {
         NavigationStack {
             GroupListView()
                 .environmentObject(ImportManager())
-                .tabItem {
-                    Label("Home", systemImage: "house")
-                }
         }
     }
 }
