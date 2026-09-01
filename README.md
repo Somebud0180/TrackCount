@@ -17,9 +17,9 @@ Keep track of your slideshow ice breakers with toggle buttons to keep track of w
 
 ### Features:
 - **Tracking**
-  - Features 3 trackers, a counter, a toggle and a timer (2 variations).
+  - Features 4 trackers, a counter, a toggle, a note, and a timer (2 variations).
   
-![Trackers](https://github.com/user-attachments/assets/b1d2d7a9-b341-4886-9936-b300b8a0a490)
+![Trackers](https://github.com/user-attachments/assets/513f3c43-6fc9-4fcf-a923-14e1d4727495)
 
 
 - **Customizations**
@@ -44,6 +44,9 @@ Keep track of your slideshow ice breakers with toggle buttons to keep track of w
 - SwiftData
 - CloudKit
 
+### Build Instructions:
+Clone the repository and open `TrackCount.xcodeproj` in Xcode. Build and run the app with Xcode.<br>
+For more details, check out the [BUILD.md](BUILD.md)
 
 ##### AI Discloure
 <sup>A large chunk of this code was AI generated, both in the pre-release and post-release codebase.

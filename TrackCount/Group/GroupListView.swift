@@ -20,7 +20,6 @@ struct GroupListView: View {
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     @Query(sort: \DMCardGroup.index, order: .forward) private var savedGroups: [DMCardGroup]
-    @State private var groupSheetHeight: CGFloat = .zero
     @State private var isPresentingFilePicker = false
     @State private var isPresentingGroupForm: Bool = false
     @State private var isPresentingGroupOrder: Bool = false
@@ -30,6 +29,12 @@ struct GroupListView: View {
     @State private var cardFormGroup: DMCardGroup?
     @State private var animateGradient: Bool = false
     @State private var searchText: String = ""
+    @Namespace private var namespace
+    
+    // Grid Sizing
+    let minGridWidth: CGFloat = 110
+    let maxGridColumns: Int = 8
+    let gridSpacing: CGFloat = 10
     
     private var filteredGroups: [DMCardGroup] {
         if searchText.isEmpty {
@@ -39,14 +44,6 @@ struct GroupListView: View {
                 (group.groupTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
                 (preprocess(group.groupSymbol ?? "").localizedCaseInsensitiveContains(searchText))
             }
-        }
-    }
-    
-    private var columnLayout: [GridItem] {
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return [GridItem(.adaptive(minimum: 220, maximum: 600), spacing: 16)]
-        } else {
-            return [GridItem(.adaptive(minimum: 110, maximum: 400), spacing: 16)]
         }
     }
     
@@ -88,37 +85,38 @@ struct GroupListView: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                 +
-                                Text(Image(systemName: "ellipsis.circle"))
+                                Text(Image(systemName: "plus.rectangle.portrait"))
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                                 +
-                                Text(" in the top-right corner")
+                                Text(" in the top-right toolbar")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             )
                             .padding()
                         }
                         
-                        LazyVGrid(columns: columns(for: geometry.size.width), spacing: 16) {
-                            ForEach(filteredGroups) { group in
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.secondary.opacity(0.25), lineWidth: 5)
-                                    NavigationLink(destination: TrackView(selectedGroup: group)) {
-                                        GroupCardView(group: group)
-                                            .frame(height: 200)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
-                                    .contextMenu {
-                                        contextMenu(for: group)
-                                    }
+                        if #available(anyAppleOS 27.0, *) {
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: gridSpacing) {
+                                ForEach(filteredGroups) { group in
+                                    groupCard(group)
                                 }
-                                .groupCardModifier()
+                                .reorderable()
                             }
+                            .reorderContainer(for: DMCardGroup.self) { difference in
+                                applyReorderDifference(difference)
+                            }
+                            .padding()
+                            .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
+                        } else {
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: gridSpacing) {
+                                ForEach(filteredGroups) { group in
+                                    groupCard(group)
+                                }
+                            }
+                            .padding()
+                            .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         }
-                        .padding()
-                        .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                     }
                 }
             }
@@ -127,31 +125,35 @@ struct GroupListView: View {
             .navigationBarTitleDisplayMode(.large)
             .navigationTitle("Your Groups")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button(action: { isPresentingGroupForm = true }) {
-                        Label("Add Group", systemImage: "plus.circle")
+                        Label("Add Group", systemImage: "plus.rectangle.portrait")
                     }
                     .legacyDarkTint()
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    
                     Menu {
                         Button(action: { isPresentingFilePicker = true }) {
                             Label("Import Group", systemImage: "square.and.arrow.down")
                         }
+                        
                         Button(action: { isPresentingGroupOrder = true }) {
                             Label("Reorder Groups", systemImage: "arrow.up.arrow.down")
                         }
+                        
+                        NavigationLink(
+                            destination: { SettingsView() },
+                            label: { Label("Settings", systemImage: "gearshape") }
+                        )
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "ellipsis")
                     }
                     .legacyDarkTint()
-                    .accessibilityIdentifier("Ellipsis Button")
+                    .accessibilityIdentifier("More Options")
                 }
             }
             .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
                 GroupFormView(viewModel: viewModel)
-                    .presentationDetents([.fraction(0.45)])
+                    .presentationDetents([.fraction(0.3)])
                     .onDisappear {
                         viewModel.validationError.removeAll()
                         viewModel.selectedGroup = nil
@@ -225,12 +227,38 @@ struct GroupListView: View {
     }
     
     private func columns(for totalWidth: CGFloat) -> [GridItem] {
-        let minWidth: CGFloat = 110
-        let spacing: CGFloat = 16
-        let maxColumns: Int = 8
         // Compute how many columns fit, but never exceed maxColumns
-        let count = max(1, min(maxColumns, Int(totalWidth / (minWidth + spacing))))
-        return Array(repeating: GridItem(.flexible()), count: count)
+        let count = max(1, min(maxGridColumns, Int(totalWidth / (minGridWidth + gridSpacing))))
+        return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
+    }
+    
+    private func groupCard(_ group: DMCardGroup) -> some View {
+        ZStack {
+            Group {
+                if #available(iOS 18.0, *) {
+                    NavigationLink(
+                        destination: TrackView(selectedGroup: group)
+                            .navigationTransition(.zoom(sourceID: group.id, in: namespace))
+                    ) {
+                        GroupCardView(group: group)
+                            .frame(height: 200)
+                            .matchedTransitionSource(id: group.id, in: namespace)
+                    }
+                } else {
+                    NavigationLink(destination: TrackView(selectedGroup: group)) {
+                        GroupCardView(group: group)
+                            .frame(height: 200)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .contextMenu {
+                contextMenu(for: group)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(((group.groupTitle?.isEmpty == false) ? group.groupSymbol : group.groupTitle) ?? "")
+        .accessibilityHint("Double-tap to open")
     }
     
     /// Computed property for alert title.
@@ -265,6 +293,55 @@ struct GroupListView: View {
             Button("Delete Group", systemImage: "trash", role: .destructive) {
                 selectedGroup = group
                 isPresentingDeleteDialog = true
+            }
+        }
+    }
+    
+    /// Applies a `ReorderDifference` produced by `reorderContainer` to update group indices.
+    @available(anyAppleOS 27.0, *)
+    private func applyReorderDifference<Destination>(_ difference: ReorderDifference<DMCardGroup.ID, Destination>) {
+        // 1. Create a working copy sorted by index
+        var mutableGroups = savedGroups.sorted { ($0.index ?? 0) < ($1.index ?? 0) }
+        
+        // 2. Locate elements referenced by difference.sources
+        var movedGroups: [DMCardGroup] = []
+        for sourceID in difference.sources {
+            if let group = mutableGroups.first(where: { $0.id == sourceID }) {
+                movedGroups.append(group)
+            }
+        }
+        
+        guard !movedGroups.isEmpty else { return }
+        
+        // 3. Remove moved elements from their original positions
+        mutableGroups.removeAll { group in
+            difference.sources.contains(group.id)
+        }
+        
+        // 4. Insert moved elements at target destination
+        switch difference.destination.position {
+        case .before(let targetID):
+            if let targetIndex = mutableGroups.firstIndex(where: { $0.id == targetID }) {
+                mutableGroups.insert(contentsOf: movedGroups, at: targetIndex)
+            } else {
+                mutableGroups.append(contentsOf: movedGroups)
+            }
+        case .end:
+            mutableGroups.append(contentsOf: movedGroups)
+        @unknown default:
+            mutableGroups.append(contentsOf: movedGroups)
+        }
+        
+        // 5. Reassign indices and persist
+        withAnimation {
+            for (newIndex, group) in mutableGroups.enumerated() {
+                group.index = newIndex
+            }
+            
+            do {
+                try context.save()
+            } catch {
+                viewModel.warnError.append("Failed to save reordered groups: \(error.localizedDescription)")
             }
         }
     }

@@ -55,10 +55,10 @@ class GroupViewModel: ObservableObject {
             warnError.append("Failed to fetch DMCardGroup: \(error)")
         }
         
-        if savedGroups.count == 0 {
+        if savedGroups.isEmpty {
             newGroupIndex = 0
         } else {
-            newGroupIndex = savedGroups.count + 1
+            newGroupIndex = savedGroups.count
         }
         
         
@@ -133,10 +133,22 @@ class GroupViewModel: ObservableObject {
         newGroupSymbol = ""
     }
     
+    /// Clean up any previously created .trackcount files in the temporary directory
+    private func cleanupShareFiles() {
+        let tempDir = FileManager.default.temporaryDirectory
+        if let files = try? FileManager.default.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil) {
+            for file in files where file.pathExtension == "trackcount" {
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
+    }
+
     /// Processes the group and packages it for export.
     /// - Parameter group: The group to be exported.
     /// - Returns: Returns the packaged group in a temporary URL.
     func shareGroup(_ group: DMCardGroup) throws -> URL {
+        // Clean up previous temporary share files
+        cleanupShareFiles()
         // Sanitize filename
         let sanitizedTitle = group.groupTitle ?? ""
             .components(separatedBy: .init(charactersIn: "/\\?%*|\"<>"))

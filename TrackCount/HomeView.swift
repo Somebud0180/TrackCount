@@ -20,7 +20,7 @@ struct DefaultSettings {
 
 // Helper to determine if Liquid Glass design is available
 let usesLiquidGlass: Bool = {
-    if #available(iOS 26.0, *) {
+    if #available(anyAppleOS 26.0, *) {
         return true
     } else {
         return false
@@ -36,19 +36,9 @@ struct HomeView: View {
     @AppStorage("primaryThemeColor") var primaryThemeColor: RawColor = DefaultSettings.primaryThemeColor
     
     var body: some View {
-        TabView {
-            // Home Tab
+        NavigationStack {
             GroupListView()
                 .environmentObject(ImportManager())
-                .tabItem {
-                    Label("Home", systemImage: "house")
-                }
-            
-            // Settings Tab
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
-                }
         }
     }
 }

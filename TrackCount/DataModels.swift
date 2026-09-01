@@ -49,6 +49,7 @@ class DMStoredCard: Identifiable {
         case toggle // A toggle button
         case timer // A predefined timer
         case timer_custom // A timer set on the fly
+        case note // A text field
     }
     
     /// Allows referencing the card without conflicts.
@@ -67,7 +68,7 @@ class DMStoredCard: Identifiable {
     /// The amount counted (counter), amount of buttons (toggle) or amount of timers stored (timer).
     var count: Int = 1
     
-    /// The state of the button, either pressed or not (toggle) or the state of the timer, either paused or counting (timer).
+    /// The state of the button, either pressed or not (toggle) or the state of the timer, either paused, counting (timer), or note state (locked).
     var state: [CardState]?
     
     // Counter-Specific
@@ -88,6 +89,9 @@ class DMStoredCard: Identifiable {
     
     /// The timer card custom ringtone
     var timerRingtone: String?
+    
+    // Note specific
+    var noteData: Data?
     
     // Colors
     /// The color used for buttons or progress bars.
@@ -111,6 +115,7 @@ class DMStoredCard: Identifiable {
          symbol: String? = "",
          timer: [Int]? = [],
          timerRingtone: String? = "",
+         noteData: Data? = nil,
          primaryColor: Color,
          secondaryColor: Color,
          group: DMCardGroup)
@@ -126,6 +131,7 @@ class DMStoredCard: Identifiable {
         self.symbol = symbol
         self.timer = timer?.map { TimerValue(timerValue: $0) }
         self.timerRingtone = timerRingtone
+        self.noteData = noteData
         self.primaryColor = CodableColor(color: primaryColor)
         self.secondaryColor = CodableColor(color: secondaryColor)
         self.group = group
@@ -149,6 +155,7 @@ extension DMCardGroup {
                     symbol: card.symbol,
                     timer: card.timer?.map { $0.timerValue },
                     timerRingtone: card.timerRingtone,
+                    noteData: card.noteData,
                     primaryColor: card.primaryColor,
                     secondaryColor: card.secondaryColor
                 )
@@ -173,6 +180,7 @@ extension DMCardGroup {
                 symbol: cardData.symbol,
                 timer: cardData.timer,
                 timerRingtone: cardData.timerRingtone,
+                noteData: cardData.noteData,
                 primaryColor: cardData.primaryColor,
                 secondaryColor: cardData.secondaryColor
             )
@@ -217,6 +225,23 @@ extension DMStoredCard.Types {
             return "Contains up to 4 preset timers that can be started with a tap."
         case .timer_custom:
             return "Contains a single customizable timer."
+        case .note:
+            return "A rich-text note that can be edited from within the card."
+        }
+    }
+    
+    var typeSymbol: String {
+        switch self {
+        case .counter:
+            return "numbers"
+        case .toggle:
+            return "button.horizontal.top.press"
+        case .timer:
+            return "timer.circle"
+        case .timer_custom:
+            return "timer"
+        case .note:
+            return "text.pad.header"
         }
     }
 }
@@ -239,6 +264,7 @@ struct ShareableCard: Codable {
     let symbol: String?
     let timer: [Int]?
     let timerRingtone: String?
+    let noteData: Data?
     let primaryColor: CodableColor?
     let secondaryColor: CodableColor?
 }
@@ -268,12 +294,13 @@ class PreviewCard: ObservableObject, Identifiable {
     let symbol: String?
     let timer: [Int]?
     let timerRingtone: String?
+    let noteData: Data?
     let primaryColor: CodableColor?
     let secondaryColor: CodableColor?
     
     init(type: DMStoredCard.Types, title: String, count: Int, modifier: [Int]? = nil,
          buttonText: [String]? = nil, symbol: String? = nil, timer: [Int]? = nil,
-         timerRingtone: String? = nil, primaryColor: CodableColor? = nil,
+         timerRingtone: String? = nil, noteData: Data? = nil, primaryColor: CodableColor? = nil,
          secondaryColor: CodableColor? = nil) {
         self.type = type
         self.title = title
@@ -283,6 +310,7 @@ class PreviewCard: ObservableObject, Identifiable {
         self.symbol = symbol
         self.timer = timer
         self.timerRingtone = timerRingtone
+        self.noteData = noteData
         self.primaryColor = primaryColor
         self.secondaryColor = secondaryColor
     }
@@ -327,12 +355,13 @@ extension PreviewCard {
             title: title,
             count: count,
             state: type == .toggle ? Array(repeating: true, count: count) :
-                (type == .timer || type == .timer_custom ? Array(repeating: false, count: 1) : []),
+                (type == .timer || type == .timer_custom || type == .note ? Array(repeating: false, count: 1) : []),
             modifier: modifier,
             buttonText: buttonText,
             symbol: symbol,
             timer: timer,
             timerRingtone: timerRingtone,
+            noteData: noteData,
             primaryColor: primaryColor?.color ?? .blue,
             secondaryColor: secondaryColor?.color ?? .white,
             group: group

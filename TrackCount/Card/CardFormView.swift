@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 /// A view containing the form for creating or editing a card.
 struct CardFormView: View {
@@ -15,6 +16,7 @@ struct CardFormView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: CardViewModel
     
+    @State private var saveSectionHeight: CGFloat = 0
     @State private var isSymbolPickerPresented: Bool = false
     @State private var isPresentingRingtonePickerView: Bool = false
     @State private var isPresentingListInputView: Bool = false
@@ -23,6 +25,7 @@ struct CardFormView: View {
     @State private var isListApplyButtonPressed: Bool = false
     @State private var listInputText: String = ""
     @State private var modifyExistingText: Bool = false
+    
     
     struct ValidationVariables: Equatable {
         let title: String
@@ -46,17 +49,9 @@ struct CardFormView: View {
         
         NavigationStack {
             ZStack(alignment: .bottom) {
-                ScrollView {
-                    if #available(iOS 26.0, *) {
-                        GlassEffectContainer {
-                            formView()
-                        }
-                    } else {
-                        formView()
-                    }
-                    
-                    Spacer(minLength: 80) // Extra space to avoid being hidden by the button
-                }
+                formView()
+                .padding(.top, -24)
+                .padding(.bottom, saveSectionHeight + 8)
                 .mask(LinearGradient(
                     gradient: Gradient(stops: [
                         .init(color: .white, location: 0.0),
@@ -95,9 +90,19 @@ struct CardFormView: View {
                             .frame(maxWidth: .infinity)
                             .foregroundStyle(.white)
                     }
-                    .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
+                    .customRoundedGlass(interactive: true, tint: .blue, externalPressed: isSaveButtonPressed)
                 }
                 .padding()
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear
+                            .onAppear {
+                                saveSectionHeight = proxy.size.height
+                            }
+                            .onChange(of: proxy.size) {
+                                saveSectionHeight = proxy.size.height
+                            }
+                    })
             }
             .navigationBarTitle(viewModel.selectedCard == nil ? "Create Card" : "Edit Card", displayMode: .inline)
             .toolbar {
@@ -142,7 +147,7 @@ struct CardFormView: View {
                         }) {
                             Label("Clear All", systemImage: "xmark.circle")
                                 .foregroundStyle(colorScheme == .dark ? .white : .black)
-                                .customRoundedStyle(tint: colorScheme == .dark ? .gray : .white)
+                                .customRoundedGlass(tint: colorScheme == .dark ? .gray : .white)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -166,7 +171,7 @@ struct CardFormView: View {
                         }) {
                             Label("Modify Existing", systemImage: modifyExistingText ? "pencil.line" : "pencil.slash")
                                 .foregroundStyle(colorScheme == .dark ? .white : .black)
-                                .customRoundedStyle(tint: modifyExistingText ? .blue : (colorScheme == .dark ? .gray : .white))
+                                .customRoundedGlass(tint: modifyExistingText ? .blue : (colorScheme == .dark ? .gray : .white))
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -211,7 +216,7 @@ struct CardFormView: View {
                         .frame(maxWidth: .infinity)
                         .foregroundStyle(.white)
                 }
-                .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isListApplyButtonPressed)
+                .customRoundedGlass(interactive: true, tint: .blue, externalPressed: isListApplyButtonPressed)
                 .disabled(listInputText.trimmingCharacters(in: .whitespaces).isEmpty)
                 .padding(.vertical, 8)
                 .padding()
@@ -252,25 +257,39 @@ struct CardFormView: View {
     }
     
     private func formView() -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            pickerFormView()
-            
-            // Text field for card title
-            VStack(alignment: .leading) {
-                TextField("Set card title", text: $viewModel.newCardTitle)
-                    .autocapitalization(.words)
-                    .disableAutocorrection(true)
-                    .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
-                    .errorOverlay("CardTitleEmpty", with: viewModel.validationError)
-                    .accessibilityIdentifier("Card Title Field")
+        Form {
+            Section {
+                // Text field for card title
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Set card title", text: $viewModel.newCardTitle)
+                        .autocapitalization(.words)
+                        .disableAutocorrection(true)
+                        .accessibilityIdentifier("Card Title Field")
+                    
+                    // Error message with animation
+                    errorMessageView("CardTitleEmpty", with: viewModel.validationError, message: "Card title cannot be empty")
+                }
                 
-                // Error message with animation
-                errorMessageView("CardTitleEmpty", with: viewModel.validationError, message: "Card title cannot be empty")
+                typePickerView()
             }
             
-            let isTimer = (viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom)
-            ColorPicker(isTimer ? "Progress Color" : "Button Color:", selection: $viewModel.newCardPrimary, supportsOpacity: false)
-            ColorPicker(isTimer ? "Text Color" : "Button Content Color:", selection: $viewModel.newCardSecondary, supportsOpacity: false)
+            Section(header: Text("Colors")) {
+                let isTimer = (viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom)
+                let isNote = viewModel.newCardType == .note
+                var primaryColorText: String {
+                    if isTimer { return "Progress Color" }
+                    else if isNote { return "Text Color" }
+                    else { return "Button Color" }
+                }
+                var secondaryColorText: String {
+                    if isTimer { return "Text Color" }
+                    else if isNote { return "Background Color" }
+                    else { return "Button Content Color" }
+                }
+                
+                ColorPicker(primaryColorText, selection: $viewModel.newCardPrimary, supportsOpacity: false)
+                ColorPicker(secondaryColorText, selection: $viewModel.newCardSecondary, supportsOpacity: false)
+            }
             
             // Check for type and add specific fields for that type
             if viewModel.newCardType == .counter {
@@ -280,68 +299,73 @@ struct CardFormView: View {
             } else if viewModel.newCardType == .timer || viewModel.newCardType == .timer_custom {
                 timerFormView()
             }
-        }.padding(.horizontal)
+        }
     }
     
-    private func pickerFormView() -> some View {
-        Group {
-            VStack(alignment: .leading, spacing: 4) {
-                // Picker for card type
-                if horizontalSizeClass == .regular {
-                    Picker(selection: $viewModel.newCardType) {
-                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                            Text(type.formattedName).tag(type)
-                                .padding(.vertical)
-                        }
-                    } label: {
-                        Text("Type")
+    private func typePickerView() -> some View {
+        // Picker for card type
+        VStack(alignment: .leading, spacing: 8) {
+            if horizontalSizeClass == .regular {
+                Picker(selection: $viewModel.newCardType) {
+                    ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                        Text(type.formattedName).tag(type)
+                            .padding(.vertical)
                     }
-                    .pickerStyle(.segmented)
-                } else {
-                    Picker(selection: $viewModel.newCardType) {
-                        ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
-                            Text(type.formattedName).tag(type)
-                        }
-                    } label: {
-                        Text("Type")
-                    }
-                    .pickerStyle(.menu)
+                } label: {
+                    Text("Type")
                 }
-                
-                // Definition for selected card type
-                Text(viewModel.newCardType.typeDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .pickerStyle(.segmented)
+            } else {
+                Picker(selection: $viewModel.newCardType) {
+                    ForEach(DMStoredCard.Types.allCases, id: \.self) { type in
+                        Text(type.formattedName).tag(type)
+                    }
+                } label: {
+                    Text("Type")
+                }
+                .pickerStyle(.menu)
             }
+            
+            // Definition for selected card type
+            Text(viewModel.newCardType.typeDescription)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
     
     private func counterFormView() -> some View {
-        Group {
-            VStack(alignment: .leading) {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Set the button increments:")
                 
                 Text("Leave at 0 to disable")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                
-                
-                ForEach(0..<3, id: \.self) { index in
+            }
+            
+            ForEach($viewModel.newCardModifierItems) { $item in
+                let index = viewModel.newCardModifierItems.firstIndex(where: { $0.id == item.id }) ?? 0
+                HStack {
                     VStack(alignment: .leading) {
-                        TextField("Modifier \(index + 1)", text: $viewModel.newCardModifierText[index])
-                            .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
+                        TextField("Modifier \(index + 1)", text: $item.text)
                             .errorOverlay("Modifier\(index)Negative", with: viewModel.validationError, warn: true)
                             .errorOverlay("Modifier\(index)MoreThanMax", with: viewModel.validationError, warn: true)
                             .keyboardType(.numberPad)
+                            .onChange(of: item.text) {
+                                viewModel.initCounter()
+                            }
                             .onSubmit {
                                 viewModel.initCounter()
                             }
                         errorMessageView("Modifier\(index)Negative", with: viewModel.validationError, message: "Modifier cannot be negative", warn: true)
                         errorMessageView("Modifier\(index)MoreThanMax", with: viewModel.validationError, message: "Modifier cannot exceed 100,000", warn: true)
                     }
+                    
+                    Image(systemName: "line.horizontal.3")
+                        .foregroundStyle(.secondary)
                 }
-            }.errorOverlay("ModifierLessThanOne", with: viewModel.validationError, isRectangle: true)
-            
+            }
+            .onMove(perform: viewModel.moveModifier)
             
             errorMessageView("ModifierLessThanOne", with: viewModel.validationError, message: "At least one modifier must be set")
         }
@@ -358,94 +382,100 @@ struct CardFormView: View {
         }()
         
         return Group {
-            // A stepper with an editable text field
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Buttons: ")
-                    TextField("", value: $viewModel.newCardCount, formatter: buttonCountFormatter)
-                        .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
-                        .errorOverlay("ButtonExceedsLimits", with: viewModel.validationError)
-                        .keyboardType(.numberPad)
-                    Stepper("", value: $viewModel.newCardCount, in: viewModel.minButtonLimit...viewModel.maxButtonLimit)
-                }
-                .onChange(of: viewModel.newCardCount) {
-                    viewModel.initButton() // Create new text field for each toggle
-                }
-                
-                ZStack(alignment: .leading) {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    // A stepper with an editable text field
+                    HStack {
+                        Text("Buttons: ")
+                        TextField("", value: $viewModel.newCardCount, formatter: buttonCountFormatter)
+                            .errorOverlay("ButtonExceedsLimits", with: viewModel.validationError)
+                            .keyboardType(.numberPad)
+                        Stepper("", value: $viewModel.newCardCount, in: viewModel.minButtonLimit...viewModel.maxButtonLimit)
+                    }
+                    .onChange(of: viewModel.newCardCount) {
+                        viewModel.initButton() // Create new text field for each toggle
+                    }
+                    
                     errorMessageView("ButtonLessThanMin", with: viewModel.validationError, message: "There must be at least 1 button")
+                    
                     errorMessageView("ButtonMoreThanMax", with: viewModel.validationError, message: "There can be at most 4,096 buttons")
                 }
-            }
-            
-            
-            // A symbol preview/picker
-            VStack(alignment: .leading) {
-                Button(action: {
-                    isSymbolPickerPresented = true
-                }) {
-                    HStack {
-                        Text("Button Symbol:")
-                        Spacer()
-                        Image(systemName: viewModel.newCardSymbol)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 24, height: 24)
-                    }
-                    .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
-                    .errorOverlay("SymbolEmpty", with: viewModel.validationError)
-                }.buttonStyle(PlainButtonStyle())
                 
-                errorMessageView("SymbolEmpty", with: viewModel.validationError, message: "A symbol is required")
-            }
-            
-            HStack {
-                Button(action: {
-                    // Clear all button texts
-                    for i in 0..<viewModel.newButtonText.count {
-                        viewModel.newButtonText[i] = ""
-                    }
-                }) {
-                    Label("Clear All", systemImage: "xmark.circle")
-                        .foregroundStyle(colorScheme == . dark ? .white : .black)
-                        .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
-                }
-                
-                Spacer()
-                
-                Menu {
-                    // Show autofill options
-                    Button("Number Prefix") {
-                        addNumberPrefixes()
-                    }
-                    
-                    Button("List Input") {
-                        isPresentingListInputView = true
-                    }
-                } label: {
-                    Label("Autofill", systemImage: "wand.and.stars")
-                        .foregroundStyle(colorScheme == . dark ? .white : .black)
-                        .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
-                }
-            }
-            
-            ForEach(0..<viewModel.newButtonText.count, id: \.self) { index in
-                if index < viewModel.newButtonText.count {
-                    let characterLimit = viewModel.buttonTextLimit
-                    
-                    TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
-                        .autocapitalization(.words)
-                        .disableAutocorrection(true)
-                        .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
-                        .onChange(of: viewModel.newButtonText[index]) {
-                            if viewModel.newButtonText[index].count > characterLimit {
-                                viewModel.newButtonText[index] = String(viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces))
-                                viewModel.newButtonText[index] = String(viewModel.newButtonText[index].prefix(characterLimit))
+                // A symbol preview/picker
+                VStack(alignment: .leading, spacing: 8) {
+                    Button(action: {
+                        isSymbolPickerPresented = true
+                    }) {
+                        HStack {
+                            Text("Button Symbol:")
+                            Spacer()
+                            if viewModel.newCardSymbol.isEmpty {
+                                Text("Select")
+                            } else {
+                                Image(systemName: viewModel.newCardSymbol)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 24, height: 24)
                             }
                         }
-                        .onSubmit {
-                            viewModel.newButtonText[index] = viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces)
+                        .errorOverlay("SymbolEmpty", with: viewModel.validationError)
+                    }
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+                    .buttonStyle(.plain)
+                    
+                    errorMessageView("SymbolEmpty", with: viewModel.validationError, message: "A symbol is required")
+                }
+                
+                // Quick actions
+                HStack {
+                    Button(action: {
+                        // Clear all button texts
+                        for i in 0..<viewModel.newButtonText.count {
+                            viewModel.newButtonText[i] = ""
                         }
+                    }) {
+                        Label("Clear All", systemImage: "xmark.circle")
+                            .foregroundStyle(colorScheme == . dark ? .white : .black)
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Spacer()
+                    
+                    Menu {
+                        // Show autofill options
+                        Button("Number Prefix") {
+                            addNumberPrefixes()
+                        }
+                        
+                        Button("List Input") {
+                            isPresentingListInputView = true
+                        }
+                    } label: {
+                        Label("Autofill", systemImage: "wand.and.stars")
+                            .foregroundStyle(colorScheme == . dark ? .white : .black)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            
+            Section {
+                ForEach(0..<viewModel.newButtonText.count, id: \.self) { index in
+                    if index < viewModel.newButtonText.count {
+                        let characterLimit = viewModel.buttonTextLimit
+                        
+                        TextField("Button \(index + 1) Text", text: $viewModel.newButtonText[index])
+                            .autocapitalization(.words)
+                            .disableAutocorrection(true)
+                            .onChange(of: viewModel.newButtonText[index]) {
+                                if viewModel.newButtonText[index].count > characterLimit {
+                                    viewModel.newButtonText[index] = String(viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces))
+                                    viewModel.newButtonText[index] = String(viewModel.newButtonText[index].prefix(characterLimit))
+                                }
+                            }
+                            .onSubmit {
+                                viewModel.newButtonText[index] = viewModel.newButtonText[index].trimmingCharacters(in: .whitespaces)
+                            }
+                    }
                 }
             }
         }
@@ -461,7 +491,7 @@ struct CardFormView: View {
             return formatter
         }()
         
-        return Group {
+        return Section {
             Button(action: {
                 isPresentingRingtonePickerView = true
             }) {
@@ -473,10 +503,8 @@ struct CardFormView: View {
                     Text("\(viewModel.newCardRingtone.isEmpty ? "Default" : viewModel.newCardRingtone)")
                         .foregroundStyle(.secondary)
                 }
-                .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
             }
             .buttonStyle(PlainButtonStyle())
-            
             .sheet(isPresented: $isPresentingRingtonePickerView) {
                 RingtonePickerView(setVariable: $viewModel.newCardRingtone, fromSettings: false)
             }
@@ -486,7 +514,6 @@ struct CardFormView: View {
                     HStack {
                         Text("Timers: ")
                         TextField("", value: $viewModel.newCardCount, formatter: timerCountFormatter)
-                            .customRoundedStyle(tint: colorScheme == . dark ? .gray : .white)
                             .errorOverlay("TimerExceedsLimits", with: viewModel.validationError)
                             .keyboardType(.numberPad)
                         Stepper("", value: $viewModel.newCardCount, in: viewModel.minTimerAmount...viewModel.maxTimerAmount)
@@ -501,37 +528,32 @@ struct CardFormView: View {
                 
                 ForEach(0..<viewModel.newCardCount, id: \.self) { index in
                     VStack(alignment: .leading) {
-                        HStack {
-                            Text("Timer \(index + 1): ")
-                                .padding(.leading)
-                            TimeWheelPickerView(
-                                timerArray: Binding(
-                                    get: { viewModel.newTimerValues[index] ?? [0, 0, 0] },
-                                    set: { newValue in
-                                        viewModel.updateTimerValue(
-                                            index: index,
-                                            hours: newValue[0],
-                                            minutes: newValue[1],
-                                            seconds: newValue[2]
-                                        )
-                                    }
-                                )
+                        Text("Timer \(index + 1): ")
+                        
+                        TimeWheelPickerView(
+                            timerArray: Binding(
+                                get: { viewModel.newTimerValues[index] ?? [0, 0, 0] },
+                                set: { newValue in
+                                    viewModel.updateTimerValue(
+                                        index: index,
+                                        hours: newValue[0],
+                                        minutes: newValue[1],
+                                        seconds: newValue[2]
+                                    )
+                                }
                             )
-                            .padding(.horizontal)
-                            .frame(maxHeight: 150)
-                        }
-                        .errorOverlay("Timer\(index)LessThanMin", with: viewModel.validationError, isRectangle: true)
-                        .errorOverlay("Timer\(index)MoreThanMax", with: viewModel.validationError, isRectangle: true)
+                        )
+                        .frame(height: 150)
                         
                         ZStack(alignment: .leading) {
                             errorMessageView("Timer\(index)LessThanMin", with: viewModel.validationError, message: "Timer must be greater than a second")
                             errorMessageView("Timer\(index)MoreThanMax", with: viewModel.validationError, message: "Timer must be less than a day")
                         }
                     }
+                    .errorOverlay("Timer\(index)LessThanMin", with: viewModel.validationError, isRectangle: true)
+                    .errorOverlay("Timer\(index)MoreThanMax", with: viewModel.validationError, isRectangle: true)
                 }
             }
-            
-            Spacer(minLength: 64)
         }
     }
     
@@ -548,10 +570,11 @@ struct CardFormView: View {
             viewModel.saveCard(with: context)
             
             // When attempting save, perform counter card increment min max application
-            for (i, value) in viewModel.newCardModifierText.enumerated() {
+            for i in 0..<viewModel.newCardModifierItems.count {
+                let value = viewModel.newCardModifierItems[i].text
                 let intValue = Int(value) ?? 0
                 let clamped = min(max(intValue, 0), viewModel.maxModifierLimit)
-                viewModel.newCardModifierText[i] = "\(clamped)"
+                viewModel.newCardModifierItems[i].text = "\(clamped)"
             }
             
             if viewModel.validationError.isEmpty && viewModel.warnError.isEmpty {

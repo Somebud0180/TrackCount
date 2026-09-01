@@ -61,11 +61,19 @@ struct CardListView: View {
                                 HStack {
                                     Image(systemName: "line.horizontal.3")
                                         .foregroundStyle(.gray)
+                                    
+                                    if let type = card.type {
+                                        Image(systemName: type.typeSymbol)
+                                            .foregroundStyle(Color(.label))
+                                            .fontWeight(.semibold)
+                                    }
+                                    
                                     Text(card.title)
                                         .foregroundStyle(Color(.label))
                                 }
                             }
                             .listRowSeparator(.hidden)
+                            .accessibilityLabel("\(card.title) - \(card.type?.formattedName ?? "") card")
                             .swipeActions {
                                 Button(role: .destructive) {
                                     viewModel.removeCard(card, with: context)
@@ -115,7 +123,7 @@ struct CardListView: View {
                         .frame(maxWidth: .infinity)
                         .foregroundStyle(.white)
                 }
-                .customRoundedStyle(interactive: true, tint: .blue, externalPressed: isNewCardButtonPressed)
+                .customRoundedGlass(interactive: true, tint: .blue, externalPressed: isNewCardButtonPressed)
                 .padding()
                 
             }

@@ -26,6 +26,9 @@ class DebouncedCardStateManager: ObservableObject {
     /// Delay before saving changes (in seconds)
     private let saveDelay: TimeInterval = 1.0
     
+    /// Last known ModelContext used for saves (avoids capturing non-Sendable in timer closures)
+    private var lastContext: ModelContext?
+    
     // MARK: - Initialization
     
     init() {
@@ -69,8 +72,11 @@ class DebouncedCardStateManager: ObservableObject {
             card.state?[buttonIndex].state = newState
         }
         
+        // Remember the latest context for use when the timer fires
+        lastContext = context
+        
         // Reset the debounce timer - when it fires, it will save to CloudKit
-        resetSaveTimer(for: card.uuid, with: context)
+        resetSaveTimer(for: card.uuid)
     }
     
     /// Apply all temporary changes to actual card state and save
@@ -83,6 +89,9 @@ class DebouncedCardStateManager: ObservableObject {
                 card.state?[buttonIndex].state = newState
             }
         }
+        
+        // Remember the latest context for immediate save
+        lastContext = context
         
         // Clear temporary states and pending card reference
         temporaryToggleStates[card.uuid] = nil
@@ -98,6 +107,9 @@ class DebouncedCardStateManager: ObservableObject {
     
     /// Apply all temporary changes for all cards immediately
     func applyAllTemporaryChanges(with context: ModelContext) {
+        // Remember the latest context for immediate save
+        lastContext = context
+        
         // Apply all pending changes first
         for (cardUUID, card) in pendingCards {
             if let temporaryStates = temporaryToggleStates[cardUUID] {
@@ -135,7 +147,7 @@ class DebouncedCardStateManager: ObservableObject {
     
     // MARK: - Private Methods
     
-    private func resetSaveTimer(for cardUUID: UUID, with context: ModelContext) {
+    private func resetSaveTimer(for cardUUID: UUID) {
         // Invalidate existing timer if any
         saveTimers[cardUUID]?.invalidate()
         
@@ -159,6 +171,13 @@ class DebouncedCardStateManager: ObservableObject {
         // Clear and invalidate the timer for this specific card
         saveTimers[cardUUID]?.invalidate()
         saveTimers[cardUUID] = nil
+        
+        // Save changes to model context using last known context
+        if let context = lastContext {
+            saveToContext(context)
+        } else {
+            print("DebouncedCardStateManager: No ModelContext available to save.")
+        }
     }
     
     private func saveToContext(_ context: ModelContext) {
@@ -178,3 +197,4 @@ class DebouncedCardStateManager: ObservableObject {
         }
     }
 }
+

@@ -1,4 +1,7 @@
 {
+  "features" : [
+    "refractivity"
+  ],
   "fill" : {
     "linear-gradient" : [
       "display-p3:0.59216,0.27843,1.00000,1.00000",
@@ -7,7 +10,7 @@
   },
   "groups" : [
     {
-      "blur-material" : null,
+      "blur-material" : 0.5,
       "layers" : [
         {
           "fill-specializations" : [
@@ -24,6 +27,12 @@
           "glass" : false,
           "image-name" : "Vector.png",
           "name" : "Vector",
+          "opacity-specializations" : [
+            {
+              "appearance" : "tinted",
+              "value" : 0.9
+            }
+          ],
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -33,18 +42,23 @@
           }
         }
       ],
+      "refractivity" : {
+        "depth" : 0.3,
+        "enabled" : true,
+        "strength" : 0.5
+      },
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
       },
-      "specular" : false,
+      "specular" : true,
       "translucency" : {
         "enabled" : false,
         "value" : 0.5
       }
     },
     {
-      "blur-material" : null,
+      "blur-material" : 0.65,
       "layers" : [
         {
           "fill-specializations" : [
@@ -92,11 +106,17 @@
         }
       ],
       "lighting" : "individual",
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+      "opacity" : 0.8,
+      "refractivity" : {
+        "depth" : 0.5,
+        "enabled" : true,
+        "strength" : 0.5
       },
-      "specular" : false,
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.8
+      },
+      "specular" : true,
       "translucency" : {
         "enabled" : true,
         "value" : 0.25

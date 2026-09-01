@@ -21,14 +21,10 @@ class TimerViewModel: ObservableObject {
     @Published var pausedTimerValues: [UUID: Double] = [:]
     @Published var timerStates: [UUID: TimerState] = [:]
     
-    @State private var isCancelButtonPressed: Bool = false
-    @State private var isPauseButtonPressed: Bool = false
-    @State private var isEndButtonPressed: Bool = false
+    @Published var isCancelButtonPressed: Bool = false
+    @Published var isPauseButtonPressed: Bool = false
+    @Published var isEndButtonPressed: Bool = false
     
-    private var lastTickTime: [UUID: Date] = [:]
-    private var timerStartTime: [UUID: Date] = [:]
-    private let timerPublisher = Timer.publish(every: 1/30.0, on: .main, in: .common).autoconnect()
-    private var sharedTimerCancellable: AnyCancellable?
     private var globalTimerCancellable: AnyCancellable?
     private var storedCards: [UUID: DMStoredCard] = [:]
     
@@ -48,10 +44,14 @@ class TimerViewModel: ObservableObject {
     }
     
     init() {
-        // Subscribe to global timer updates
-        globalTimerCancellable = globalTimerManager.$persistentTimerStates
-            .sink { [weak self] persistentStates in
-                self?.syncWithGlobalTimers(persistentStates: persistentStates)
+        // Subscribe to global timer updates via objectWillChange
+        globalTimerCancellable = globalTimerManager.objectWillChange
+            .sink { [weak self] _ in
+                DispatchQueue.main.async {
+                    if let states = self?.globalTimerManager.persistentTimerStates {
+                        self?.syncWithGlobalTimers(persistentStates: states)
+                    }
+                }
             }
         
         // Subscribe to in-app timer completion notifications
@@ -81,12 +81,12 @@ class TimerViewModel: ObservableObject {
                 selectedTimerIndex[cardUUID] = globalState.timerIndex
                 
                 // Update local timer state to match global state
-                if globalState.pausedAt != nil {
+                if globalState.pausedAt != nil || (!globalState.isRunning && (globalState.pausedRemainingTime ?? 0) > 0) {
                     timerStates[cardUUID] = .paused
                     pausedTimerValues[cardUUID] = globalState.timeRemaining
                 } else if globalState.isRunning && globalState.timeRemaining > 0 {
                     timerStates[cardUUID] = .running
-                } else if globalState.timeRemaining <= 0 && (activeTimerValues[cardUUID] ?? 0) > 0 {
+                } else if globalState.timeRemaining <= 0 && globalState.totalTime > 0 {
                     timerStates[cardUUID] = .completed
                     displayValues[cardUUID] = 0
                 } else {
@@ -99,97 +99,110 @@ class TimerViewModel: ObservableObject {
     /// Creates the timer countdown view
     func activeTimerView(_ card: DMStoredCard) -> some View {
         let state = timerStates[card.uuid] ?? .idle
-        let timerIndex = selectedTimerIndex[card.uuid] ?? 0
-        let initialTime = card.type == .timer ?
-        card.timer?[timerIndex].timerValue ?? 1 :
-        card.timer?[0].timerValue ?? 1
-        let displayValue = displayValues[card.uuid] ?? activeTimerValues[card.uuid] ?? 0
-        let progress = Float(displayValue) / Float(max(1, initialTime))
+        let persistentState = globalTimerManager.getTimerState(cardUUID: card.uuid)
+        
+        let totalTime = persistentState?.totalTime ?? 1.0
+        let targetEndDate = persistentState?.targetEndDate
+        let pausedRemaining = persistentState?.pausedRemainingTime ?? displayValues[card.uuid] ?? totalTime
         let isPaused = state == .paused
+        let isCompleted = state == .completed
         
         return VStack {
-            ZStack(alignment: .center) {
-                Circle()
-                    .stroke(lineWidth: 16)
-                    .opacity(0.3)
-                    .foregroundColor(card.primaryColor?.color ?? .white)
-                
-                Circle()
-                    .trim(from: 0.0, to: CGFloat(progress))
-                    .stroke(style: StrokeStyle(lineWidth: 16, lineCap: .round))
-                    .foregroundColor(card.primaryColor?.color ?? .blue)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.linear(duration: 1/30), value: progress)
-                
-                if state == .completed {
-                    Text("Time's Up!")
-                        .font(.system(.title, weight: .bold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.3)
-                        .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                        .minimumScaleFactor(0.3)
-                } else {
-                    let formatted = displayValue.formatTime()
-                    if formatted.count == 7 {
-                        Text(formatted)
-                            .font(.system(.title, weight: .bold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.3)
-                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                            .minimumScaleFactor(0.3)
-                            .frame(width: 130, alignment: .leading)
-                    } else {
-                        Text(formatted)
-                            .font(.system(.largeTitle, weight: .bold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.3)
-                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                            .minimumScaleFactor(0.3)
-                            .frame(width: 100, alignment: .leading)
-                    }
-                }
-            }
+            ActiveTimerView(
+                cardTitle: card.title,
+                targetEndDate: targetEndDate,
+                totalTime: totalTime,
+                isPaused: isPaused,
+                pausedRemaining: pausedRemaining,
+                primaryColor: card.primaryColor?.color ?? .blue,
+                secondaryColor: card.secondaryColor?.color ?? .white,
+                isCompleted: isCompleted
+            )
             .frame(height: 200)
             .padding()
             
             HStack {
                 switch state {
                 case .running, .paused:
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            self.isCancelButtonPressed = true
-                            self.stopTimer(card)
+                    Button(
+                        action: {
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                self.isCancelButtonPressed = true
+                                self.stopTimer(card)
+                            }
+                            withAnimation(.easeInOut(duration: 0.1).delay(0.1))
+                            { self.isCancelButtonPressed = false }
+                        },
+                        label: {
+                            Text("Cancel").foregroundStyle(
+                                card.secondaryColor?.color ?? .white
+                            )
                         }
-                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) { self.isCancelButtonPressed = false }
-                    }) { Text("Cancel").foregroundStyle(card.secondaryColor?.color ?? .white) }
-                        .padding()
-                        .adaptiveGlassButton(tintColor: .secondary, externalPressed: self.isCancelButtonPressed)
+                    )
+                    .padding()
+                    .adaptiveGlassButton(
+                        tintColor: .secondary,
+                        externalPressed: self.isCancelButtonPressed
+                    )
+                    
                     Spacer()
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            self.isPauseButtonPressed = true
-                            if isPaused { self.resumeTimer(card) } else { self.pauseTimer(card) }
+                    
+                    Button(
+                        action: {
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                self.isPauseButtonPressed = true
+                                if isPaused {
+                                    self.resumeTimer(card)
+                                } else {
+                                    self.pauseTimer(card)
+                                }
+                            }
+                            withAnimation(.easeInOut(duration: 0.1).delay(0.1))
+                            { self.isPauseButtonPressed = false }
+                        },
+                        label: {
+                            Text(isPaused ? "Resume" : "Pause").foregroundStyle(
+                                card.secondaryColor?.color ?? .white
+                            )
                         }
-                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) { self.isPauseButtonPressed = false }
-                    }) { Text(isPaused ? "Resume" : "Pause").foregroundStyle(card.secondaryColor?.color ?? .white) }
-                        .padding()
-                        .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: self.isPauseButtonPressed)
+                    )
+                    .padding()
+                    .adaptiveGlassButton(
+                        tintColor: card.primaryColor?.color ?? .blue,
+                        externalPressed: self.isPauseButtonPressed
+                    )
+                    
                 case .completed:
                     Spacer()
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            self.isPauseButtonPressed = true
-                            self.stopTimer(card) // Reset to idle & stop audio
-                            NotificationManager.shared.cancelTimerNotification(for: card.uuid)
+                    
+                    Button(
+                        action: {
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                self.isPauseButtonPressed = true
+                                self.stopTimer(card)
+                                NotificationManager.shared
+                                    .cancelTimerNotification(for: card.uuid)
+                            }
+                            withAnimation(.easeInOut(duration: 0.1).delay(0.1))
+                            { self.isPauseButtonPressed = false }
+                        },
+                        label: {
+                            Text("End").foregroundStyle(
+                                card.secondaryColor?.color ?? .white
+                            )
                         }
-                        withAnimation(.easeInOut(duration: 0.1).delay(0.1)) { self.isPauseButtonPressed = false }
-                    }) { Text("End").foregroundStyle(card.secondaryColor?.color ?? .white) }
-                        .padding()
-                        .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: self.isPauseButtonPressed)
+                    )
+                    .padding()
+                    .adaptiveGlassButton(
+                        tintColor: card.primaryColor?.color ?? .blue,
+                        externalPressed: self.isPauseButtonPressed
+                    )
+                    
                 default:
-                    EmptyView() // idle should not reach here
+                    EmptyView()
                 }
-            }.padding(.horizontal)
+            }
+            .padding(.horizontal)
         }
     }
     
@@ -201,20 +214,16 @@ class TimerViewModel: ObservableObject {
             duration = pausedTimerValues[card.uuid] ?? 1.0
         } else {
             duration = card.type == .timer ?
-            Double(card.timer?[timerIndex].timerValue ?? 1):
+            Double(card.timer?[timerIndex].timerValue ?? 1) :
             Double(card.timer?[0].timerValue ?? 1)
         }
         activeTimerValues[card.uuid] = duration
         displayValues[card.uuid] = Double(duration)
         timerStates[card.uuid] = .running
-        timerStartTime[card.uuid] = Date()
-        lastTickTime[card.uuid] = Date()
         storedCards[card.uuid] = card
         
-        // Get ringtone for notifications
         let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
         
-        // Save to global timer manager for persistence with notification info
         globalTimerManager.saveTimerState(
             cardUUID: card.uuid,
             groupUUID: card.group?.uuid ?? UUID(),
@@ -226,13 +235,6 @@ class TimerViewModel: ObservableObject {
             groupTitle: card.group?.groupTitle ?? "Group",
             ringtone: ringtone
         )
-        
-        // Initialize shared timer if needed
-        if sharedTimerCancellable == nil {
-            sharedTimerCancellable = timerPublisher.sink { [weak self] _ in
-                self?.updateAllTimers()
-            }
-        }
     }
     
     /// Stops the timer
@@ -243,10 +245,7 @@ class TimerViewModel: ObservableObject {
         activeTimerValues.removeValue(forKey: card.uuid)
         storedCards.removeValue(forKey: card.uuid)
         
-        // Stop any playing audio for this timer immediately
         timerSound(card, mode: .stop)
-        
-        // Remove from global timer manager
         globalTimerManager.stopTimer(cardUUID: card.uuid)
     }
     
@@ -270,79 +269,19 @@ class TimerViewModel: ObservableObject {
     func pauseTimer(_ card: DMStoredCard) {
         timerStates[card.uuid] = .paused
         pausedTimerValues[card.uuid] = displayValues[card.uuid] ?? 0
-        
-        // Pause in global timer manager
         globalTimerManager.pauseTimer(cardUUID: card.uuid)
     }
     
     /// Resumes the timer
     func resumeTimer(_ card: DMStoredCard) {
         timerStates[card.uuid] = .running
-        lastTickTime[card.uuid] = Date()
-        
-        // Get ringtone for notifications
         let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
-        
-        // Resume in global timer manager with notification info
         globalTimerManager.resumeTimer(
             cardUUID: card.uuid,
             cardTitle: card.title,
             groupTitle: card.group?.groupTitle ?? "Group",
             ringtone: ringtone
         )
-    }
-    
-    /// Updates timer countdown and syncs with global state
-    private func updateAllTimers() {
-        let currentTime = Date()
-        
-        for (uuid, state) in timerStates {
-            guard state == .running else { continue }
-            guard let lastTick = lastTickTime[uuid] else { continue }
-            guard let card = storedCards[uuid] else { continue }
-            
-            let elapsed = currentTime.timeIntervalSince(lastTick)
-            let currentValue = displayValues[uuid] ?? 0
-            let newValue = max(0, currentValue - elapsed)
-            
-            // Always update display values for smooth countdown
-            displayValues[uuid] = newValue
-            lastTickTime[uuid] = currentTime
-            
-            // Check for completion BEFORE updating global state
-            if newValue <= 0 && currentValue > 0 {
-                // Timer just completed - handle it directly when in TrackView
-                self.timerStates[uuid] = .completed
-                
-                // Get ringtone for completion
-                let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
-                
-                // If in TrackView, directly call NotificationManager since GlobalTimerManager won't detect completion
-                if globalTimerManager.isInTrackView {
-                    NotificationManager.shared.handleTimerCompletion(
-                        cardUUID: uuid,
-                        cardTitle: card.title,
-                        groupTitle: card.group?.groupTitle ?? "Group",
-                        ringtone: ringtone
-                    )
-                }
-            }
-            
-            // Update global timer state so it's synchronized
-            let timerIndex = selectedTimerIndex[uuid] ?? 0
-            let totalTime = activeTimerValues[uuid] ?? newValue
-            globalTimerManager.saveTimerState(
-                cardUUID: uuid,
-                groupUUID: card.group?.uuid ?? UUID(),
-                timeRemaining: newValue,
-                totalTime: totalTime,
-                timerIndex: timerIndex,
-                isRunning: newValue > 0 && timerStates[uuid] == .running,
-                cardTitle: card.title,
-                groupTitle: card.group?.groupTitle ?? "Group",
-                ringtone: (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
-            )
-        }
     }
     
     /// Loads timer state from global manager when entering TrackView
@@ -355,12 +294,11 @@ class TimerViewModel: ObservableObject {
                 selectedTimerIndex[card.uuid] = persistentState.timerIndex
                 activeTimerValues[card.uuid] = persistentState.totalTime
                 
-                if persistentState.pausedAt != nil {
+                if persistentState.pausedAt != nil || (!persistentState.isRunning && (persistentState.pausedRemainingTime ?? 0) > 0) {
                     timerStates[card.uuid] = .paused
                     pausedTimerValues[card.uuid] = persistentState.timeRemaining
                 } else if persistentState.isRunning && persistentState.timeRemaining > 0 {
                     timerStates[card.uuid] = .running
-                    lastTickTime[card.uuid] = Date()
                     storedCards[card.uuid] = card
                 } else if persistentState.timeRemaining <= 0 && persistentState.totalTime > 0 {
                     timerStates[card.uuid] = .completed
@@ -371,20 +309,13 @@ class TimerViewModel: ObservableObject {
             }
         }
         
-        // Start the timer publisher if we have running timers
-        let hasRunningTimers = timerStates.values.contains(.running)
-        if hasRunningTimers && sharedTimerCancellable == nil {
-            sharedTimerCancellable = timerPublisher.sink { [weak self] _ in
-                self?.updateAllTimers()
-            }
-        }
+        syncWithGlobalTimers(persistentStates: globalTimerManager.persistentTimerStates)
     }
     
     /// Handles the timer completion
     private func handleTimerCompletion(_ card: DMStoredCard) {
         if isTimerAlertEnabled {
             self.timerStates[card.uuid] = .completed
-            // Send notification to centralized audio manager instead of local handling
             let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
             NotificationCenter.default.post(
                 name: NSNotification.Name("TimerCompletedInApp"),
@@ -400,14 +331,12 @@ class TimerViewModel: ObservableObject {
     /// Stops timer audio by sending notification to centralized audio manager
     func timerSound(_ card: DMStoredCard, mode: audioMode) {
         if mode == .stop {
-            // Send stop notification to centralized audio manager
             NotificationCenter.default.post(
                 name: NSNotification.Name("StopTimerAudio"),
                 object: nil,
                 userInfo: ["cardUUID": card.uuid]
             )
         } else {
-            // Send play notification to centralized audio manager
             let ringtone = (card.timerRingtone?.isEmpty ?? true) ? timerDefaultRingtone : (card.timerRingtone ?? timerDefaultRingtone)
             NotificationCenter.default.post(
                 name: NSNotification.Name("TimerCompletedInApp"),
@@ -425,7 +354,6 @@ class TimerViewModel: ObservableObject {
         guard let cards = group.cards else { return }
         
         for card in cards {
-            // Only pause timers that are currently running
             if timerStates[card.uuid] == .running {
                 pauseTimer(card)
             }
@@ -443,8 +371,6 @@ class TimerViewModel: ObservableObject {
     
     /// Cleans up only audio resources without affecting timer persistence
     func cleanupAudioOnly() {
-        // Audio is now handled centrally by AudioPlayerManager
-        // Just send notifications to stop all audio for cleanup
         NotificationCenter.default.post(
             name: NSNotification.Name("StopAllTimerAudio"),
             object: nil
@@ -453,7 +379,6 @@ class TimerViewModel: ObservableObject {
     
     /// Cleans up timer-related variables
     func timerCleanup(for context: ModelContext, group: DMCardGroup) {
-        // Clear all timer-related state
         selectedTimerIndex.removeAll()
         pausedTimerValues.removeAll()
         activeTimerValues.removeAll()
@@ -461,7 +386,6 @@ class TimerViewModel: ObservableObject {
         
         if let cards = group.cards {
             for card in cards where card.type == .timer || card.type == .timer_custom {
-                // Stop audio for each timer card
                 NotificationCenter.default.post(
                     name: NSNotification.Name("StopTimerAudio"),
                     object: nil,
@@ -473,18 +397,17 @@ class TimerViewModel: ObservableObject {
         do {
             try context.save()
         } catch {
-            fatalError("Failed to save context after timer cleanup: \(error)")
+            print("Failed to save context after timer cleanup: \(error)")
         }
     }
     
     deinit {
-        sharedTimerCancellable?.cancel()
         globalTimerCancellable?.cancel()
         NotificationCenter.default.removeObserver(self)
     }
     
     @objc private func handleInAppTimerCompletion(_ notification: Notification) {
-        // Backward compatibility - no action needed
+        // Backward compatibility
     }
     
     /// Handles a timer card being edited; cancels any running/paused timers for that card

@@ -19,6 +19,7 @@ struct TrackView: View {
     @StateObject private var timerViewModel: TimerViewModel
     @StateObject private var cardViewModel: CardViewModel
     @StateObject private var debouncedStateManager: DebouncedCardStateManager
+    @StateObject private var noteEditorController = NoteTextEditorController()
     @Namespace private var toggleButtonNamespace
     
     var selectedGroup: DMCardGroup
@@ -30,8 +31,13 @@ struct TrackView: View {
     @State private var isPresentingDeleteDialog: Bool = false
     @State private var pressedStates: [String: Bool] = [:]
     
+    @State private var searchText: String = ""
+    @State private var isSearchActive: Bool = false
+    @State private var currentMatchIndex: Int = 0
+    @FocusState private var focusSearch
+    
     @AppStorage("trackGridSize") var gridSizeOption: Int = DefaultSettings.trackGridSize  // 0 = compact, 1 = default, 2 = relaxed
-    @State private var gridSize: [CGFloat] = [350, 400, 450]
+    @State private var gridSize: [CGFloat] = [320, 400, 450]
     
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
@@ -54,25 +60,62 @@ struct TrackView: View {
         let gridColumns = [GridItem(.adaptive(minimum: gridSize[gridSizeOption]), spacing: 16)]
         
         NavigationStack {
-            ScrollView {
-                Group {
-                    if storedCards.isEmpty {
-                        Text("You have no cards yet")
-                            .font(.title)
-                            .foregroundStyle(.gray)
-                            .multilineTextAlignment(.center)
-                    } else {
-                        // Define the grid layout
-                        LazyVGrid(columns: gridColumns, spacing: 16) {
-                            // Display a message when there are no cards
-                            // Iterate through the sorted cards and display each card
-                            ForEach(storedCards, id: \.uuid) { card in
-                                gridCard(card)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    Group {
+                        if storedCards.isEmpty {
+                            Text("You have no cards yet")
+                                .font(.title)
+                                .foregroundStyle(.gray)
+                                .multilineTextAlignment(.center)
+                        } else {
+                            // Define the grid layout
+                            LazyVGrid(columns: gridColumns, spacing: 16) {
+                                // Display a message when there are no cards
+                                // Iterate through the sorted cards and display each card
+                                ForEach(storedCards, id: \.uuid) { card in
+                                    gridCard(card)
+                                        .id(card.uuid)
+                                }
+                            }
+                        }
+                    }
+                    .padding()
+                }
+                .safeAreaInset(edge: .bottom) {
+                    if isSearchActive {
+                        if #available(anyAppleOS 26.0, *) {
+                            GlassEffectContainer {
+                                searchBar(proxy: proxy)
+                            }
+                        } else {
+                            searchBar(proxy: proxy)
+                                .background(.bar)
+                        }
+                    } else if noteEditorController.isEditing {
+                        NoteFormattingToolbar(editor: noteEditorController)
+                            .padding(.bottom, 8)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: noteEditorController.isEditing)
+                .onChange(of: noteEditorController.editingCardUUID) {
+                    if let uuid = noteEditorController.editingCardUUID {
+                        // Delay slightly to let the scroll view resize for the keyboard
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo(uuid, anchor: .center)
                             }
                         }
                     }
                 }
-                .padding()
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                    if let uuid = noteEditorController.editingCardUUID {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(uuid, anchor: .center)
+                        }
+                    }
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitleViewBuilder {
@@ -83,21 +126,34 @@ struct TrackView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button(action: { 
+                        withAnimation {
+                            isSearchActive.toggle()
+                            focusSearch = isSearchActive
+                            if !isSearchActive {
+                                searchText = ""
+                                currentMatchIndex = 0
+                            }
+                        }
+                    }) {
+                        Label("Search", systemImage: "magnifyingglass")
+                            .labelStyle(.iconOnly)
+                    }
+                    .legacyDarkTint()
+                    
                     Button(action: { isPresentingCardFormView = true }) {
                         Label("Add Card", systemImage: "plus.circle")
                             .labelStyle(.iconOnly)
                     }
                     .legacyDarkTint()
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    
                     Button(action: { isPresentingCardListView = true }) {
                         Label("Manage Cards", systemImage: "tablecells.badge.ellipsis")
                             .labelStyle(.iconOnly)
                     }
                     .legacyDarkTint()
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    
                     Menu {
                         Button("Edit Group", systemImage: "pencil") {
                             groupViewModel.fetchGroup()
@@ -124,12 +180,12 @@ struct TrackView: View {
                                 }
                             }
                         } label: {
-                                Label("Grid Size", systemImage: "square.grid.2x2")
-                            }
-                            
-                            Button("Delete Group", systemImage: "trash", role: .destructive) {
-                                isPresentingDeleteDialog = true
-                            }
+                            Label("Grid Size", systemImage: "square.grid.2x2")
+                        }
+                        
+                        Button("Delete Group", systemImage: "trash", role: .destructive) {
+                            isPresentingDeleteDialog = true
+                        }
                     } label: {
                         Label("Group Options", systemImage: "ellipsis.circle")
                     }
@@ -139,7 +195,7 @@ struct TrackView: View {
         }
         .sheet(isPresented: $isPresentingGroupForm) {
             GroupFormView(viewModel: groupViewModel)
-                .presentationDetents([.fraction(0.45)])
+                .presentationDetents([.fraction(0.3)])
                 .onDisappear {
                     groupViewModel.validationError.removeAll()
                     groupViewModel.selectedGroup = nil
@@ -198,21 +254,33 @@ struct TrackView: View {
     
     /// Builds the inputted card into a visible card according to it's type.
     private func gridCard(_ card: DMStoredCard) -> some View {
-        Group {
-            ZStack {
-                if #available(iOS 26.0, *) {
+        let matches = matchUUIDs
+        let isMatch = matches.indices.contains(currentMatchIndex) && matches[currentMatchIndex] == card.uuid
+        return Group {
+                if #available(anyAppleOS 26.0, *) {
                     GlassEffectContainer {
                         baseCard(card)
+                            .overlay {
+                                if isMatch {
+                                    RoundedRectangle(cornerRadius: 25)
+                                        .stroke(Color.blue, lineWidth: 2)
+                                }
+                            }
                     }
                 } else {
                     baseCard(card)
+                        .overlay {
+                            if isMatch {
+                                RoundedRectangle(cornerRadius: 25)
+                                    .stroke(Color.blue, lineWidth: 2)
+                            }
+                        }
                 }
-            }
         }
     }
     
     private func baseCard(_ card: DMStoredCard) -> some View {
-        Group {
+        ZStack {
             RoundedRectangle(cornerRadius: 25)
                 .foregroundStyle(.thickMaterial)
                 .shadow(radius: 5)
@@ -233,8 +301,10 @@ struct TrackView: View {
                 } else if card.type == .timer || card.type == .timer_custom {
                     timerCard(card)
                         .transition(.scale.combined(with: .opacity))
+                } else if card.type == .note {
+                    noteCard(card)
                 }
-            }.padding()
+            }.padding(12)
         }
     }
     
@@ -247,8 +317,7 @@ struct TrackView: View {
                 card: card,
                 operation: +,
                 symbol: "plus",
-                accessibilityLabel: "Increase counter",
-                accessibilityHintPrefix: "Increase"
+                accessibilityLabelPrefix: "Increase"
             )
             
             // Current Count
@@ -262,11 +331,8 @@ struct TrackView: View {
                 card: card,
                 operation: -,
                 symbol: "minus",
-                accessibilityLabel: "Reduce counter",
-                accessibilityHintPrefix: "Reduce"
+                accessibilityLabelPrefix: "Reduce"
             )
-            
-            Spacer()
         }
         .frame(maxWidth: 450)
     }
@@ -276,14 +342,14 @@ struct TrackView: View {
         card: DMStoredCard,
         operation: @escaping (Int, Int) -> Int,
         symbol: String,
-        accessibilityLabel: String,
-        accessibilityHintPrefix: String
+        accessibilityLabelPrefix: String
     ) -> some View {
         HStack {
             if let modifiers = card.modifier?.map({ $0.modifier }) {
                 ForEach(0..<modifiers.count, id: \.self) { index in
                     if modifiers[index] > 0 {
-                        @State var isPressed = false
+                        let buttonKey = "\(card.uuid)_mod_\(symbol)_\(index)"
+                        let isPressed = pressedStates[buttonKey] ?? false
                         let willOverflow = operation(1, 1) == 2
                         ? card.count > Int.max - modifiers[index]
                         : card.count < Int.min + modifiers[index]
@@ -291,13 +357,13 @@ struct TrackView: View {
                         
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.1)) {
-                                isPressed = true
+                                pressedStates[buttonKey] = true
                                 let newValue = operation(card.count, modifiers[index])
                                 card.count = min(Int.max, max(Int.min, newValue))
                             }
                             
                             withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                                isPressed = false
+                                pressedStates[buttonKey] = false
                             }
                         }) {
                             HStack(spacing: 2) {
@@ -319,8 +385,7 @@ struct TrackView: View {
                         .disabled(willOverflow)
                         .foregroundStyle((card.secondaryColor?.color ?? .white).readableOn(tint, sensitivity: usesLiquidGlass ? 0.7 : 0.75))
                         .adaptiveGlassButton(interactive: !willOverflow, tintColor: tint, externalPressed: isPressed)
-                        .accessibilityLabel(accessibilityLabel)
-                        .accessibilityHint("\(accessibilityHintPrefix) \(card.title) by \(modifiers[index])")
+                        .accessibilityLabel("\(accessibilityLabelPrefix) \(card.title) by \(modifiers[index])")
                     }
                 }
             }
@@ -346,7 +411,7 @@ struct TrackView: View {
         let symbolName = card.symbol ?? "questionmark.circle"
         let buttonKey = "\(card.uuid)_\(id)"
         let isPressed = pressedStates[buttonKey] ?? false
-        
+        let tint = card.primaryColor?.color ?? .blue
         return Button(action: {
             withAnimation(.easeInOut(duration: 0.1)) {
                 pressedStates[buttonKey] = true
@@ -386,11 +451,11 @@ struct TrackView: View {
             }
             .padding(4)
             .frame(maxWidth: .infinity, minHeight: 20, maxHeight: .infinity)
-            .foregroundStyle(isActive ? (card.secondaryColor?.color ?? .white).readableOn((card.primaryColor?.color ?? .blue)) : .black)
+            .foregroundStyle(isActive ? (card.secondaryColor?.color ?? .white).readableOn(tint, sensitivity: usesLiquidGlass ? 0.7 : 0.75) : .black)
         }
         .customConditionalButtonModifier(
             condition: isActive,
-            tint: card.primaryColor?.color ?? .blue,
+            tint: tint,
             shape: RoundedRectangle(cornerRadius: 12),
             externalPressed: isPressed
         )
@@ -399,8 +464,10 @@ struct TrackView: View {
     
     /// Creates the timer card contents from the inputted card.
     private func timerCard(_ card: DMStoredCard) -> some View {
-        @State var isStartButtonPressed: Bool = false
+        let startButtonKey = "\(card.uuid)_start"
+        let isStartButtonPressed = pressedStates[startButtonKey] ?? false
         let timerState = timerViewModel.timerStates[card.uuid] ?? .idle
+        let tint = card.primaryColor?.color ?? .blue
         return Group {
             if card.type == .timer_custom && timerState == .idle  {
                 VStack {
@@ -430,43 +497,49 @@ struct TrackView: View {
                     
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.1)) {
-                            isStartButtonPressed = true
+                            pressedStates[startButtonKey] = true
                             timerViewModel.startTimer(card)
                         }
                         
                         withAnimation(.easeInOut(duration: 0.1).delay(0.1)) {
-                            isStartButtonPressed = false
+                            pressedStates[startButtonKey] = false
                         }
                     }) {
                         Text("Start")
-                            .foregroundStyle((card.secondaryColor?.color ?? .white).readable(in: colorScheme))
+                            .foregroundStyle((card.secondaryColor?.color ?? .white).readableOn(tint, sensitivity: usesLiquidGlass ? 0.7 : 0.75))
                             .frame(maxWidth: .infinity)
                             .padding()
                     }
-                    .adaptiveGlassButton(tintColor: card.primaryColor?.color ?? .blue, externalPressed: isStartButtonPressed)
+                    .adaptiveGlassButton(tintColor: tint, externalPressed: isStartButtonPressed)
                 }
             } else if card.type == .timer && timerState == .idle {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                     ForEach(0..<card.count, id: \.self) { index in
-                        Button(action: {
-                            timerViewModel.selectedTimerIndex[card.uuid] = index
-                            timerViewModel.startTimer(card)
-                        }) {
-                            Circle()
-                                .stroke(lineWidth: 10)
-                                .opacity(0.3)
-                                .foregroundColor(card.primaryColor?.color ?? .blue)
-                                .overlay(
-                                    Text((card.timer?[index].timerValue ?? 0).formatTime())
-                                        .font(.system(.title2, weight: .bold))
-                                        .foregroundStyle((card.secondaryColor?.color ?? .white).readable(in: colorScheme))
-                                        .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.3)
-                                        .padding(.horizontal)
-                                )
-                                .frame(height: 100)
-                                .padding(10)
+                        if let timerValue = card.timer?[index].timerValue {
+                            Button(action: {
+                                timerViewModel.selectedTimerIndex[card.uuid] = index
+                                timerViewModel.startTimer(card)
+                            }) {
+                                Circle()
+                                    .stroke(lineWidth: 10)
+                                    .opacity(0.3)
+                                    .foregroundColor(card.primaryColor?.color ?? .blue)
+                                    .overlay(
+                                        Text(timerValue.formatTime())
+                                            .font(.system(.title2, weight: .bold))
+                                            .foregroundStyle((card.secondaryColor?.color ?? .white).readable(in: colorScheme))
+                                            .dynamicTypeSize(DynamicTypeSize.xSmall ... DynamicTypeSize.xxLarge)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.3)
+                                            .padding(.horizontal)
+                                    )
+                                    .frame(height: 100)
+                                    .padding(10)
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Timer Preset")
+                            .accessibilityValue(accessibleTimeFormat(Double(timerValue)))
+                            .accessibilityHint("Double-tap to start timer")
                         }
                     }
                 }
@@ -478,129 +551,241 @@ struct TrackView: View {
         }
     }
     
-    /// Computed property for alert title.
-    private var alertTitle: Text {
-        if (selectedGroup.groupTitle?.isEmpty == false) {
-            return Text("Delete Group?")
-        } else {
-            return Text("Delete \(selectedGroup.groupTitle ?? "This Group")?")
-        }
-    }
-}
-
-extension Color {
-    /// Returns the relative luminance of this color, from 0 (black) to 1 (white).
-    func luminance() -> Double {
-        // Convert the color to UIColor/NSColor and extract components
-#if canImport(UIKit)
-        let uiColor = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-#else
-        let nsColor = NSColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        nsColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-#endif
+    private func noteCard(_ card: DMStoredCard) -> some View {
+        let textColor = card.primaryColor?.color ?? .primary
+        let backgroundColor = card.secondaryColor?.color ?? .secondary
+        let lockState = card.state?[0].state ?? false
         
-        // Calculate luminance (perceptual brightness)
-        func channel(_ c: CGFloat) -> Double {
-            let c = Double(c)
-            return (c <= 0.03928) ? (c/12.92) : pow((c+0.055)/1.055, 2.4)
+        return ZStack {
+            RoundedRectangle(cornerRadius: 13)
+                .foregroundStyle(backgroundColor)
+                .opacity(0.9)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            VStack(spacing: 2) {
+                AttributedTextEditor(
+                    noteData: noteDataBinding(for: card),
+                    controller: noteEditorController,
+                    textColor: UIColor(textColor.readableOn(backgroundColor)),
+                    locked: lockState,
+                    cardUUID: card.uuid,
+                    bottomPadding: 52
+                )
+                .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
+                .overlay(alignment: .bottomTrailing, content: {
+                    Button(action: {
+                        let newValue = !lockState
+                        if card.state?.isEmpty ?? true {
+                            card.state = [CardState(state: newValue)]
+                        } else {
+                            card.state?[0].state = newValue
+                        }
+                    }, label: {
+                        if #available(iOS 18.0, *) {
+                            Image(systemName: lockState ? "lock.fill" : "lock.open.fill")
+                                .imageScale(.medium)
+                                .contentTransition(.symbolEffect(.replace.magic(fallback: .downUp.byLayer), options: .nonRepeating))
+                        } else {
+                            Image(systemName: lockState ? "lock.fill" : "lock.open.fill")
+                                .imageScale(.medium)
+                        }
+                    })
+                    .accessibilityLabel(lockState ? "Unlock note" : "Lock note")
+                    .accessibilityValue(lockState ? "Locked" : "Unlocked")
+                    .accessibilityHint("Toggles whether this note can be edited")
+                    .foregroundStyle(textColor.readableOn(backgroundColor))
+                    .frame(maxWidth: 44, maxHeight: 44)
+                    .aspectRatio(1, contentMode: .fit)
+                    .adaptiveGlassButton()
+                })
+                .padding()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
     }
-    
-    /// Determines if the color is considered "white" based on its luminance.
-    /// - Parameters:
-    /// - colorScheme: The current color scheme (light or dark).
-    /// - sensitivity: A value from 0 to 1 indicating how sensitive the readability check is. Default is 0.6.
-    func isColorUnreadable(_ colorScheme: ColorScheme, sensitivity: CGFloat = 0.60) -> Bool {
-        if colorScheme == .dark {
-            return self.luminance() <= (1 - sensitivity)
-        } else {
-            return self.luminance() >= sensitivity
-        }
-    }
-    
-    /// Returns a color that is guaranteed to be readable for the given color scheme.
-    /// If the color is unreadable, returns a contrasting color (black for light mode, white for dark mode). Otherwise returns self.
-    /// - Parameters:
-    ///  - colorScheme: The current color scheme (light or dark).
-    ///  - sensitivity: A value from 0 to 1 indicating how sensitive the readability check is. Default is 0.6.
-    func readable(in colorScheme: ColorScheme, sensitivity: CGFloat = 0.6) -> Color {
-        if isColorUnreadable(colorScheme, sensitivity: sensitivity) {
-            return colorScheme == .light ? self.darkened() : self.lightened()
-        } else {
-            return self
-        }
-    }
-    
-    /// Returns a version of the color that is readable against a background color, using luminance contrast.
-    /// If the contrast is insufficient, returns a darkened or lightened variant for readability.
-    /// - Parameters:
-    ///   - background: The background color to check against.
-    ///   - sensitivity: How strict the contrast check is (0 to 1). Default is 0.9.
-    func readableOn(_ background: Color, sensitivity: CGFloat = 0.75) -> Color {
-        // Calculate luminance of the background
-        let bgLuminance = background.luminance()
-        // Thresholds can be tweaked for your design preference.
-        return bgLuminance > sensitivity ? self.darkened(by: 0.6) : self.lightened(by: 0.6)
-    }
-    
-    /// Returns a darkened version of the color by blending it towards black.
-    /// - Parameter amount: A value from 0 (no change) to 1 (black). Default is 0.5.
-    func darkened(by amount: CGFloat = 0.5) -> Color {
-#if canImport(UIKit)
-        let uiColor = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-#else
-        let nsColor = NSColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        nsColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-#endif
-        return Color(
-            .sRGB,
-            red: Double(max(r * (1 - amount), 0)),
-            green: Double(max(g * (1 - amount), 0)),
-            blue: Double(max(b * (1 - amount), 0)),
-            opacity: Double(a)
+
+    private func noteDataBinding(for card: DMStoredCard) -> Binding<Data?> {
+        Binding(
+            get: { card.noteData },
+            set: { card.noteData = $0 }
         )
     }
     
-    /// Returns a lightened version of the color by blending it towards white.
-    /// - Parameter amount: A value from 0 (no change) to 1 (white). Default is 0.5.
-    func lightened(by amount: CGFloat = 0.5) -> Color {
-#if canImport(UIKit)
-        let uiColor = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-#else
-        let nsColor = NSColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        nsColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-#endif
-        return Color(
-            .sRGB,
-            red: Double(min(r + (1 - r) * amount, 1)),
-            green: Double(min(g + (1 - g) * amount, 1)),
-            blue: Double(min(b + (1 - b) * amount, 1)),
-            opacity: Double(a)
-        )
+private var alertTitle: Text {
+    let title = selectedGroup.groupTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let resolvedTitle = (title?.isEmpty == false) ? title! : "This Group"
+    return Text("Delete \(resolvedTitle)?")
+}
+    
+    @ViewBuilder
+    private func searchBar(proxy: ScrollViewProxy) -> some View {
+        let matches = matchUUIDs
+        
+        if #available(anyAppleOS 26.0, *) {
+            HStack {
+                Button(action: {
+                    withAnimation {
+                        isSearchActive = false
+                        searchText = ""
+                        currentMatchIndex = 0
+                    }
+                }, label: {
+                    Label("Done", systemImage: "xmark")
+                        .labelStyle(.iconOnly)
+                })
+                .foregroundStyle(.primary)
+                .frame(minWidth: 24, minHeight: 24)
+                .padding(12)
+                .adaptiveGlassButton(tintStrength: 0)
+                
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    
+                    TextField("Search cards...", text: $searchText)
+                        .focused($focusSearch)
+                        .textFieldStyle(.plain)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: searchText) {
+                            currentMatchIndex = 0
+                            if !matchUUIDs.isEmpty {
+                                scrollToCurrentMatch(proxy: proxy)
+                            }
+                        }
+                    
+                    if !searchText.isEmpty {
+                        Text("\(matches.isEmpty ? 0 : currentMatchIndex + 1) of \(matches.count)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 4)
+                        
+                        Button(action: {
+                            searchText = ""
+                            currentMatchIndex = 0
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .frame(minHeight: 24)
+                .customRoundedGlass()
+                
+                HStack(spacing: 12) {
+                    Button(action: { previousMatch(proxy: proxy) }) {
+                        Image(systemName: "chevron.up")
+                            .fontWeight(.medium)
+                    }
+                    .disabled(matches.isEmpty)
+                    
+                    Button(action: { nextMatch(proxy: proxy) }) {
+                        Image(systemName: "chevron.down")
+                            .fontWeight(.medium)
+                    }
+                    .disabled(matches.isEmpty)
+                }
+                .frame(minHeight: 24)
+                .customRoundedGlass()
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal)
+        } else {
+            HStack(spacing: 18) {
+                Button(action: {
+                    withAnimation {
+                        isSearchActive = false
+                        searchText = ""
+                        currentMatchIndex = 0
+                    }
+                }, label: {
+                    Label("Done", systemImage: "xmark")
+                        .labelStyle(.titleOnly)
+                        .font(.headline)
+                })
+                .foregroundStyle(.primary)
+                
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    
+                    TextField("Search cards...", text: $searchText)
+                        .focused($focusSearch)
+                        .textFieldStyle(.plain)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: searchText) {
+                            currentMatchIndex = 0
+                            if !matchUUIDs.isEmpty {
+                                scrollToCurrentMatch(proxy: proxy)
+                            }
+                        }
+                    
+                    if !searchText.isEmpty {
+                        Text("\(matches.isEmpty ? 0 : currentMatchIndex + 1) of \(matches.count)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 4)
+                        
+                        Button(action: {
+                            searchText = ""
+                            currentMatchIndex = 0
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .foregroundStyle(Color(UIColor.systemGray4))
+                )
+                
+                HStack(spacing: 12) {
+                    Group {
+                        Button(action: { previousMatch(proxy: proxy) }) {
+                            Image(systemName: "chevron.up")
+                        }
+                        
+                        Button(action: { nextMatch(proxy: proxy) }) {
+                            Image(systemName: "chevron.down")
+                        }
+                    }
+                    .foregroundStyle(.secondary)
+                    .fontWeight(.medium)
+                    .disabled(matches.isEmpty)
+                }
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal)
+        }
+    }
+    
+    private var matchUUIDs: [UUID] {
+        guard !searchText.isEmpty else { return [] }
+        return storedCards.filter { $0.title.localizedCaseInsensitiveContains(searchText) }.map { $0.uuid }
+    }
+    
+    private func nextMatch(proxy: ScrollViewProxy) {
+        let matches = matchUUIDs
+        guard !matches.isEmpty else { return }
+        currentMatchIndex = (currentMatchIndex + 1) % matches.count
+        scrollToCurrentMatch(proxy: proxy)
+    }
+
+    private func previousMatch(proxy: ScrollViewProxy) {
+        let matches = matchUUIDs
+        guard !matches.isEmpty else { return }
+        currentMatchIndex = (currentMatchIndex - 1 + matches.count) % matches.count
+        scrollToCurrentMatch(proxy: proxy)
+    }
+
+    private func scrollToCurrentMatch(proxy: ScrollViewProxy) {
+        let matches = matchUUIDs
+        guard !matches.isEmpty && currentMatchIndex < matches.count else { return }
+        withAnimation {
+            proxy.scrollTo(matches[currentMatchIndex], anchor: .center)
+        }
     }
 }
-
-#Preview {
-    let exampleGroup = DMCardGroup(index: 0, groupTitle: "Test", groupSymbol: "", cards: [])
-    let exampleCards: [DMStoredCard] = [
-        DMStoredCard(index: 0, type: .counter, title: "Test Counter", count: 0, modifier: [1, 5, 10], primaryColor: .red, secondaryColor: .white, group: exampleGroup),
-        DMStoredCard(index: 1, type: .toggle, title: "Test Toggle", count: 5, state: Array(repeating: true, count: 5), buttonText: Array(repeating: "Test", count: 5), symbol: "trophy.fill", primaryColor: .gray, secondaryColor: .yellow, group: exampleGroup),
-        DMStoredCard(index: 2, type: .timer, title: "Test Timer", count: 4, state: [false], timer: [5, 15, 60, 3600], primaryColor: .blue, secondaryColor: .white, group: exampleGroup),
-        DMStoredCard(index: 3, type: .timer_custom, title: "Test Timer (Custom)", count: 1, state: [false], timer: [0], primaryColor: .blue, secondaryColor: .white, group: exampleGroup),
-    ]
-    
-    exampleGroup.cards = exampleCards
-    
-    return TrackView(selectedGroup: exampleGroup)
-}
-
