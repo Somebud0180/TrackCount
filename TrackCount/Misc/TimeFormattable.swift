@@ -7,7 +7,7 @@
 
 import Foundation
 
-func accessibleTimeFormat(_ seconds: TimeInterval, secondsOnZero: Bool = false) -> String {
+func accessibleTimeFormat(_ seconds: TimeInterval) -> String {
     let total = Int(seconds)
     let hours = total / 3600
     let minutes = (total % 3600) / 60
@@ -26,7 +26,7 @@ func accessibleTimeFormat(_ seconds: TimeInterval, secondsOnZero: Bool = false) 
     }
     
     if components.isEmpty {
-        return secondsOnZero ? "0 seconds" : "0"
+        return "0 seconds"
     }
     
     if components.count == 1 {
