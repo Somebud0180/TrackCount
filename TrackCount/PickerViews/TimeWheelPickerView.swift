@@ -2,8 +2,7 @@
 //  TimeWheelPickerView.swift
 //  TrackCount
 //
-//  //  A time picker featuring a wheel style picker
-//
+//  A time picker featuring a wheel style picker
 //
 import SwiftUI
 
