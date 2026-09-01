@@ -573,11 +573,9 @@ struct TrackView: View {
                 .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
                 .overlay(alignment: .bottomTrailing, content: {
                     Button(action: {
-                        if lockState {
-                            card.state?[0].state = false
-                        } else {
-                            card.state?[0].state = true
-                        }
+let newValue = !lockState
+if card.state?.isEmpty ?? true { card.state = [CardState(state: newValue)] }
+else { card.state?[0].state = newValue }
                     }, label: {
                         if #available(iOS 18.0, *) {
                             Image(systemName: lockState ? "lock.fill" : "lock.open.fill")
