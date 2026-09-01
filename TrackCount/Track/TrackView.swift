@@ -597,8 +597,8 @@ struct TrackView: View {
                     .frame(maxWidth: 44, maxHeight: 44)
                     .aspectRatio(1, contentMode: .fit)
                     .adaptiveGlassButton()
-                    .padding()
                 })
+                .padding()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
