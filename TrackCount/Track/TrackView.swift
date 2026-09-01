@@ -604,10 +604,11 @@ else { card.state?[0].state = newValue }
         )
     }
     
-    /// Computed property for alert title.
-    private var alertTitle: Text {
-        return Text("Delete \(selectedGroup.groupTitle ?? "This Group")?")
-    }
+private var alertTitle: Text {
+    let title = selectedGroup.groupTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let resolvedTitle = (title?.isEmpty == false) ? title! : "This Group"
+    return Text("Delete \(resolvedTitle)?")
+}
     
     private func searchBar(proxy: ScrollViewProxy) -> some View {
         let matches = matchUUIDs
