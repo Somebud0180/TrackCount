@@ -230,7 +230,7 @@ extension DMStoredCard.Types {
         }
     }
     
-    var typeSmybol: String {
+    var typeSymbol: String {
         switch self {
         case .counter:
             return "numbers"

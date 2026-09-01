@@ -63,7 +63,7 @@ struct CardListView: View {
                                         .foregroundStyle(.gray)
                                     
                                     if let type = card.type {
-                                        Image(systemName: type.typeSmybol)
+                                        Image(systemName: type.typeSymbol)
                                             .foregroundStyle(Color(.label))
                                             .fontWeight(.semibold)
                                     }
