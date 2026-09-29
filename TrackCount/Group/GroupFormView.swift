@@ -36,8 +36,8 @@ struct GroupFormView: View {
             VStack(alignment: .leading, spacing: 16) {
                 formView()
             }
-            .padding(.top, -24)
-            .navigationBarTitle(viewModel.selectedGroup != nil ? "Edit Group" : "Create Group", displayMode: .inline)
+            .navigationBarTitle(viewModel.selectedGroup != nil ? "Edit Group" : "Create Group")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Dismiss") {

@@ -50,7 +50,6 @@ struct CardFormView: View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 formView()
-                .padding(.top, -24)
                 .padding(.bottom, saveSectionHeight + 8)
                 .mask(LinearGradient(
                     gradient: Gradient(stops: [
