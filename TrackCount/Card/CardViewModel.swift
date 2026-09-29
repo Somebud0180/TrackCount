@@ -405,7 +405,7 @@ if newCardType == .counter {
                     validationError.append("ButtonMoreThanMax")
                 }
                 
-            case .timer, .timer_custom: // Consolidated timer cases
+            case .timer: // Consolidated timer cases
                 if newCardCount < minTimerAmount || newCardCount > maxTimerAmount {
                     validationError.append("TimerExceedsLimits")
                 }
