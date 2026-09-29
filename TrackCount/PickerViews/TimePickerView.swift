@@ -20,11 +20,10 @@ struct TimePickerView: View {
             Picker(title, selection: binding) {
                 ForEach(range, id: \.self) { timeIncrement in
                     HStack {
-                        // Forces the text in the Picker to be
-                        // right-aligned
-                        Spacer()
+                        Spacer(minLength: 0)
                         Text("\(timeIncrement)")
-                            .multilineTextAlignment(.trailing)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                             .padding(.trailing, 4)
                     }
                     .accessibilityElement(children: .combine)
@@ -36,6 +35,8 @@ struct TimePickerView: View {
 
             Text(title)
                 .fontWeight(.bold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity)
