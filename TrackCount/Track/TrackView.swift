@@ -37,7 +37,7 @@ struct TrackView: View {
     @FocusState private var focusSearch
     
     @AppStorage("trackGridSize") var gridSizeOption: Int = DefaultSettings.trackGridSize  // 0 = compact, 1 = default, 2 = relaxed
-    @State private var gridSize: [CGFloat] = [320, 400, 450]
+    @State private var gridSize: [CGFloat] = [240, 320, 420]
     
     let buttonColumns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
     
@@ -56,73 +56,81 @@ struct TrackView: View {
         // Safely get a share URL for the group
         let shareURL = try? groupViewModel.shareGroup(selectedGroup)
         
-        // Define grid layout with adaptive columns
-        let gridColumns = [GridItem(.adaptive(minimum: gridSize[gridSizeOption]), spacing: 16)]
-        
         NavigationStack {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    Group {
-                        if storedCards.isEmpty {
-                            Text("You have no cards yet")
-                                .font(.title)
-                                .foregroundStyle(.gray)
-                                .multilineTextAlignment(.center)
-                        } else {
-                            // Define the grid layout
-                            LazyVGrid(columns: gridColumns, spacing: 16) {
-                                // Display a message when there are no cards
-                                // Iterate through the sorted cards and display each card
-                                ForEach(storedCards, id: \.uuid) { card in
-                                    gridCard(card)
-                                        .id(card.uuid)
+            GeometryReader { geometry in
+                let availableWidth = max(0, geometry.size.width - 32)
+                let minWidth = min(gridSize[gridSizeOption], max(140, availableWidth))
+                let gridColumns = [GridItem(.adaptive(minimum: minWidth), spacing: 16)]
+                
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        Group {
+                            if storedCards.isEmpty {
+                                Text("You have no cards yet")
+                                    .font(.title)
+                                    .foregroundStyle(.gray)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity, minHeight: 200, alignment: .center)
+                            } else {
+                                // Define the grid layout
+                                LazyVGrid(columns: gridColumns, spacing: 16) {
+                                    // Display a message when there are no cards
+                                    // Iterate through the sorted cards and display each card
+                                    ForEach(storedCards, id: \.uuid) { card in
+                                        gridCard(card)
+                                            .id(card.uuid)
+                                    }
+                                }
+                            }
+                        }
+                        .padding()
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        if isSearchActive {
+                            if #available(anyAppleOS 26.0, *) {
+                                GlassEffectContainer {
+                                    searchBar(proxy: proxy)
+                                        .frame(maxWidth: 600)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                }
+                            } else {
+                                searchBar(proxy: proxy)
+                                    .frame(maxWidth: 600)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .background(.bar)
+                            }
+                        } else if noteEditorController.isEditing {
+                            NoteFormattingToolbar(editor: noteEditorController)
+                                .padding(.bottom, 8)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
+                    .animation(.easeInOut(duration: 0.2), value: noteEditorController.isEditing)
+                    .onChange(of: noteEditorController.editingCardUUID) {
+                        if let uuid = noteEditorController.editingCardUUID {
+                            // Delay slightly to let the scroll view resize for the keyboard
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    proxy.scrollTo(uuid, anchor: .center)
                                 }
                             }
                         }
                     }
-                    .padding()
-                }
-                .safeAreaInset(edge: .bottom) {
-                    if isSearchActive {
-                        if #available(anyAppleOS 26.0, *) {
-                            GlassEffectContainer {
-                                searchBar(proxy: proxy)
-                            }
-                        } else {
-                            searchBar(proxy: proxy)
-                                .background(.bar)
-                        }
-                    } else if noteEditorController.isEditing {
-                        NoteFormattingToolbar(editor: noteEditorController)
-                            .padding(.bottom, 8)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                }
-                .animation(.easeInOut(duration: 0.2), value: noteEditorController.isEditing)
-                .onChange(of: noteEditorController.editingCardUUID) {
-                    if let uuid = noteEditorController.editingCardUUID {
-                        // Delay slightly to let the scroll view resize for the keyboard
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                        if let uuid = noteEditorController.editingCardUUID {
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 proxy.scrollTo(uuid, anchor: .center)
                             }
                         }
                     }
                 }
-                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-                    if let uuid = noteEditorController.editingCardUUID {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo(uuid, anchor: .center)
-                        }
-                    }
-                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitleViewBuilder {
-                if (selectedGroup.groupTitle?.isEmpty != nil) {
-                    Image(systemName: selectedGroup.groupSymbol ?? "")
-                } else {
-                    Text(selectedGroup.groupTitle ?? "")
+                if let title = selectedGroup.groupTitle, !title.isEmpty {
+                    Text(title)
+                } else if let symbol = selectedGroup.groupSymbol, !symbol.isEmpty {
+                    Image(systemName: symbol)
                 }
             }
             .toolbar {
@@ -195,7 +203,7 @@ struct TrackView: View {
         }
         .sheet(isPresented: $isPresentingGroupForm) {
             GroupFormView(viewModel: groupViewModel)
-                .presentationDetents([.fraction(0.3)])
+                .presentationDetents([.fraction(0.35), .medium])
                 .onDisappear {
                     groupViewModel.validationError.removeAll()
                     groupViewModel.selectedGroup = nil
@@ -306,6 +314,7 @@ struct TrackView: View {
                 }
             }.padding(12)
         }
+        .frame(minHeight: 220)
     }
     
     /// Creates the counter card contents from the inputted card.
@@ -513,7 +522,11 @@ struct TrackView: View {
                     .adaptiveGlassButton(tintColor: tint, externalPressed: isStartButtonPressed)
                 }
             } else if card.type == .timer && timerState == .idle {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
+                let timerColumns = (card.count == 1)
+                    ? [GridItem(.flexible())]
+                    : [GridItem(.adaptive(minimum: 90, maximum: 140), spacing: 15)]
+                
+                LazyVGrid(columns: timerColumns, spacing: 15) {
                     ForEach(0..<card.count, id: \.self) { index in
                         if let timerValue = card.timer?[index].timerValue {
                             Button(action: {
@@ -657,6 +670,8 @@ private var alertTitle: Text {
                     if !searchText.isEmpty {
                         Text("\(matches.isEmpty ? 0 : currentMatchIndex + 1) of \(matches.count)")
                             .font(.caption)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                             .foregroundColor(.gray)
                             .padding(.horizontal, 4)
                         
@@ -724,6 +739,8 @@ private var alertTitle: Text {
                     if !searchText.isEmpty {
                         Text("\(matches.isEmpty ? 0 : currentMatchIndex + 1) of \(matches.count)")
                             .font(.caption)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                             .foregroundColor(.gray)
                             .padding(.horizontal, 4)
                         

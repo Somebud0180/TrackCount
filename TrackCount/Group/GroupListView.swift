@@ -32,9 +32,10 @@ struct GroupListView: View {
     @Namespace private var namespace
     
     // Grid Sizing
-    let minGridWidth: CGFloat = 110
+    let minGridWidth: CGFloat = 130
     let maxGridColumns: Int = 8
-    let gridSpacing: CGFloat = 10
+    let gridSpacing: CGFloat = 12
+    let horizontalPadding: CGFloat = 16
     
     private var filteredGroups: [DMCardGroup] {
         if searchText.isEmpty {
@@ -80,41 +81,49 @@ struct GroupListView: View {
                         }
                         
                         if savedGroups.isEmpty {
-                            (
-                                Text("Create a new group by tapping the ")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                +
-                                Text(Image(systemName: "plus.rectangle.portrait"))
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                +
-                                Text(" in the top-right toolbar")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            )
-                            .padding()
+                            VStack(spacing: 8) {
+                                (
+                                    Text("Create a new group by tapping the ")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    +
+                                    Text(Image(systemName: "plus.rectangle.portrait"))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    +
+                                    Text(" in the top-right toolbar")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                )
+                                .multilineTextAlignment(.center)
+                                .padding()
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 200, alignment: .center)
                         }
+                        
+                        let height = cardHeight(for: geometry.size.width)
                         
                         if #available(anyAppleOS 27.0, *) {
                             LazyVGrid(columns: columns(for: geometry.size.width), spacing: gridSpacing) {
                                 ForEach(filteredGroups) { group in
-                                    groupCard(group)
+                                    groupCard(group, cardHeight: height)
                                 }
                                 .reorderable()
                             }
                             .reorderContainer(for: DMCardGroup.self) { difference in
                                 applyReorderDifference(difference)
                             }
-                            .padding()
+                            .padding(.horizontal, horizontalPadding)
+                            .padding(.vertical)
                             .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         } else {
                             LazyVGrid(columns: columns(for: geometry.size.width), spacing: gridSpacing) {
                                 ForEach(filteredGroups) { group in
-                                    groupCard(group)
+                                    groupCard(group, cardHeight: height)
                                 }
                             }
-                            .padding()
+                            .padding(.horizontal, horizontalPadding)
+                            .padding(.vertical)
                             .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         }
                     }
@@ -153,7 +162,7 @@ struct GroupListView: View {
             }
             .sheet(isPresented: $isPresentingGroupForm, onDismiss: {selectedGroup = nil}) {
                 GroupFormView(viewModel: viewModel)
-                    .presentationDetents([.fraction(0.35)])
+                    .presentationDetents([.fraction(0.35), .medium])
                     .onDisappear {
                         viewModel.validationError.removeAll()
                         viewModel.selectedGroup = nil
@@ -227,12 +236,19 @@ struct GroupListView: View {
     }
     
     private func columns(for totalWidth: CGFloat) -> [GridItem] {
-        // Compute how many columns fit, but never exceed maxColumns
-        let count = max(1, min(maxGridColumns, Int(totalWidth / (minGridWidth + gridSpacing))))
+        let availableWidth = max(0, totalWidth - (horizontalPadding * 2))
+        let count = max(1, min(maxGridColumns, Int(availableWidth / (minGridWidth + gridSpacing))))
         return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
     }
     
-    private func groupCard(_ group: DMCardGroup) -> some View {
+    private func cardHeight(for totalWidth: CGFloat) -> CGFloat {
+        let availableWidth = max(0, totalWidth - (horizontalPadding * 2))
+        let count = max(1, min(maxGridColumns, Int(availableWidth / (minGridWidth + gridSpacing))))
+        let columnWidth = (availableWidth - CGFloat(count - 1) * gridSpacing) / CGFloat(count)
+        return min(max(columnWidth * 0.9, 130), 170)
+    }
+    
+    private func groupCard(_ group: DMCardGroup, cardHeight: CGFloat) -> some View {
         ZStack {
             Group {
                 if #available(iOS 18.0, *) {
@@ -241,13 +257,13 @@ struct GroupListView: View {
                             .navigationTransition(.zoom(sourceID: group.id, in: namespace))
                     ) {
                         GroupCardView(group: group)
-                            .frame(height: 200)
+                            .frame(height: cardHeight)
                             .matchedTransitionSource(id: group.id, in: namespace)
                     }
                 } else {
                     NavigationLink(destination: TrackView(selectedGroup: group)) {
                         GroupCardView(group: group)
-                            .frame(height: 200)
+                            .frame(height: cardHeight)
                     }
                 }
             }
