@@ -342,6 +342,8 @@ struct TrackView: View {
                 symbol: "minus",
                 accessibilityLabelPrefix: "Reduce"
             )
+            
+            Spacer()
         }
         .frame(maxWidth: 450)
     }
