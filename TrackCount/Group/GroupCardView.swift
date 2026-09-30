@@ -60,7 +60,7 @@ struct GroupCardView: View {
                     .font(.system(.title3, weight: .bold))
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 8)
             }
         }
         .transaction { tx in

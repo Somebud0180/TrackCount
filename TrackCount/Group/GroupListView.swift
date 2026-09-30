@@ -31,10 +31,24 @@ struct GroupListView: View {
     @State private var searchText: String = ""
     @Namespace private var namespace
     
-    // Grid Sizing
-    let minGridWidth: CGFloat = 130
-    let maxGridColumns: Int = 8
-    let gridSpacing: CGFloat = 12
+    // Grid Sizing & Aspect Ratio
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.userInterfaceIdiom == .mac
+    }
+    
+    private func isRegularLayout(for totalWidth: CGFloat) -> Bool {
+        isIPad && totalWidth >= 500
+    }
+    
+    private func minGridWidth(for totalWidth: CGFloat) -> CGFloat {
+        isRegularLayout(for: totalWidth) ? 140 : 100
+    }
+    
+    private func gridSpacing(for totalWidth: CGFloat) -> CGFloat {
+        isRegularLayout(for: totalWidth) ? 14 : 10
+    }
+    
+    let maxGridColumns: Int = 10
     let horizontalPadding: CGFloat = 16
     
     private var filteredGroups: [DMCardGroup] {
@@ -102,9 +116,10 @@ struct GroupListView: View {
                         }
                         
                         let height = cardHeight(for: geometry.size.width)
+                        let spacing = gridSpacing(for: geometry.size.width)
                         
                         if #available(anyAppleOS 27.0, *) {
-                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: gridSpacing) {
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: spacing) {
                                 ForEach(filteredGroups) { group in
                                     groupCard(group, cardHeight: height)
                                 }
@@ -117,7 +132,7 @@ struct GroupListView: View {
                             .padding(.vertical)
                             .animation(.easeInOut(duration: 0.3), value: savedGroups.map { $0.index })
                         } else {
-                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: gridSpacing) {
+                            LazyVGrid(columns: columns(for: geometry.size.width), spacing: spacing) {
                                 ForEach(filteredGroups) { group in
                                     groupCard(group, cardHeight: height)
                                 }
@@ -236,16 +251,37 @@ struct GroupListView: View {
     }
     
     private func columns(for totalWidth: CGFloat) -> [GridItem] {
+        let count = columnsCount(for: totalWidth)
+        let spacing = gridSpacing(for: totalWidth)
+        return Array(repeating: GridItem(.flexible(), spacing: spacing), count: count)
+    }
+    
+    private func columnsCount(for totalWidth: CGFloat) -> Int {
         let availableWidth = max(0, totalWidth - (horizontalPadding * 2))
-        let count = max(1, min(maxGridColumns, Int(availableWidth / (minGridWidth + gridSpacing))))
-        return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
+        let minWidth = minGridWidth(for: totalWidth)
+        let spacing = gridSpacing(for: totalWidth)
+        return max(1, min(maxGridColumns, Int(availableWidth / (minWidth + spacing))))
     }
     
     private func cardHeight(for totalWidth: CGFloat) -> CGFloat {
         let availableWidth = max(0, totalWidth - (horizontalPadding * 2))
-        let count = max(1, min(maxGridColumns, Int(availableWidth / (minGridWidth + gridSpacing))))
-        let columnWidth = (availableWidth - CGFloat(count - 1) * gridSpacing) / CGFloat(count)
-        return min(max(columnWidth * 0.9, 130), 170)
+        let count = columnsCount(for: totalWidth)
+        let spacing = gridSpacing(for: totalWidth)
+        let columnWidth = max(0, (availableWidth - CGFloat(count - 1) * spacing) / CGFloat(count))
+        
+        let aspectRatio: CGFloat
+        if isRegularLayout(for: totalWidth) {
+            // For iPad: more square-ish card with vertical orientation preference (e.g. 0.85, height = width / 0.85)
+            aspectRatio = 0.85
+        } else {
+            // For iPhone: slimmer/taller card with vertical orientation, strictly limited between 1:2 (0.5) and 9:16 (0.5625)
+            let minRatio: CGFloat = 1.0 / 2.0  // 0.5 (1:2)
+            let maxRatio: CGFloat = 9.0 / 16.0 // 0.5625 (9:16)
+            let targetRatio: CGFloat = 9.0 / 16.0
+            aspectRatio = min(max(targetRatio, minRatio), maxRatio)
+        }
+        
+        return columnWidth / aspectRatio
     }
     
     private func groupCard(_ group: DMCardGroup, cardHeight: CGFloat) -> some View {
